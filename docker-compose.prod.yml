@@ -1,11 +1,10 @@
 # KCT Labs — production runtime on the VPS. Used by deploy/deploy.sh (images are built by
 # deploy.sh with the env file passed as a BuildKit secret; do not `build` from here).
 #
-#   IMAGE_TAG=<git-sha> ENV_FILE=/root/projects/kct-labs/.env.prod MEDIA_DIR=/srv/kct-labs/media APP_PORT=6001 \
+#   IMAGE_TAG=<git-sha> ENV_FILE=<APP_DIR>/.env.prod MEDIA_DIR=<DATA_DIR>/media APP_PORT=<PORT> \
 #     docker compose -p kct-labs -f docker-compose.prod.yml up -d
 #
-# Sized for the target VPS: 3.8 GB RAM + 8 GB swap (DigitalOcean SGP), shared with other
-# workloads. The database is an external/managed Postgres (DATABASE_URL in the env file).
+# Sized for a small VPS: ~4 GB RAM + 8 GB swap, possibly shared with other workloads. The database is an external/managed Postgres (DATABASE_URL in the env file).
 name: kct-labs
 
 services:
@@ -25,7 +24,7 @@ services:
       # Cap the V8 heap below the container limit so Node GCs instead of being OOM-killed.
       NODE_OPTIONS: '--max-old-space-size=640'
     # Published on all interfaces (no reverse proxy in front). NOTE: Docker-published ports bypass
-    # ufw — restrict access with the DigitalOcean Cloud Firewall if needed.
+    # ufw — restrict access with the provider's cloud firewall if needed.
     ports:
       - '0.0.0.0:${APP_PORT:?APP_PORT is required}:3000'
     volumes:

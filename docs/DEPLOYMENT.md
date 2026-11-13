@@ -1,19 +1,21 @@
 # Deployment KCT Labs — VPS + Docker + Postgres terkelola
 
-Arsitektur saat ini: **VPS DigitalOcean SGP** (host `koorva-elk`, 2 vCPU, 3.8 GB RAM, 8 GB swap; dipakai bersama container lain) → build di Docker pada VPS → container `kct-labs-app` dipublish langsung di **`http://159.65.2.9:6001`** (port internal container tetap 3000). Database: **Postgres terkelola/terpisah** (`DATABASE_URL`). Upload media disimpan di disk VPS (`/srv/kct-labs/media`), **bukan** di database.
+Placeholder yang dipakai di dokumen ini: `<APP_DIR>` (folder source di server), `<DATA_DIR>` (folder data, mis. `/srv/kct-labs`), `<REPO_URL>` (URL git repo), `<SERVER_IP>` (IP server), `<PORT>` (port publik).
+
+Arsitektur: **VPS Linux** (contoh sizing: 2 vCPU, ±4 GB RAM, 8 GB swap; bisa dipakai bersama container lain) → build di Docker pada VPS → container `kct-labs-app` dipublish di `http://<SERVER_IP>:<PORT>` (port internal container tetap 3000). Database: **Postgres terkelola/terpisah** (`DATABASE_URL`). Upload media disimpan di disk VPS (`<DATA_DIR>/media`), **bukan** di database.
 
 > Port **6000 tidak dipakai** karena diblokir semua browser utama (`ERR_UNSAFE_PORT`). `deploy.sh` menolak port-port terblokir seperti ini.
-> Belum ada domain/HTTPS: login admin berjalan lewat HTTP (tidak terenkripsi) dan SEO berbasis IP kurang ideal — lihat bagian H.
+> Tanpa domain/HTTPS, login admin berjalan lewat HTTP (tidak terenkripsi) dan SEO berbasis IP kurang ideal — lihat bagian H.
 
 | File | Fungsi |
 |---|---|
 | `Dockerfile` | target `runner` (aplikasi) & `migrator` (menjalankan `payload migrate`) |
-| `docker-compose.prod.yml` | definisi container produksi (port publik 6001, volume media, batas resource, healthcheck, log rotation) |
+| `docker-compose.prod.yml` | definisi container produksi (port publik, volume media, batas resource, healthcheck, log rotation) |
 | `deploy/deploy.sh` | `deploy` / `rollback` / `status` |
 | `deploy/nginx/kct-labs.conf.example` | (opsional, saat domain siap) reverse proxy + HTTPS |
 | `scripts/migration-preflight.ts` | cek non-interaktif penanda "dev push" sebelum migrasi (mencegah deploy menggantung) |
 | `src/migrations/20261109_113225_initial.*` | **baseline** migrasi = skema DB saat ini (101 tabel) |
-| `.env.prod` | env produksi, ikut di repo (dipakai langsung oleh `deploy.sh` dari `/root/projects/kct-labs/.env.prod`) |
+| `.env.prod` | env produksi, **tidak** ada di repo (berisi secret; dibuat manual di server dari `.env.example`, dipakai oleh `deploy.sh` dari `<APP_DIR>/.env.prod`) |
 
 ---
 
@@ -27,26 +29,26 @@ apt-get update && apt-get install -y git curl util-linux
 docker --version && docker compose version          # compose v2 wajib
 
 # 2. Folder data (di luar repo agar tidak tertimpa git)
-mkdir -p /srv/kct-labs/{media,state}
-chown -R 1001:1001 /srv/kct-labs/media              # uid user aplikasi di dalam container
+mkdir -p <DATA_DIR>/{media,state}
+chown -R 1001:1001 <DATA_DIR>/media                 # uid user aplikasi di dalam container
 
-# 3. Source code (+ .env.prod yang ikut di repo)
-mkdir -p /root/projects
-git clone https://git.kct.co.id/KCT/kct-labs.git /root/projects/kct-labs
-cd /root/projects/kct-labs && git checkout master
+# 3. Source code
+git clone <REPO_URL> <APP_DIR>
+cd <APP_DIR> && git checkout master
 chmod +x deploy/deploy.sh
+cp .env.example .env.prod                            # isi nilai produksi (jangan di-commit)
 chmod 600 .env.prod                                  # hanya root yang boleh membaca secret
 
 # 4. Firewall. PENTING: port yang dipublish Docker MELEWATI ufw. Batasi akses dengan
-#    DigitalOcean Cloud Firewall (Networking → Firewalls): inbound 22 (IP admin saja) + 6001.
-ufw allow OpenSSH && ufw allow 6001/tcp && ufw enable
+#    firewall tingkat provider (Cloud Firewall): inbound 22 (IP admin saja) + <PORT>.
+ufw allow OpenSSH && ufw allow <PORT>/tcp && ufw enable
 ```
 
-**Keamanan login root:** login SSH root hanya dengan SSH key — di `/etc/ssh/sshd_config` set `PermitRootLogin prohibit-password` dan `PasswordAuthentication no`, lalu `systemctl reload ssh`. Pastikan key Anda sudah ada di `/root/.ssh/authorized_keys` **sebelum** reload.
+**Keamanan login root:** login SSH root hanya dengan SSH key — di `/etc/ssh/sshd_config` set `PermitRootLogin prohibit-password` dan `PasswordAuthentication no`, lalu `systemctl reload ssh`. Pastikan key Anda sudah ada di `~/.ssh/authorized_keys` **sebelum** reload.
 
-**`.env.prod` ada di repo:** ubah nilainya di laptop → commit → push → deploy. **Jangan edit langsung di VPS**: `deploy.sh` menolak berjalan bila ada perubahan lokal pada file yang ter-track.
+**`.env.prod` tidak ada di repo** (berisi secret; sudah di-ignore git). Kelola langsung di server dengan akses terbatas (`chmod 600`) dan simpan salinannya di password manager/secret store. Simpan secret **hanya** di sana, jangan di issue, chat, atau commit.
 
-**Kapasitas disk:** VPS ini hanya punya ±24 GB kosong (147/171 GB terpakai). Satu deploy butuh ±4–6 GB sementara (image migrator ±1.6 GB, image app, cache build). `deploy.sh` menolak build bila < 8 GB kosong dan otomatis membersihkan image/cache lama. Cek: `df -h /` dan `docker system df`.
+**Kapasitas disk:** pastikan ruang kosong memadai. Satu deploy butuh ±4–6 GB sementara (image migrator ±1.6 GB, image app, cache build). `deploy.sh` menolak build bila < 8 GB kosong dan otomatis membersihkan image/cache lama. Cek: `df -h /` dan `docker system df`.
 
 **Database terkelola:** izinkan IP VPS di firewall/allowlist DB, buat database & user khusus aplikasi:
 
@@ -56,7 +58,7 @@ CREATE DATABASE kct_labs OWNER kct_app ENCODING 'UTF8' TEMPLATE template0;
 -- Database HARUS kosong sebelum restore (langkah C).
 ```
 
-**Nginx + HTTPS:** belum dipakai (container dipublish langsung di port 6001). Saat domain siap, lihat bagian H.
+**Nginx + HTTPS:** opsional (container bisa dipublish langsung di `<PORT>`). Saat domain siap, lihat bagian H.
 
 ---
 
@@ -137,9 +139,9 @@ pg_restore --no-owner --no-privileges --single-transaction --exit-on-error -d "$
 Dari mesin dev (folder proyek):
 
 ```bash
-rsync -avz --progress public/media/ root@159.65.2.9:/srv/kct-labs/media/
-# di VPS (file hasil rsync dimiliki root → kembalikan ke user aplikasi):
-chown -R 1001:1001 /srv/kct-labs/media
+rsync -avz --progress public/media/ <SSH_USER>@<SERVER_IP>:<DATA_DIR>/media/
+# di VPS (file hasil rsync dimiliki user SSH → kembalikan ke user aplikasi):
+chown -R 1001:1001 <DATA_DIR>/media
 ```
 
 Tanpa langkah ini semua ikon/screenshot aplikasi tampil rusak (DB merujuk file yang tidak ada).
@@ -149,8 +151,8 @@ Tanpa langkah ini semua ikon/screenshot aplikasi tampil rusak (DB merujuk file y
 ## E. Deploy
 
 ```bash
-cd /root/projects/kct-labs
-./deploy/deploy.sh            # deploy branch yang sedang di-checkout (env: /root/projects/kct-labs/.env.prod)
+cd <APP_DIR>
+./deploy/deploy.sh            # deploy branch yang sedang di-checkout (env: <APP_DIR>/.env.prod)
 ./deploy/deploy.sh status     # tag aktif + status container
 ./deploy/deploy.sh rollback   # kembali ke image sebelumnya (tanpa build)
 ```
@@ -163,9 +165,9 @@ Urutan yang dijalankan `deploy.sh`:
 5. Ganti container → tunggu healthcheck → smoke test `/`, `/id`, `/apps`, `/apps-sitemap.xml`, `/robots.txt`.
 6. Gagal → **rollback otomatis** ke image sebelumnya. Berhasil → simpan tag & bersihkan: image app sisa 2 (+current/previous), image migrator hanya yang terbaru, image *dangling* milik proyek ini saja (label `com.kct.project=kct-labs`). Build cache host **tidak** disentuh kecuali `PRUNE_BUILD_CACHE=1`.
 
-Variabel opsional: `BRANCH`, `ENV_FILE` (default: `.env.prod` di repo), `MEDIA_DIR`, `APP_PORT` (default: `PORT` di env), `KEEP_IMAGES`, `HEALTH_TIMEOUT`, `MIGRATE_TIMEOUT`, `MIN_FREE_GB`, `FORCE_BUILD=1`, `PRUNE_BUILD_CACHE=1`.
+Variabel opsional: `BRANCH`, `ENV_FILE` (default: `.env.prod` di `<APP_DIR>`), `MEDIA_DIR`, `APP_PORT` (default: `PORT` di env), `KEEP_IMAGES`, `HEALTH_TIMEOUT`, `MIGRATE_TIMEOUT`, `MIN_FREE_GB`, `FORCE_BUILD=1`, `PRUNE_BUILD_CACHE=1`.
 
-### Sizing untuk VPS ini (2 vCPU / 3.8 GB RAM / 8 GB swap)
+### Contoh sizing (2 vCPU / ±4 GB RAM / 8 GB swap)
 | Komponen | Nilai | Alasan |
 |---|---|---|
 | Container app | `mem_limit 1g` (+512 MB swap), `cpus 1.5`, heap Node 640 MB | idle ±150 MB; cukup untuk Admin & upload (sharp), sisakan ±2,8 GB & 0,5 core untuk OS, stack lain, dan `docker build` |
@@ -174,13 +176,13 @@ Variabel opsional: `BRANCH`, `ENV_FILE` (default: `.env.prod` di repo), `MEDIA_D
 | Hardening | `init`, `pids_limit 512`, `nofile 65536`, `cap_drop ALL`, `no-new-privileges` | stabilitas & keamanan |
 
 ### Server dipakai bersama container lain
-> **Catatan `/run` penuh:** container yang healthcheck-nya gagal terus (mis. `superset_app`, `unhealthy` 16 bulan) bisa membocorkan ratusan ribu file ke `/run/containerd` hingga tmpfs `/run` penuh → build gagal `mkdir /run/runc: no space left on device`. Cari pelaku: `for d in /run/containerd/io.containerd.runtime.v2.task/moby/*/; do echo "$(find "$d" -xdev | wc -l) $(basename "$d" | cut -c1-12)"; done | sort -n`, lalu restart/stop container itu saja (jangan restart Docker). Superset sudah di-stop (`docker start superset_cache superset_worker_beat superset_app` untuk menyalakan lagi).
+> **Catatan `/run` penuh:** container yang healthcheck-nya gagal terus (`unhealthy` berbulan-bulan) bisa membocorkan ratusan ribu file ke `/run/containerd` hingga tmpfs `/run` penuh → build gagal `mkdir /run/runc: no space left on device`. Cari pelaku: `for d in /run/containerd/io.containerd.runtime.v2.task/moby/*/; do echo "$(find "$d" -xdev | wc -l) $(basename "$d" | cut -c1-12)"; done | sort -n`, lalu restart/stop container itu saja (jangan restart Docker).
 
-VPS ini juga menjalankan container lain, jadi `deploy.sh` & compose dibuat agar tidak saling ganggu:
+Bila VPS juga menjalankan container lain, `deploy.sh` & compose dibuat agar tidak saling ganggu:
 - **Isolasi:** compose project `kct-labs`, container `kct-labs-app`, network `kct-labs_default` sendiri; `--remove-orphans` hanya berlaku untuk project ini. Container lain tidak di-stop/restart.
-- **Port:** sebelum deploy dicek `docker ps --filter publish=<PORT>` dan `ss -ltn`; bila 6001 sudah dipakai stack lain, deploy berhenti sebelum build. Cek manual: `docker ps --format '{{.Names}}	{{.Ports}}'`.
+- **Port:** sebelum deploy dicek `docker ps --filter publish=<PORT>` dan `ss -ltn`; bila port sudah dipakai stack lain, deploy berhenti sebelum build. Cek manual: `docker ps --format '{{.Names}}	{{.Ports}}'`.
 - **Cleanup:** hanya menghapus image `kct-labs*` dan image dangling berlabel proyek ini. Jangan jalankan `docker system prune -a` / `docker builder prune -af` tanpa memastikan stack lain tidak butuh image/cache-nya.
-- **Resource:** container dibatasi 1 GB RAM & 1,5 CPU (dari 2 core). `next build` saat deploy bisa memakai ±2–3 GB RAM & CPU penuh beberapa menit → deploy di jam sepi dan cek dulu `free -h` / `docker stats --no-stream`. Bila total limit semua container mendekati 3,8 GB, turunkan `mem_limit` atau tambah RAM.
+- **Resource:** container dibatasi 1 GB RAM & 1,5 CPU (dari 2 core). `next build` saat deploy bisa memakai ±2–3 GB RAM & CPU penuh beberapa menit → deploy di jam sepi dan cek dulu `free -h` / `docker stats --no-stream`. Bila total limit semua container mendekati total RAM host, turunkan `mem_limit` atau tambah RAM.
 - **Disk:** ambang `MIN_FREE_GB=8` dihitung untuk seluruh host (dipakai bersama); pantau `docker system df`.
 
 Naikkan `mem_limit`/heap bila traffic Admin/upload besar (pantau `docker stats kct-labs-app`).
@@ -208,23 +210,23 @@ Downtime: beberapa detik saat container diganti (satu instance). Untuk zero-down
 | Build gagal `connect ECONNREFUSED/timeout` / `migration preflight failed (exit 1)` | VPS tidak bisa akses DB: cek allowlist IP, SSL (`sslmode=require`), `DATABASE_URL`. |
 | `port ... is blocked by web browsers` | Ganti `PORT` & port di `NEXT_PUBLIC_SERVER_URL` (mis. 6001). |
 | `only XGB free on disk` | `docker system df`; `PRUNE_BUILD_CACHE=1 ./deploy/deploy.sh` (cache > 3 hari). `docker builder prune -af` menghapus cache **semua** stack — koordinasikan dulu. |
-| `port 6001 is already published by: ...` / `in use by a host process` | Port dipakai service lain: ganti `PORT` + port di `NEXT_PUBLIC_SERVER_URL` di `.env.prod`, commit, deploy ulang (buka port baru di firewall). |
+| `port <PORT> is already published by: ...` / `in use by a host process` | Port dipakai service lain: ganti `PORT` + port di `NEXT_PUBLIC_SERVER_URL` di `.env.prod`, deploy ulang (buka port baru di firewall). |
 | `container 'kct-labs-app' exists but belongs to another stack` | Nama bentrok dengan stack lain: jalankan dengan `APP_NAME=<nama-unik>` (ikut mengubah folder `/srv/<APP_NAME>`). |
-| Situs tidak bisa dibuka dari luar padahal `status` healthy | Cloud Firewall DO / ufw belum membuka port 6001. |
+| Situs tidak bisa dibuka dari luar padahal `status` healthy | Firewall provider / ufw belum membuka `<PORT>`. |
 | Gambar 404 | Folder media belum disalin / owner bukan `1001` (langkah D). |
 | Canonical/sitemap memakai domain salah | `NEXT_PUBLIC_SERVER_URL` salah → perbaiki lalu `FORCE_BUILD=1 ./deploy/deploy.sh`. |
 | Konten baru tidak muncul setelah import/seed langsung ke DB | `POST /api/apps/revalidate` (login admin) atau `docker restart kct-labs-app`. |
 | Container unhealthy | `docker logs --tail 200 kct-labs-app`. |
 | Upload gagal `413` | Naikkan `client_max_body_size` di Nginx. |
 
-**Backup rutin (rekomendasi):** snapshot otomatis harian dari provider DB (retensi ≥ 7 hari, uji restore berkala) + backup harian folder `/srv/kct-labs/media` (rsync/rclone ke object storage). Untuk skala lebih besar/multi-server pindahkan media ke S3-compatible storage (`@payloadcms/storage-s3`).
+**Backup rutin (rekomendasi):** snapshot otomatis harian dari provider DB (retensi ≥ 7 hari, uji restore berkala) + backup harian folder `<DATA_DIR>/media` (rsync/rclone ke object storage). Untuk skala lebih besar/multi-server pindahkan media ke S3-compatible storage (`@payloadcms/storage-s3`).
 
 ---
 
 ## H. Saat domain & HTTPS siap (rekomendasi production)
 
-1. Arahkan DNS domain ke `159.65.2.9`.
+1. Arahkan DNS domain ke `<SERVER_IP>`.
 2. Ubah port di `docker-compose.prod.yml` menjadi `'127.0.0.1:${APP_PORT}:3000'` dan set `PORT=3000` di env (container tidak lagi terbuka ke internet).
 3. Pasang Nginx + certbot memakai `deploy/nginx/kct-labs.conf.example` (gzip, cache `/_next/static`, batas upload, HSTS).
 4. Ganti `NEXT_PUBLIC_SERVER_URL=https://<domain>` lalu `FORCE_BUILD=1 ./deploy/deploy.sh` (canonical, sitemap, OG ikut domain baru).
-5. Tambahkan redirect 301 dari `http://159.65.2.9:6001` ke domain agar URL IP yang sempat terindeks berpindah.
+5. Tambahkan redirect 301 dari `http://<SERVER_IP>:<PORT>` ke domain agar URL IP yang sempat terindeks berpindah.

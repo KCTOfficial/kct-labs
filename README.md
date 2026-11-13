@@ -4,7 +4,7 @@ Website showcase aplikasi milik **PT Kreasindo Cipta Teknologi (KCT)** yang terb
 
 - **Bahasa:** English (default, tanpa prefix — `/apps`) dan Indonesia (`/id/apps`). `/en/...` selalu 308 ke versi tanpa prefix. Terjemahan ID yang kosong otomatis memakai EN.
 - **Stack:** Next.js 16 (App Router) + React 19, Payload CMS 3 (`@payloadcms/db-postgres`), Tailwind CSS v4, TypeScript. Package manager **pnpm**, Node `^22.23.4 || >=24.22.1`.
-- **Produksi:** Docker di VPS DigitalOcean (SGP) — `http://159.65.2.9:6001`, source di `/root/projects/kct-labs`. Panduan lengkap: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+- **Deployment:** Docker + Docker Compose di VPS Linux. Panduan: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 Panduan kerja untuk developer/AI (konvensi, aturan SEO, hal yang sering keliru) ada di [CLAUDE.md](CLAUDE.md). Spesifikasi desain di [design/README.md](design/README.md).
 
@@ -49,7 +49,7 @@ Lalu panggil `POST /api/apps/revalidate` (login admin) atau restart server agar 
 | `DISALLOW_INDEXING`      | `true` di staging → `noindex` + robots Disallow-all              |
 | `PORT`                   | (produksi) port publik di host; container tetap listen di 3000   |
 
-Contoh: [.env.example](.env.example). Env produksi ada di `.env.prod` (sengaja ikut di repo).
+Contoh: [.env.example](.env.example). Env produksi (`.env.prod`) berisi secret, **tidak** disimpan di repo; buat manual di server dari `.env.example`.
 
 ## Perintah
 
@@ -78,23 +78,24 @@ pnpm payload migrate                 # di produksi otomatis dijalankan oleh depl
 
 ## Deploy ke VPS
 
-Ringkasnya (sebagai `root`, detail di [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)):
+Ringkasnya (detail di [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)):
 
 ```bash
 # sekali saja
-mkdir -p /root/projects /srv/kct-labs/{media,state}
-chown -R 1001:1001 /srv/kct-labs/media
-git clone https://git.kct.co.id/KCT/kct-labs.git /root/projects/kct-labs
-cd /root/projects/kct-labs && chmod +x deploy/deploy.sh && chmod 600 .env.prod
+mkdir -p <APP_DIR> <DATA_DIR>/{media,state}
+chown -R 1001:1001 <DATA_DIR>/media
+git clone <REPO_URL> <APP_DIR>
+cd <APP_DIR> && chmod +x deploy/deploy.sh
+# buat .env.prod dari .env.example lalu: chmod 600 .env.prod
 
 # setiap rilis
-cd /root/projects/kct-labs
+cd <APP_DIR>
 ./deploy/deploy.sh            # pull → build → migrate → up → health check (rollback otomatis bila gagal)
 ./deploy/deploy.sh status
 ./deploy/deploy.sh rollback
 ```
 
-Alur: ubah kode/`.env.prod` di laptop → commit → push → jalankan `deploy.sh` di VPS. Jangan mengedit file ter-track langsung di VPS (deploy akan ditolak). Restore database awal (DBeaver) dan penyalinan media dijelaskan di runbook bagian B–D.
+Alur: ubah kode di laptop → commit → push → jalankan `deploy.sh` di server. Jangan mengedit file ter-track langsung di server (deploy akan ditolak). Restore database awal dan penyalinan media dijelaskan di runbook.
 
 ## Struktur penting
 

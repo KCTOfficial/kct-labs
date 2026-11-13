@@ -4,6 +4,8 @@ node_modules
 .DS_Store
 .env
 # Environment files with real secrets (keep .env.example committed)
+.env.*
+!.env.example
 .next
 next-env.d.ts
 .vercel
