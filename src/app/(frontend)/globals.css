@@ -1,0 +1,348 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@config '../../../tailwind.config.mjs';
+
+@custom-variant dark (&:is([data-theme='dark'] *));
+@custom-variant sm (@media (width >= theme(--breakpoint-sm)));
+@custom-variant md (@media (width >= theme(--breakpoint-md)));
+@custom-variant lg (@media (width >= theme(--breakpoint-lg)));
+@custom-variant xl (@media (width >= theme(--breakpoint-xl)));
+@custom-variant 2xl (@media (width >= theme(--breakpoint-2xl)));
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: unset;
+    font-size: unset;
+  }
+}
+
+@plugin "@tailwindcss/typography";
+
+@source inline("lg:col-span-4");
+@source inline("lg:col-span-6");
+@source inline("lg:col-span-8");
+@source inline("lg:col-span-12");
+@source inline("border-border");
+@source inline("bg-card");
+@source inline("border-error");
+@source inline("bg-error/30");
+@source inline("border-success");
+@source inline("bg-success/30");
+@source inline("border-warning");
+@source inline("bg-warning/30");
+
+@theme {
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 86rem;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, sans-serif;
+}
+
+@layer utilities {
+  .container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @variant sm {
+    .container {
+      max-width: var(--breakpoint-sm);
+    }
+  }
+
+  @variant md {
+    .container {
+      max-width: var(--breakpoint-md);
+      padding-inline: 2rem;
+    }
+  }
+
+  @variant lg {
+    .container {
+      max-width: var(--breakpoint-lg);
+    }
+  }
+
+  @variant xl {
+    .container {
+      max-width: var(--breakpoint-xl);
+    }
+  }
+
+  @variant 2xl {
+    .container {
+      max-width: var(--breakpoint-2xl);
+    }
+  }
+}
+
+/*
+ * KCT Labs design tokens — source of truth: design/kct-labs.pen (variables) and design/README.md.
+ * Brand base: navy #25508F + sky #3CBAF9 (KCT logo). Light = :root, dark = [data-theme='dark'].
+ * shadcn/ui variable names are mapped onto the design tokens so template components (posts, forms)
+ * inherit the same palette.
+ */
+:root {
+  --brand-navy: #25508f;
+  --brand-sky: #3cbaf9;
+  /* Theme-independent colours: device bezel and text on the always-navy CTA band. */
+  --device: #04070d;
+  --on-brand-accent: #b6f36a;
+  --on-brand-muted: #d6e6f7;
+
+  --background: #f4f8fc;
+  --foreground: #0b1a2e;
+  --bg-raised: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #eaf2fa;
+  --border-strong: #b4cbe2;
+  --grid-line: #25508f12;
+  --text-secondary: #40566f;
+  /* Darker than the .pen value (#6A7F96) to reach WCAG AA 4.5:1 on --background. */
+  --text-muted: #566a81;
+  --primary-soft: #1b6fb514;
+  --accent-lime: #3e8a12;
+  --accent-lime-soft: #3e8a1214;
+  --accent-violet: #5b4fd6;
+  --nav-bg: #f4f8fcd9;
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: #1b6fb5;
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--foreground);
+  --destructive: #c53030;
+  --destructive-foreground: #ffffff;
+  --border: #d3e1ef;
+  --input: #d3e1ef;
+  --ring: #1b6fb5;
+  --chart-1: #1b6fb5;
+  --chart-2: #3e8a12;
+  --chart-3: #5b4fd6;
+  --chart-4: #b45309;
+  --chart-5: #c53030;
+  --radius: 0.875rem;
+  --sidebar: var(--bg-raised);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --success: #15803d;
+  --warning: #b45309;
+  --error: #c53030;
+}
+
+[data-theme='dark'] {
+  --background: #070d1a;
+  --foreground: #eaf2fb;
+  --bg-raised: #0c1628;
+  --surface: #101d33;
+  --surface-2: #16263f;
+  --border-strong: #2b4a73;
+  --grid-line: #3cbaf914;
+  --text-secondary: #9db2cc;
+  --text-muted: #7f95b3;
+  --primary-soft: #3cbaf91f;
+  --accent-lime: #b6f36a;
+  --accent-lime-soft: #b6f36a1f;
+  --accent-violet: #8c8cff;
+  --nav-bg: #070d1acc;
+
+  --primary: #3cbaf9;
+  --primary-foreground: #04121f;
+  --destructive: #ff6b6b;
+  --destructive-foreground: #04121f;
+  --border: #1e3352;
+  --input: #1e3352;
+  --ring: #3cbaf9;
+  --chart-1: #3cbaf9;
+  --chart-2: #b6f36a;
+  --chart-3: #8c8cff;
+  --chart-4: #f5c451;
+  --chart-5: #ff6b6b;
+  --success: #4ade9a;
+  --warning: #f5c451;
+  --error: #ff6b6b;
+}
+
+/* No data-theme yet (no JS / before the inline theme script) → follow the OS preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --background: #070d1a;
+    --foreground: #eaf2fb;
+    --bg-raised: #0c1628;
+    --surface: #101d33;
+    --surface-2: #16263f;
+    --border-strong: #2b4a73;
+    --grid-line: #3cbaf914;
+    --text-secondary: #9db2cc;
+    --text-muted: #7f95b3;
+    --primary-soft: #3cbaf91f;
+    --accent-lime: #b6f36a;
+    --accent-lime-soft: #b6f36a1f;
+    --accent-violet: #8c8cff;
+    --nav-bg: #070d1acc;
+
+    --primary: #3cbaf9;
+    --primary-foreground: #04121f;
+    --destructive: #ff6b6b;
+    --destructive-foreground: #04121f;
+    --border: #1e3352;
+    --input: #1e3352;
+    --ring: #3cbaf9;
+    --chart-1: #3cbaf9;
+    --chart-2: #b6f36a;
+    --chart-3: #8c8cff;
+    --chart-4: #f5c451;
+    --chart-5: #ff6b6b;
+    --success: #4ade9a;
+    --warning: #f5c451;
+    --error: #ff6b6b;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 8px);
+  --radius-xl: calc(var(--radius) + 14px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-sky: var(--brand-sky);
+  --color-bg-raised: var(--bg-raised);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border-strong: var(--border-strong);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent-lime: var(--accent-lime);
+  --color-accent-lime-soft: var(--accent-lime-soft);
+  --color-accent-violet: var(--accent-violet);
+  --color-nav-bg: var(--nav-bg);
+  --color-grid-line: var(--grid-line);
+  --color-device: var(--device);
+  --color-on-brand-accent: var(--on-brand-accent);
+  --color-on-brand-muted: var(--on-brand-muted);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-padding-top: 5rem;
+  }
+  body {
+    @apply bg-background text-foreground min-h-[100vh] flex flex-col font-sans antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .site-container {
+    width: 100%;
+    max-width: 85rem; /* 1360px → 1280px content at the xl gutter */
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @variant md {
+    .site-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  @variant xl {
+    .site-container {
+      padding-inline: 2.5rem;
+    }
+  }
+
+  .bg-blueprint {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The former `html { opacity: 0 }` anti-flash rule was removed: it hid the whole page until the
+   Next.js runtime loaded (≈5 s LCP on mobile). The inline theme script in <head> prevents flashes. */

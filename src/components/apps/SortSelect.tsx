@@ -1,0 +1,52 @@
+'use client'
+
+import { ChevronsUpDown } from 'lucide-react'
+import React from 'react'
+
+import { cn } from '@/utilities/ui'
+
+/**
+ * Sort control inside a GET form. Submits on change; the visible "Apply" button keeps it usable
+ * when JavaScript is unavailable.
+ */
+export const SortSelect: React.FC<{
+  action: string
+  label: string
+  applyLabel: string
+  value: string
+  options: Array<{ value: string; label: string }>
+  hidden: Record<string, string | undefined>
+  id: string
+  className?: string
+}> = ({ action, label, applyLabel, value, options, hidden, id, className }) => (
+  <form action={action} className={cn('relative flex items-center', className)} method="get">
+    {Object.entries(hidden).map(([name, v]) =>
+      v ? <input key={name} name={name} type="hidden" value={v} /> : null,
+    )}
+    <label className="sr-only" htmlFor={id}>
+      {label}
+    </label>
+    <select
+      className="h-12 w-full appearance-none rounded-[12px] border border-border bg-surface pl-3.5 pr-10 text-sm text-text-secondary focus:border-primary focus:outline-none"
+      defaultValue={value}
+      id={id}
+      name="sort"
+      onChange={(event) => event.currentTarget.form?.requestSubmit()}
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {label}: {o.label}
+        </option>
+      ))}
+    </select>
+    <ChevronsUpDown
+      aria-hidden="true"
+      className="pointer-events-none absolute right-3.5 size-4 text-text-muted"
+    />
+    <noscript>
+      <button className="ml-2 text-sm text-primary" type="submit">
+        {applyLabel}
+      </button>
+    </noscript>
+  </form>
+)

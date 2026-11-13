@@ -1,0 +1,8 @@
+# Files executed inside Linux (VPS / Docker) must keep LF line endings even when edited on Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+docker-compose*.yml text eol=lf
+deploy/** text eol=lf
+# Read by Docker/deploy.sh on Linux; CRLF would break the env values.
+.env.prod text eol=lf

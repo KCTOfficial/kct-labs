@@ -1,0 +1,108 @@
+/**
+ * Static UI strings (buttons, labels, states). Editorial content lives in Payload and is localized there.
+ * `id.ts` must satisfy the same shape — TypeScript enforces parity.
+ */
+export const en = {
+  meta: {
+    siteName: 'KCT Labs',
+    defaultTitle: 'KCT Labs — Apps by PT Kreasindo Cipta Teknologi',
+    defaultDescription:
+      'Explore apps designed and developed by PT Kreasindo Cipta Teknologi (KCT) for everyday life and business, available on Google Play.',
+  },
+  a11y: {
+    skipToContent: 'Skip to content',
+    mainNavigation: 'Main navigation',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    toggleTheme: 'Toggle color theme',
+    switchLanguage: 'Change language',
+    breadcrumb: 'Breadcrumb',
+    pagination: 'Pagination',
+    previousScreenshot: 'Previous screenshot',
+    nextScreenshot: 'Next screenshot',
+    close: 'Close',
+  },
+  nav: {
+    home: 'Home',
+    apps: 'Apps',
+    contactUs: 'Contact Us',
+    language: 'Language',
+  },
+  app: {
+    viewDetails: 'View details',
+    downloads: '{count} downloads',
+    justReleased: 'Just released',
+    status: { live: 'LIVE', new: 'NEW', beta: 'BETA', archived: 'ARCHIVED' },
+    getOnGooglePlay: 'Get it on Google Play',
+    viewOnGooglePlay: 'View on Google Play',
+    iconAlt: '{name} app icon',
+    screenshotAlt: '{name} screenshot {index}',
+  },
+  listing: {
+    title: 'All Apps',
+    subtitle:
+      'Every app designed and developed by the KCT team. Filter by category or search directly.',
+    categoryDescription:
+      '{count} {category} apps designed and developed by PT Kreasindo Cipta Teknologi (KCT), available on Google Play.',
+    searchLabel: 'Search apps',
+    searchPlaceholder: 'Search apps…',
+    searchSubmit: 'Search',
+    all: 'All',
+    categories: 'Categories',
+    sortLabel: 'Sort',
+    sort: { featured: 'Featured', newest: 'Newest', name: 'Name (A–Z)' },
+    showing: 'Showing {from}–{to} of {total} apps',
+    countLabel: '{count} apps',
+    filterAndSort: 'Filter & sort',
+    apply: 'Apply',
+    emptyTitle: 'No apps found',
+    emptyBody: 'Try another keyword or clear the category filter to see all apps.',
+    reset: 'Reset filters',
+    errorTitle: "Apps couldn't be loaded",
+    errorBody: 'Something went wrong. Please try again in a moment.',
+    retry: 'Try again',
+    previous: 'Previous',
+    next: 'Next',
+    page: 'Page {page}',
+    pageOf: 'Page {page} of {total}',
+  },
+  detail: {
+    backToApps: 'All apps',
+    share: 'Share',
+    linkCopied: 'Link copied',
+    screenshots: 'Screenshots · {count}',
+    swipeHint: 'Swipe to see more · click to enlarge',
+    about: 'About this app',
+    keyFeatures: 'Key features',
+    appInfo: 'App information',
+    packageId: 'Package ID',
+    category: 'Category',
+    downloads: 'Downloads',
+    ageRating: 'Age rating',
+    platform: 'Platform',
+    developer: 'Developer',
+    privacyPolicy: 'Privacy Policy',
+    contactSupport: 'Contact support',
+    moreApps: 'More apps from KCT',
+    developerName: 'PT KCT',
+  },
+  platforms: { android: 'Android', ios: 'iOS', web: 'Web' },
+  home: {
+    step: 'STEP',
+    statApps: 'apps available',
+    statCategories: 'categories',
+    statTopDownloads: 'top downloads',
+    viewAll: 'View all {count} apps',
+  },
+  footer: {
+    rights: 'All rights reserved.',
+    contact: 'Contact',
+  },
+  notFound: {
+    title: 'Page not found',
+    body: "The page you're looking for doesn't exist or has been moved.",
+    goHome: 'Back to home',
+  },
+}
+
+export type Dictionary = typeof en

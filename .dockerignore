@@ -1,0 +1,38 @@
+# Keep the build context small and free of secrets.
+.git
+.gitignore
+.github
+.vscode
+.claude
+node_modules
+.next
+out
+build
+dist
+coverage
+test-results
+playwright-report
+blob-report
+playwright/.cache
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Secrets: the env file is passed as a BuildKit secret, never copied into the image.
+.env
+
+# Uploaded media lives in a runtime volume, not in the image.
+public/media
+
+# Generated at build time inside the image.
+public/robots.txt
+public/sitemap*.xml
+
+# Not needed to build or run the app.
+design
+docs
+deploy
+tests
+Dockerfile
+.dockerignore
+docker-compose*.yml
