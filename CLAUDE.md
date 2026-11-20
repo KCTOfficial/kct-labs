@@ -8,10 +8,10 @@ Catatan pengelola (tidak dimuat ke konteks Claude):
 
 ## Informasi Proyek
 
-- **Deskripsi:** KCT Labs — website showcase aplikasi milik PT Kreasindo Cipta Teknologi (KCT) yang terbit di Google Play. Konten dikelola lewat Admin Payload; bahasa **English (default, tanpa prefix URL)** dan Indonesia (`/id/...`).
+- **Deskripsi:** KCT Hub (sebelumnya KCT Labs) — website showcase aplikasi milik PT Kreasindo Cipta Teknologi (KCT) yang terbit di Google Play. Konten dikelola lewat Admin Payload; bahasa **English (default, tanpa prefix URL)** dan Indonesia (`/id/...`).
 - **Stack:** TypeScript, Next.js 16 (App Router) + React 19, Payload CMS 3 (`@payloadcms/db-postgres`), Tailwind CSS v4, Lexical, `lucide-react`, `sharp`. Package manager: **pnpm**. Node `^22.23.4 || >=24.22.1`.
 - **Payload skill:** baca `.claude/skills/payload/SKILL.md` dulu, lalu `.claude/skills/payload/reference/` untuk detail (hooks, access control, query, transaksi).
-- **Desain:** `design/kct-labs.pen` (hanya via Pencil MCP, terenkripsi — jangan dibaca dengan Read/Grep), spesifikasi & pemetaan CMS di `design/README.md`. Token warna/font di desain adalah sumber kebenaran UI.
+- **Desain:** `design/kct-hub.pen` (hanya via Pencil MCP, terenkripsi — jangan dibaca dengan Read/Grep), spesifikasi & pemetaan CMS di `design/README.md`. Token warna/font di desain adalah sumber kebenaran UI.
 - **Lokasi penting:**
   - Config Payload: `src/payload.config.ts`; plugin (SEO, redirects, search, form builder, nested docs): `src/plugins/index.ts`.
   - Collections: `src/collections/` (KCT: `Apps`, `AppCategories`); globals: `src/Header/config.ts`, `src/Footer/config.ts`, `src/globals/Home/config.ts`; blocks: `src/blocks/`; heros: `src/heros/`.
@@ -41,7 +41,9 @@ Catatan pengelola (tidak dimuat ke konteks Claude):
   - `next/image` hanya menerima path yang ada di `images.localPatterns` (`next.config.ts`).
   - Konten dari skrip/seed di luar proses Next tidak memicu `revalidateTag`; panggil `/api/apps/revalidate`.
   - Saat Local API dipanggil dengan `user`, set `overrideAccess: false`; teruskan `req` ke operasi nested di hooks agar tetap dalam transaksi.
-  - Copywriting: nuansa "lab" hanya untuk visual. Jangan memakai istilah "eksperimen/laboratorium" di konten; "KCT Labs" hanya nama situs.
+  - Copywriting: nama situs **KCT Hub** (pakai `SITE_NAME` dari `src/utilities/seo/constants.ts`, jangan hardcode; jangan pakai lagi "KCT Labs"). Nuansa "lab" hanya untuk visual; jangan memakai istilah "eksperimen/laboratorium" di konten.
+  - Logo situs: komponen `BrandLogo` + aset `public/brand/*` yang diturunkan dari `design/images/brand/kct-hub/` (`design/scripts/generate-brand-assets.py`); jangan edit PNG turunan manual. Logo perusahaan `public/kct-logo.png` khusus JSON-LD `Organization`. Teks brand di database diganti lewat `pnpm rebrand:content` (dry-run default).
+  - Nama teknis `kct-hub` (image/container/compose/`/srv/kct-hub`); server lama `kct-labs` dimigrasi sekali dengan `deploy/migrate-from-kct-labs.sh` (docs/DEPLOYMENT.md bagian I).
 
 ## Peran
 
@@ -93,7 +95,7 @@ Tujuan: setiap halaman aplikasi dan halaman publik terindeks dengan benar, tampi
 
 **Metadata**
 - Setiap route publik wajib mengekspor `generateMetadata` (atau `metadata`) melalui `generateMeta`/`mergeOpenGraph`, bukan menulis ulang logika.
-- `title` unik per halaman (≤ 60 karakter) dengan pola `{Judul} | KCT Labs`; `description` unik 120–160 karakter. Fallback berurutan: field `meta` plugin SEO → `tagline`/ringkasan → default situs. Jangan pernah kosong atau duplikat antarhalaman.
+- `title` unik per halaman (≤ 60 karakter) dengan pola `{Judul} | KCT Hub`; `description` unik 120–160 karakter. Fallback berurutan: field `meta` plugin SEO → `tagline`/ringkasan → default situs. Jangan pernah kosong atau duplikat antarhalaman.
 - `alternates.canonical` absolut di setiap halaman (berbasis `getServerSideURL()`), tanpa query string filter/sort/paginasi kecuali halaman paginasi itu sendiri.
 - Open Graph & Twitter lengkap: `og:title`, `og:description`, `og:url` absolut, `og:image` 1200×630 (ukuran `og` di Media), `og:locale` (`id_ID`/`en_US`), `twitter:card=summary_large_image`. Halaman app memakai icon/screenshot app sebagai OG image bila `meta.image` kosong.
 - `metadataBase` wajib benar; `NEXT_PUBLIC_SERVER_URL` tanpa trailing slash.

@@ -32,6 +32,19 @@ export default buildConfig({
             // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
             // Feel free to delete this at any time. Simply remove the line below.
             beforeDashboard: ['@/components/BeforeDashboard'],
+            // KCT Hub branding: login-page logo and navigation icon.
+            graphics: {
+                Logo: '@/components/AdminBrand#AdminLogo',
+                Icon: '@/components/AdminBrand#AdminIcon',
+            },
+        },
+        meta: {
+            titleSuffix: ' — KCT Hub Admin',
+            icons: [
+                { rel: 'icon', url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+                { rel: 'icon', type: 'image/png', url: '/icon-512.png', sizes: '512x512' },
+                { rel: 'apple-touch-icon', url: '/apple-touch-icon.png', sizes: '180x180' },
+            ],
         },
         importMap: {
             baseDir: path.resolve(dirname),

@@ -1,8 +1,8 @@
-# Nginx reverse proxy for KCT Labs (host machine). Copy to /etc/nginx/sites-available/kct-labs.conf,
+# Nginx reverse proxy for KCT Hub (host machine). Copy to /etc/nginx/sites-available/kct-hub.conf,
 # replace CHANGE_ME_DOMAIN, symlink into sites-enabled, then: sudo nginx -t && sudo systemctl reload nginx
 # Certificates: sudo certbot --nginx -d CHANGE_ME_DOMAIN   (Let's Encrypt, auto-renew via systemd timer)
 
-upstream kct_labs_app {
+upstream kct_hub_app {
     server 127.0.0.1:3000;
     keepalive 32;
 }
@@ -48,12 +48,12 @@ server {
 
     # Hashed build assets never change → cache for a year at the edge/browser.
     location /_next/static/ {
-        proxy_pass http://kct_labs_app;
+        proxy_pass http://kct_hub_app;
         add_header Cache-Control "public, max-age=31536000, immutable";
         access_log off;
     }
 
     location / {
-        proxy_pass http://kct_labs_app;
+        proxy_pass http://kct_hub_app;
     }
 }

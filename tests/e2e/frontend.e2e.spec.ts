@@ -10,8 +10,8 @@ test.describe('Frontend', () => {
 
   test('can load homepage', async ({ page }) => {
     await page.goto('http://localhost:3000')
-    // The template homepage was replaced by the KCT Labs Home global (see kct-labs.e2e.spec.ts).
-    await expect(page).toHaveTitle(/KCT Labs/)
+    // The template homepage was replaced by the KCT Hub Home global (see kct-hub.e2e.spec.ts).
+    await expect(page).toHaveTitle(/KCT Hub/)
     const heading = page.locator('h1').first()
     await expect(heading).toHaveText('Apps built by KCT for your everyday life and business.')
   })

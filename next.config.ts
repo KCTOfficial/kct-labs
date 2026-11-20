@@ -22,9 +22,9 @@ const nextConfig: NextConfig = {
       {
         pathname: '/api/media/file/**',
       },
-      // Static brand mark used in the header/footer.
+      // KCT Hub wordmarks used in the header/footer (BrandLogo).
       {
-        pathname: '/icon-512.png',
+        pathname: '/brand/**',
       },
     ],
     // 75 = next/image default (used by site components); 100 kept for the template's ImageMedia.

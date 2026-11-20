@@ -1,5 +1,5 @@
 /**
- * Initial KCT Labs content (EN + ID). Facts (names, package IDs, categories, download labels) come from
+ * Initial KCT Hub content (EN + ID). Facts (names, package IDs, categories, download labels) come from
  * the KCT developer page on Google Play; descriptions/features are draft copy to be reviewed by KCT.
  */
 export type Localized<T = string> = { en: T; id: T }
@@ -398,8 +398,8 @@ export const homeContent = {
   },
   meta: {
     title: {
-      en: 'KCT Labs — Apps by PT Kreasindo Cipta Teknologi',
-      id: 'KCT Labs — Aplikasi dari PT Kreasindo Cipta Teknologi',
+      en: 'KCT Hub — Apps by PT Kreasindo Cipta Teknologi',
+      id: 'KCT Hub — Aplikasi dari PT Kreasindo Cipta Teknologi',
     },
     description: {
       en: 'Explore apps by PT Kreasindo Cipta Teknologi (KCT) for worship, learning, finance and teamwork — available on Google Play.',
@@ -446,6 +446,6 @@ export const footerColumns: Array<{
 ]
 
 export const footerTagline: Localized = {
-  en: 'Entertain Your Business with Technology. KCT Labs showcases apps designed and developed by PT Kreasindo Cipta Teknologi.',
-  id: 'Entertain Your Business with Technology. KCT Labs menampilkan aplikasi yang dirancang dan dikembangkan oleh PT Kreasindo Cipta Teknologi.',
+  en: 'Entertain Your Business with Technology. KCT Hub showcases apps designed and developed by PT Kreasindo Cipta Teknologi.',
+  id: 'Entertain Your Business with Technology. KCT Hub menampilkan aplikasi yang dirancang dan dikembangkan oleh PT Kreasindo Cipta Teknologi.',
 }

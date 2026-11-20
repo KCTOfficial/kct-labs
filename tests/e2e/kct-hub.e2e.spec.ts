@@ -25,7 +25,7 @@ const headTags = async (page: Page) =>
       .length,
   }))
 
-test.describe('KCT Labs — routing & i18n', () => {
+test.describe('KCT Hub — routing & i18n', () => {
   test('English is served without a prefix and /en redirects to it', async ({ page }) => {
     const res = await page.goto(`${BASE}/en/apps`)
     expect(res?.status()).toBe(200)
@@ -45,7 +45,7 @@ test.describe('KCT Labs — routing & i18n', () => {
   })
 })
 
-test.describe('KCT Labs — SEO', () => {
+test.describe('KCT Hub — SEO', () => {
   for (const [path, locale, schema] of [
     ['/', 'en', 'Organization'],
     ['/id', 'id', 'WebSite'],
@@ -70,6 +70,55 @@ test.describe('KCT Labs — SEO', () => {
     })
   }
 
+  test('brand: KCT Hub title, default OG image, favicons and Organization logo', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/`)
+    await expect(page).toHaveTitle(/KCT Hub/)
+    const head = await page.evaluate(() => ({
+      title: document.title,
+      ogImage: document.querySelector('meta[property="og:image"]')?.getAttribute('content') ?? '',
+      ogSiteName: document.querySelector('meta[property="og:site_name"]')?.getAttribute('content'),
+      icons: [...document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]')].map(
+        (l) => l.getAttribute('href'),
+      ),
+      jsonLd: [...document.querySelectorAll('script[type="application/ld+json"]')].flatMap((s) =>
+        ([] as Array<Record<string, unknown>>).concat(JSON.parse(s.textContent || '[]')),
+      ),
+    }))
+    expect(head.title).not.toContain('KCT Labs')
+    expect(head.ogSiteName).toBe('KCT Hub')
+    expect(head.ogImage).toMatch(/\/og-kct-hub\.png$/)
+    expect(head.icons.some((href) => href?.startsWith('/favicon.ico'))).toBe(true)
+    expect(head.icons.some((href) => href?.startsWith('/apple-touch-icon.png'))).toBe(true)
+    const website = head.jsonLd.find((o) => o['@type'] === 'WebSite')
+    const organization = head.jsonLd.find((o) => o['@type'] === 'Organization')
+    expect(website?.name).toBe('KCT Hub')
+    // The Organization is the company (PT KCT), so it keeps the company logo.
+    expect(organization?.name).toBe('PT Kreasindo Cipta Teknologi')
+    expect(String(organization?.logo)).toMatch(/\/kct-logo\.png$/)
+    for (const asset of ['/og-kct-hub.png', '/favicon.ico', '/apple-touch-icon.png']) {
+      expect((await page.request.get(`${BASE}${asset}`)).status()).toBe(200)
+    }
+  })
+
+  test('brand: header/footer show the theme-matching KCT Hub logo', async ({ page }) => {
+    await page.goto(`${BASE}/`)
+    const home = page.locator('header').getByRole('link', { name: 'KCT Hub', exact: true }).first()
+    await expect(home).toBeVisible()
+    const visibleLogos = async () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('header img[alt="KCT Hub"]')]
+          .filter((img) => (img as HTMLElement).offsetParent !== null)
+          .map((img) => (img.classList.contains('brand-logo-dark') ? 'dark' : 'light')),
+      )
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'))
+    expect(new Set(await visibleLogos())).toEqual(new Set(['light']))
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'))
+    expect(new Set(await visibleLogos())).toEqual(new Set(['dark']))
+    await expect(page.locator('footer img[alt="KCT Hub"]').first()).toBeAttached()
+  })
+
   test('search results are noindex', async ({ page }) => {
     await page.goto(`${BASE}/apps?q=quran`)
     expect((await headTags(page)).robots.join(' ')).toContain('noindex')
@@ -85,7 +134,7 @@ test.describe('KCT Labs — SEO', () => {
   })
 })
 
-test.describe('KCT Labs — listing behaviour', () => {
+test.describe('KCT Hub — listing behaviour', () => {
   test('category filter narrows results and empty search shows the empty state', async ({
     page,
   }) => {

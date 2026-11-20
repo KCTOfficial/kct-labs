@@ -1,5 +1,5 @@
 /**
- * Idempotent KCT Labs content seed. Usage: `pnpm seed:kct`
+ * Idempotent KCT Hub content seed. Usage: `pnpm seed:kct`
  * Safe to re-run: upserts by slug, never deletes, keeps existing Header/Footer edits.
  * `SEED_KCT_REPLACE_HEADER=true pnpm seed:kct` explicitly replaces the header navigation with the design one.
  */

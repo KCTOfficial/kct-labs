@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================================
-# KCT Labs — deploy on the VPS (build happens in Docker on this machine).
+# KCT Hub — deploy on the VPS (build happens in Docker on this machine).
 #
 #   ./deploy/deploy.sh            # pull latest code, migrate DB, build, deploy, health-check
 #   ./deploy/deploy.sh rollback   # switch back to the previously deployed image (no rebuild)
 #   ./deploy/deploy.sh status     # show current/previous tags and container health
+#   ./deploy/deploy.sh start      # (re)start the currently recorded image (no pull/build/migrate)
 #
 # Overridable settings (env vars): see the CONFIG block below.
 # Requirements on the VPS: git, docker (with BuildKit + compose v2 plugin), flock, curl.
@@ -14,7 +15,7 @@
 set -Eeuo pipefail
 
 # ----------------------------------------------------------------------------- CONFIG
-APP_NAME="${APP_NAME:-kct-labs}"
+APP_NAME="${APP_NAME:-kct-hub}"
 APP_DIR="${APP_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 BRANCH="${BRANCH:-}"                                  # default: branch currently checked out on the VPS
 GIT_REMOTE="${GIT_REMOTE:-origin}"
@@ -212,6 +213,20 @@ cmd_rollback() {
   log "rollback complete → ${prev}"
 }
 
+# Starts the recorded current image again — e.g. after the one-time kct-labs → kct-hub rename
+# (deploy/migrate-from-kct-labs.sh) or after the container was removed by hand.
+cmd_start() {
+  resolve_port
+  check_host_conflicts
+  local cur; cur="$(current_tag)"
+  [[ -n "$cur" ]] || die "no deployment recorded in $STATE_DIR — run a full deploy instead"
+  switch_to "$cur"
+  wait_healthy || die "image ${cur} is not healthy — check: docker logs ${APP_NAME}-app"
+  smoke_test || die "smoke test failed for ${cur}"
+  echo "$(date -Iseconds) start ${cur}" >> "$STATE_DIR/history.log"
+  log "started → ${cur}"
+}
+
 cmd_deploy() {
   preflight
   cd "$APP_DIR"
@@ -293,5 +308,6 @@ case "${1:-deploy}" in
   deploy)   cmd_deploy ;;
   rollback) cmd_rollback ;;
   status)   cmd_status ;;
-  *)        die "usage: $0 [deploy|rollback|status]" ;;
+  start)    cmd_start ;;
+  *)        die "usage: $0 [deploy|rollback|status|start]" ;;
 esac

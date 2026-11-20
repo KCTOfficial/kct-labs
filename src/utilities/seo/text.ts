@@ -10,7 +10,7 @@ export const truncate = (value: string, max: number): string => {
 }
 
 /**
- * `"Al Quran Imam"` → `"Al Quran Imam | KCT Labs"`. Titles that already contain the site name are kept.
+ * `"Al Quran Imam"` → `"Al Quran Imam | KCT Hub"`. Titles that already contain the site name are kept.
  * The page part is truncated so the full title stays within ~60 characters.
  */
 export const formatTitle = (title?: string | null): string => {

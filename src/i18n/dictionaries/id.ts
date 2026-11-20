@@ -2,8 +2,8 @@ import type { Dictionary } from './en'
 
 export const id: Dictionary = {
   meta: {
-    siteName: 'KCT Labs',
-    defaultTitle: 'KCT Labs — Aplikasi dari PT Kreasindo Cipta Teknologi',
+    siteName: 'KCT Hub',
+    defaultTitle: 'KCT Hub — Aplikasi dari PT Kreasindo Cipta Teknologi',
     defaultDescription:
       'Jelajahi aplikasi yang dirancang dan dikembangkan oleh PT Kreasindo Cipta Teknologi (KCT) untuk keseharian dan bisnis, tersedia di Google Play.',
   },

@@ -1,12 +1,12 @@
 'use client'
 import { ArrowRight, ArrowUpRight, Menu, X } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useEffect, useId, useRef, useState } from 'react'
 
 import type { Dictionary, Locale } from '@/i18n'
 import { stripLocale } from '@/i18n/config'
+import { BrandLogo } from '@/components/site/BrandLogo'
 import { buttonClassName } from '@/components/site/ButtonLink'
 import { LanguageSwitch, LanguageToggleButton } from '@/components/site/LanguageSwitch'
 import type { NavItem } from '@/components/site/navigation'
@@ -53,22 +53,9 @@ const NavLink: React.FC<{
 }
 
 const Brand: React.FC<{ href: string; compact?: boolean }> = ({ href, compact }) => (
-  // No aria-label: the visible text ("KCT labs") is the accessible name (WCAG 2.5.3 Label in Name).
-  <Link className="flex items-center gap-2.5" href={href}>
-    <Image
-      alt=""
-      className={compact ? 'size-[26px]' : 'size-[30px]'}
-      height={30}
-      priority
-      src="/icon-512.png"
-      width={30}
-    />
-    <span className={cn('font-display font-bold text-foreground', compact ? 'text-lg' : 'text-xl')}>
-      KCT
-    </span>{' '}
-    <span className="rounded-[6px] border border-primary bg-primary-soft px-2 py-0.5 font-mono text-[11px] font-semibold text-primary">
-      labs
-    </span>
+  // No aria-label: the logo's alt text ("KCT Hub") is the accessible name (WCAG 2.5.3 Label in Name).
+  <Link className="flex items-center" href={href}>
+    <BrandLogo height={compact ? 24 : 28} />
   </Link>
 )
 

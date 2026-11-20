@@ -1,10 +1,12 @@
-# KCT Labs
+# KCT Hub
 
 Website showcase aplikasi milik **PT Kreasindo Cipta Teknologi (KCT)** yang terbit di Google Play. Seluruh konten (app, kategori, beranda, header, footer, SEO) dikelola lewat Admin Payload.
 
 - **Bahasa:** English (default, tanpa prefix — `/apps`) dan Indonesia (`/id/apps`). `/en/...` selalu 308 ke versi tanpa prefix. Terjemahan ID yang kosong otomatis memakai EN.
 - **Stack:** Next.js 16 (App Router) + React 19, Payload CMS 3 (`@payloadcms/db-postgres`), Tailwind CSS v4, TypeScript. Package manager **pnpm**, Node `^22.23.4 || >=24.22.1`.
 - **Deployment:** Docker + Docker Compose di VPS Linux. Panduan: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Branding (logo resmi, aset turunan, komponen `BrandLogo`): lihat bagian _Brand KCT Hub_ di [design/README.md](design/README.md). Situs ini sebelumnya bernama **KCT Labs**; migrasi server & konten lama dijelaskan di [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) bagian I.
 
 Panduan kerja untuk developer/AI (konvensi, aturan SEO, hal yang sering keliru) ada di [CLAUDE.md](CLAUDE.md). Spesifikasi desain di [design/README.md](design/README.md).
 
@@ -53,17 +55,18 @@ Contoh: [.env.example](.env.example). Env produksi (`.env.prod`) berisi secret, 
 
 ## Perintah
 
-| Perintah                          | Fungsi                                                      |
-| --------------------------------- | ----------------------------------------------------------- |
-| `pnpm dev`                        | Dev server                                                  |
-| `pnpm build` / `pnpm start`       | Build produksi (+ next-sitemap) / jalankan hasil build      |
-| `pnpm lint` / `pnpm lint:fix`     | ESLint                                                      |
-| `pnpm exec tsc --noEmit`          | Type check                                                  |
-| `pnpm test`                       | Integration (Vitest) + E2E (Playwright)                     |
-| `pnpm test:int` / `pnpm test:e2e` | Salah satu saja                                             |
-| `pnpm generate:types`             | Regenerasi `src/payload-types.ts` setelah ubah skema        |
-| `pnpm generate:importmap`         | Regenerasi import map admin setelah menambah komponen admin |
-| `pnpm seed:kct`                   | Seed konten KCT (idempoten)                                 |
+| Perintah                          | Fungsi                                                                                  |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| `pnpm dev`                        | Dev server                                                                              |
+| `pnpm build` / `pnpm start`       | Build produksi (+ next-sitemap) / jalankan hasil build                                  |
+| `pnpm lint` / `pnpm lint:fix`     | ESLint                                                                                  |
+| `pnpm exec tsc --noEmit`          | Type check                                                                              |
+| `pnpm test`                       | Integration (Vitest) + E2E (Playwright)                                                 |
+| `pnpm test:int` / `pnpm test:e2e` | Salah satu saja                                                                         |
+| `pnpm generate:types`             | Regenerasi `src/payload-types.ts` setelah ubah skema                                    |
+| `pnpm generate:importmap`         | Regenerasi import map admin setelah menambah komponen admin                             |
+| `pnpm seed:kct`                   | Seed konten KCT (idempoten)                                                             |
+| `pnpm rebrand:content`            | Ganti "KCT Labs" → "KCT Hub" di konten DB (dry-run; `REBRAND_APPLY=true` untuk menulis) |
 
 ## Migrasi database
 

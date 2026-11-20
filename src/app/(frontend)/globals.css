@@ -88,8 +88,9 @@
 }
 
 /*
- * KCT Labs design tokens — source of truth: design/kct-labs.pen (variables) and design/README.md.
+ * KCT Hub design tokens — source of truth: design/kct-hub.pen (variables) and design/README.md.
  * Brand base: navy #25508F + sky #3CBAF9 (KCT logo). Light = :root, dark = [data-theme='dark'].
+ * The KCT Hub wordmark (public/brand/) keeps its own colours; the site palette is unchanged.
  * shadcn/ui variable names are mapped onto the design tokens so template components (posts, forms)
  * inherit the same palette.
  */
@@ -323,6 +324,26 @@
       linear-gradient(var(--grid-line) 1px, transparent 1px),
       linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
     background-size: 60px 60px;
+  }
+
+  /* KCT Hub wordmark (BrandLogo): light variant = dark text for light backgrounds. Mirrors the
+     theme token logic: explicit data-theme wins, otherwise follow the OS preference. */
+  .brand-logo-dark {
+    display: none;
+  }
+  [data-theme='dark'] .brand-logo-light {
+    display: none;
+  }
+  [data-theme='dark'] .brand-logo-dark {
+    display: block;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .brand-logo-light {
+      display: none;
+    }
+    :root:not([data-theme]) .brand-logo-dark {
+      display: block;
+    }
   }
 
   .scrollbar-none {

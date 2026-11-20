@@ -4,8 +4,8 @@
  */
 export const en = {
   meta: {
-    siteName: 'KCT Labs',
-    defaultTitle: 'KCT Labs — Apps by PT Kreasindo Cipta Teknologi',
+    siteName: 'KCT Hub',
+    defaultTitle: 'KCT Hub — Apps by PT Kreasindo Cipta Teknologi',
     defaultDescription:
       'Explore apps designed and developed by PT Kreasindo Cipta Teknologi (KCT) for everyday life and business, available on Google Play.',
   },

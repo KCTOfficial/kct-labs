@@ -1,8 +1,8 @@
-# Deployment KCT Labs — VPS + Docker + Postgres terkelola
+# Deployment KCT Hub — VPS + Docker + Postgres terkelola
 
-Placeholder yang dipakai di dokumen ini: `<APP_DIR>` (folder source di server), `<DATA_DIR>` (folder data, mis. `/srv/kct-labs`), `<REPO_URL>` (URL git repo), `<SERVER_IP>` (IP server), `<PORT>` (port publik).
+Placeholder yang dipakai di dokumen ini: `<APP_DIR>` (folder source di server), `<DATA_DIR>` (folder data, mis. `/srv/kct-hub`), `<REPO_URL>` (URL git repo), `<SERVER_IP>` (IP server), `<PORT>` (port publik).
 
-Arsitektur: **VPS Linux** (contoh sizing: 2 vCPU, ±4 GB RAM, 8 GB swap; bisa dipakai bersama container lain) → build di Docker pada VPS → container `kct-labs-app` dipublish di `http://<SERVER_IP>:<PORT>` (port internal container tetap 3000). Database: **Postgres terkelola/terpisah** (`DATABASE_URL`). Upload media disimpan di disk VPS (`<DATA_DIR>/media`), **bukan** di database.
+Arsitektur: **VPS Linux** (contoh sizing: 2 vCPU, ±4 GB RAM, 8 GB swap; bisa dipakai bersama container lain) → build di Docker pada VPS → container `kct-hub-app` dipublish di `http://<SERVER_IP>:<PORT>` (port internal container tetap 3000). Database: **Postgres terkelola/terpisah** (`DATABASE_URL`). Upload media disimpan di disk VPS (`<DATA_DIR>/media`), **bukan** di database.
 
 > Port **6000 tidak dipakai** karena diblokir semua browser utama (`ERR_UNSAFE_PORT`). `deploy.sh` menolak port-port terblokir seperti ini.
 > Tanpa domain/HTTPS, login admin berjalan lewat HTTP (tidak terenkripsi) dan SEO berbasis IP kurang ideal — lihat bagian H.
@@ -11,8 +11,10 @@ Arsitektur: **VPS Linux** (contoh sizing: 2 vCPU, ±4 GB RAM, 8 GB swap; bisa di
 |---|---|
 | `Dockerfile` | target `runner` (aplikasi) & `migrator` (menjalankan `payload migrate`) |
 | `docker-compose.prod.yml` | definisi container produksi (port publik, volume media, batas resource, healthcheck, log rotation) |
-| `deploy/deploy.sh` | `deploy` / `rollback` / `status` |
-| `deploy/nginx/kct-labs.conf.example` | (opsional, saat domain siap) reverse proxy + HTTPS |
+| `deploy/deploy.sh` | `deploy` / `rollback` / `status` / `start` |
+| `deploy/migrate-from-kct-labs.sh` | migrasi **sekali** server lama bernama `kct-labs` → `kct-hub` (bagian I) |
+| `deploy/nginx/kct-hub.conf.example` | (opsional, saat domain siap) reverse proxy + HTTPS |
+| `scripts/rebrand-content.ts` | ganti teks "KCT Labs" → "KCT Hub" di konten database (dry-run default, bagian I) |
 | `scripts/migration-preflight.ts` | cek non-interaktif penanda "dev push" sebelum migrasi (mencegah deploy menggantung) |
 | `src/migrations/20261109_113225_initial.*` | **baseline** migrasi = skema DB saat ini (101 tabel) |
 | `.env.prod` | env produksi, **tidak** ada di repo (berisi secret; dibuat manual di server dari `.env.example`, dipakai oleh `deploy.sh` dari `<APP_DIR>/.env.prod`) |
@@ -54,7 +56,7 @@ ufw allow OpenSSH && ufw allow <PORT>/tcp && ufw enable
 
 ```sql
 CREATE ROLE kct_app LOGIN PASSWORD '<password-kuat>';
-CREATE DATABASE kct_labs OWNER kct_app ENCODING 'UTF8' TEMPLATE template0;
+CREATE DATABASE kct_hub OWNER kct_app ENCODING 'UTF8' TEMPLATE template0;
 -- Database HARUS kosong sebelum restore (langkah C).
 ```
 
@@ -83,7 +85,7 @@ CREATE DATABASE kct_labs OWNER kct_app ENCODING 'UTF8' TEMPLATE template0;
    - Compression: default/`9`. Encoding: `UTF8`.
    - Centang **"Do not backup privileges (GRANT/REVOKE)"** dan **"Discard objects owner"** (= `--no-privileges --no-owner`) agar objek nanti dimiliki user DB produksi.
    - **Jangan** centang "Use INSERT" (COPY jauh lebih cepat untuk data besar).
-   - Output: misal `kct_labs_YYYYMMDD.backup`. Klik **Start** dan tunggu "Task completed".
+   - Output: misal `kct_hub_YYYYMMDD.backup`. Klik **Start** dan tunggu "Task completed".
 5. Simpan file backup di tempat aman (berisi hash password user admin).
 
 ---
@@ -128,8 +130,8 @@ CREATE DATABASE kct_labs OWNER kct_app ENCODING 'UTF8' TEMPLATE template0;
 ### Alternatif CLI (setara DBeaver, untuk otomasi)
 ```bash
 # Dump seluruh database (tanpa --schema) → tidak perlu DROP SCHEMA di target.
-pg_dump  --format=custom --no-owner --no-privileges -d "$DEV_DATABASE_URL" -f kct_labs.backup
-pg_restore --no-owner --no-privileges --single-transaction --exit-on-error -d "$PROD_DATABASE_URL" kct_labs.backup
+pg_dump  --format=custom --no-owner --no-privileges -d "$DEV_DATABASE_URL" -f kct_hub.backup
+pg_restore --no-owner --no-privileges --single-transaction --exit-on-error -d "$PROD_DATABASE_URL" kct_hub.backup
 ```
 
 ---
@@ -155,6 +157,7 @@ cd <APP_DIR>
 ./deploy/deploy.sh            # deploy branch yang sedang di-checkout (env: <APP_DIR>/.env.prod)
 ./deploy/deploy.sh status     # tag aktif + status container
 ./deploy/deploy.sh rollback   # kembali ke image sebelumnya (tanpa build)
+./deploy/deploy.sh start      # jalankan ulang image yang tercatat (tanpa pull/build/migrasi)
 ```
 
 Urutan yang dijalankan `deploy.sh`:
@@ -163,7 +166,7 @@ Urutan yang dijalankan `deploy.sh`:
 3. Build image **migrator** → cek penanda dev-push (`scripts/migration-preflight.ts`) → `payload migrate` dengan timeout 15 menit (**sebelum** build app, karena `next build` membaca DB). Pada deploy pertama setelah restore hasilnya *tidak ada migrasi baru*.
 4. Build image **app** (env dipasang sebagai BuildKit secret, tidak tersimpan di image).
 5. Ganti container → tunggu healthcheck → smoke test `/`, `/id`, `/apps`, `/apps-sitemap.xml`, `/robots.txt`.
-6. Gagal → **rollback otomatis** ke image sebelumnya. Berhasil → simpan tag & bersihkan: image app sisa 2 (+current/previous), image migrator hanya yang terbaru, image *dangling* milik proyek ini saja (label `com.kct.project=kct-labs`). Build cache host **tidak** disentuh kecuali `PRUNE_BUILD_CACHE=1`.
+6. Gagal → **rollback otomatis** ke image sebelumnya. Berhasil → simpan tag & bersihkan: image app sisa 2 (+current/previous), image migrator hanya yang terbaru, image *dangling* milik proyek ini saja (label `com.kct.project=kct-hub`). Build cache host **tidak** disentuh kecuali `PRUNE_BUILD_CACHE=1`.
 
 Variabel opsional: `BRANCH`, `ENV_FILE` (default: `.env.prod` di `<APP_DIR>`), `MEDIA_DIR`, `APP_PORT` (default: `PORT` di env), `KEEP_IMAGES`, `HEALTH_TIMEOUT`, `MIGRATE_TIMEOUT`, `MIN_FREE_GB`, `FORCE_BUILD=1`, `PRUNE_BUILD_CACHE=1`.
 
@@ -179,13 +182,13 @@ Variabel opsional: `BRANCH`, `ENV_FILE` (default: `.env.prod` di `<APP_DIR>`), `
 > **Catatan `/run` penuh:** container yang healthcheck-nya gagal terus (`unhealthy` berbulan-bulan) bisa membocorkan ratusan ribu file ke `/run/containerd` hingga tmpfs `/run` penuh → build gagal `mkdir /run/runc: no space left on device`. Cari pelaku: `for d in /run/containerd/io.containerd.runtime.v2.task/moby/*/; do echo "$(find "$d" -xdev | wc -l) $(basename "$d" | cut -c1-12)"; done | sort -n`, lalu restart/stop container itu saja (jangan restart Docker).
 
 Bila VPS juga menjalankan container lain, `deploy.sh` & compose dibuat agar tidak saling ganggu:
-- **Isolasi:** compose project `kct-labs`, container `kct-labs-app`, network `kct-labs_default` sendiri; `--remove-orphans` hanya berlaku untuk project ini. Container lain tidak di-stop/restart.
+- **Isolasi:** compose project `kct-hub`, container `kct-hub-app`, network `kct-hub_default` sendiri; `--remove-orphans` hanya berlaku untuk project ini. Container lain tidak di-stop/restart.
 - **Port:** sebelum deploy dicek `docker ps --filter publish=<PORT>` dan `ss -ltn`; bila port sudah dipakai stack lain, deploy berhenti sebelum build. Cek manual: `docker ps --format '{{.Names}}	{{.Ports}}'`.
-- **Cleanup:** hanya menghapus image `kct-labs*` dan image dangling berlabel proyek ini. Jangan jalankan `docker system prune -a` / `docker builder prune -af` tanpa memastikan stack lain tidak butuh image/cache-nya.
+- **Cleanup:** hanya menghapus image `kct-hub*` dan image dangling berlabel proyek ini. Jangan jalankan `docker system prune -a` / `docker builder prune -af` tanpa memastikan stack lain tidak butuh image/cache-nya.
 - **Resource:** container dibatasi 1 GB RAM & 1,5 CPU (dari 2 core). `next build` saat deploy bisa memakai ±2–3 GB RAM & CPU penuh beberapa menit → deploy di jam sepi dan cek dulu `free -h` / `docker stats --no-stream`. Bila total limit semua container mendekati total RAM host, turunkan `mem_limit` atau tambah RAM.
 - **Disk:** ambang `MIN_FREE_GB=8` dihitung untuk seluruh host (dipakai bersama); pantau `docker system df`.
 
-Naikkan `mem_limit`/heap bila traffic Admin/upload besar (pantau `docker stats kct-labs-app`).
+Naikkan `mem_limit`/heap bila traffic Admin/upload besar (pantau `docker stats kct-hub-app`).
 
 Downtime: beberapa detik saat container diganti (satu instance). Untuk zero-downtime: dua slot (blue/green, port 3000/3001) + switch upstream Nginx.
 
@@ -211,12 +214,12 @@ Downtime: beberapa detik saat container diganti (satu instance). Untuk zero-down
 | `port ... is blocked by web browsers` | Ganti `PORT` & port di `NEXT_PUBLIC_SERVER_URL` (mis. 6001). |
 | `only XGB free on disk` | `docker system df`; `PRUNE_BUILD_CACHE=1 ./deploy/deploy.sh` (cache > 3 hari). `docker builder prune -af` menghapus cache **semua** stack — koordinasikan dulu. |
 | `port <PORT> is already published by: ...` / `in use by a host process` | Port dipakai service lain: ganti `PORT` + port di `NEXT_PUBLIC_SERVER_URL` di `.env.prod`, deploy ulang (buka port baru di firewall). |
-| `container 'kct-labs-app' exists but belongs to another stack` | Nama bentrok dengan stack lain: jalankan dengan `APP_NAME=<nama-unik>` (ikut mengubah folder `/srv/<APP_NAME>`). |
+| `container 'kct-hub-app' exists but belongs to another stack` | Nama bentrok dengan stack lain: jalankan dengan `APP_NAME=<nama-unik>` (ikut mengubah folder `/srv/<APP_NAME>`). |
 | Situs tidak bisa dibuka dari luar padahal `status` healthy | Firewall provider / ufw belum membuka `<PORT>`. |
 | Gambar 404 | Folder media belum disalin / owner bukan `1001` (langkah D). |
 | Canonical/sitemap memakai domain salah | `NEXT_PUBLIC_SERVER_URL` salah → perbaiki lalu `FORCE_BUILD=1 ./deploy/deploy.sh`. |
-| Konten baru tidak muncul setelah import/seed langsung ke DB | `POST /api/apps/revalidate` (login admin) atau `docker restart kct-labs-app`. |
-| Container unhealthy | `docker logs --tail 200 kct-labs-app`. |
+| Konten baru tidak muncul setelah import/seed/skrip langsung ke DB | `POST /api/apps/revalidate` saat login admin (mis. dari console browser di `/admin`: `fetch('/api/apps/revalidate', { method: 'POST' })`), atau rebuild `FORCE_BUILD=1 ./deploy/deploy.sh`. `docker restart` **tidak** cukup: cache Next.js ada di filesystem container dan halaman prerender di image. |
+| Container unhealthy | `docker logs --tail 200 kct-hub-app`. |
 | Upload gagal `413` | Naikkan `client_max_body_size` di Nginx. |
 
 **Backup rutin (rekomendasi):** snapshot otomatis harian dari provider DB (retensi ≥ 7 hari, uji restore berkala) + backup harian folder `<DATA_DIR>/media` (rsync/rclone ke object storage). Untuk skala lebih besar/multi-server pindahkan media ke S3-compatible storage (`@payloadcms/storage-s3`).
@@ -227,6 +230,47 @@ Downtime: beberapa detik saat container diganti (satu instance). Untuk zero-down
 
 1. Arahkan DNS domain ke `<SERVER_IP>`.
 2. Ubah port di `docker-compose.prod.yml` menjadi `'127.0.0.1:${APP_PORT}:3000'` dan set `PORT=3000` di env (container tidak lagi terbuka ke internet).
-3. Pasang Nginx + certbot memakai `deploy/nginx/kct-labs.conf.example` (gzip, cache `/_next/static`, batas upload, HSTS).
+3. Pasang Nginx + certbot memakai `deploy/nginx/kct-hub.conf.example` (gzip, cache `/_next/static`, batas upload, HSTS).
 4. Ganti `NEXT_PUBLIC_SERVER_URL=https://<domain>` lalu `FORCE_BUILD=1 ./deploy/deploy.sh` (canonical, sitemap, OG ikut domain baru).
 5. Tambahkan redirect 301 dari `http://<SERVER_IP>:<PORT>` ke domain agar URL IP yang sempat terindeks berpindah.
+
+---
+
+## I. Rebrand KCT Labs → KCT Hub (sekali, untuk server yang sudah berjalan)
+
+Nama teknis berubah dari `kct-labs` ke `kct-hub`: image/container (`kct-hub`, `kct-hub-app`), compose project & network, folder data (`/srv/kct-hub`), lock deploy, label image. Server baru cukup mengikuti bagian A–E. Server yang sudah men-deploy versi `kct-labs` jalankan langkah ini **sekali**, berurutan:
+
+1. **Repo (di GitHub/Git server):** rename repo `kct-labs` → `kct-hub` (GitHub mengalihkan URL lama, tetapi tetap perbarui remote). Di laptop: `git remote set-url origin <REPO_URL>`.
+2. **Backup dulu di VPS:** salin `.env.prod` ke tempat aman (mis. `cp <APP_DIR>/.env.prod /root/env-prod.backup && chmod 600 /root/env-prod.backup`) dan pastikan ada backup/snapshot DB terbaru.
+3. **Pindahkan folder source** (`.env.prod` ikut pindah karena berada di dalamnya):
+   ```bash
+   mv /root/projects/kct-labs /root/projects/kct-hub     # sesuaikan dengan <APP_DIR> lama/baru
+   cd /root/projects/kct-hub
+   git remote set-url origin <REPO_URL>
+   git pull --ff-only
+   ```
+4. **Migrasi identitas Docker + folder data** (downtime beberapa detik; tanpa build; idempoten):
+   ```bash
+   ./deploy/migrate-from-kct-labs.sh
+   ```
+   Skrip: retag image `kct-labs:<tag>` → `kct-hub:<tag>` (rollback tetap bisa), hapus container `kct-labs-app`, `mv /srv/kct-labs /srv/kct-hub`, jalankan image yang sama sebagai `kct-hub-app` (`deploy.sh start` + health check), baru setelah sukses menghapus tag/migrator/network lama. Database tidak disentuh. Bila belum pernah deploy, skrip hanya menyiapkan `/srv/kct-hub`.
+5. **Deploy kode baru** (logo, favicon, OG image, nama situs, admin): `./deploy/deploy.sh`.
+6. **Rebrand teks di database** (judul SEO Home, tagline Footer, dll. — kode tidak bisa mengubah data). Jalankan dari image migrator versi yang baru di-deploy; **dry run dulu**:
+   ```bash
+   TAG=$(cat /srv/kct-hub/state/current_tag)
+   docker run --rm --env-file .env.prod kct-hub-migrator:$TAG pnpm rebrand:content                        # dry run: hanya laporan
+   docker run --rm --env-file .env.prod -e REBRAND_APPLY=true kct-hub-migrator:$TAG pnpm rebrand:content  # terapkan
+   ```
+   Idempoten (jalankan ulang = 0 perubahan); field Indonesia tidak pernah diisi teks English; slug/URL tidak disentuh. Dokumen yang versi terbarunya masih **draft** hanya di-patch sebagai draft dan dicantumkan di log → tinjau & *Publish* di Admin.
+7. **Segarkan cache**: login `/admin`, lalu di console browser `fetch('/api/apps/revalidate', { method: 'POST' })` (atau `FORCE_BUILD=1 ./deploy/deploy.sh`). Cek view-source: `<title>` dan `og:site_name` = KCT Hub, `og:image` = `/og-kct-hub.png`.
+8. **(Opsional) rename database** `kct-labs` → `kct-hub`. Tidak terlihat pengunjung dan menambah downtime; lakukan hanya bila perlu konsistensi:
+   ```bash
+   docker stop kct-hub-app      # ALTER DATABASE butuh 0 koneksi aktif
+   ```
+   ```sql
+   -- terhubung ke database lain (mis. postgres/defaultdb), BUKAN ke "kct-labs"
+   SELECT count(*) FROM pg_stat_activity WHERE datname = 'kct-labs';   -- harus 0
+   ALTER DATABASE "kct-labs" RENAME TO "kct-hub";
+   ```
+   Lalu ubah nama database di `DATABASE_URL` pada `.env.prod` dan jalankan `./deploy/deploy.sh start`. Di DB terkelola, sesuaikan juga allowlist/pool yang merujuk nama database lama.
+9. **Lainnya:** perbarui bookmark/monitoring yang memakai nama container lama (`kct-labs-app`) dan `/srv/kct-labs`. Domain/URL publik tidak berubah sehingga SEO (canonical, sitemap) tetap; Google memperbarui nama situs dari JSON-LD `WebSite` saat crawl berikutnya.

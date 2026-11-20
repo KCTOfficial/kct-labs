@@ -1,7 +1,7 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 
+import { BrandLogo } from '@/components/site/BrandLogo'
 import { LanguageSwitch } from '@/components/site/LanguageSwitch'
 import { footerColumns, toNavItems, type NavItem } from '@/components/site/navigation'
 import { getDictionary, localizeHref, type Locale } from '@/i18n'
@@ -48,8 +48,8 @@ export async function Footer({ locale }: { locale: Locale }) {
       <div className="site-container flex flex-col gap-12 pb-8 pt-10 md:pt-16">
         <div className="grid gap-10 md:grid-cols-[minmax(0,360px)_1fr] md:gap-16">
           <div className="flex flex-col gap-4">
-            <Link className="flex items-center gap-2.5" href={localizeHref('/', locale)}>
-              <Image alt="" className="size-[34px]" height={34} src="/icon-512.png" width={34} />
+            <Link className="flex flex-col items-start gap-2" href={localizeHref('/', locale)}>
+              <BrandLogo height={30} />
               <span className="font-display text-[17px] font-semibold text-foreground">
                 Kreasindo Cipta Teknologi
               </span>

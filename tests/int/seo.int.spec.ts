@@ -17,14 +17,14 @@ import { localizedSitemapEntries } from '@/utilities/seo/sitemap'
 import { stripLocalizedFlags } from '@/utilities/withoutLocalization'
 
 beforeAll(() => {
-  process.env.NEXT_PUBLIC_SERVER_URL = 'https://labs.kct.co.id'
+  process.env.NEXT_PUBLIC_SERVER_URL = 'https://hub.kct.co.id'
 })
 
 describe('titles and descriptions', () => {
   it('appends the site name once and stays within 60 characters', () => {
-    expect(formatTitle('Al Quran Imam')).toBe('Al Quran Imam | KCT Labs')
-    expect(formatTitle('KCT Labs — Apps')).toBe('KCT Labs — Apps')
-    expect(formatTitle('')).toBe('KCT Labs')
+    expect(formatTitle('Al Quran Imam')).toBe('Al Quran Imam | KCT Hub')
+    expect(formatTitle('KCT Hub — Apps')).toBe('KCT Hub — Apps')
+    expect(formatTitle('')).toBe('KCT Hub')
     expect(formatTitle('x '.repeat(80)).length).toBeLessThanOrEqual(60)
   })
 
@@ -38,32 +38,32 @@ describe('titles and descriptions', () => {
 
 describe('canonical + hreflang', () => {
   it('builds absolute, locale-aware URLs', () => {
-    expect(absoluteUrl('/')).toBe('https://labs.kct.co.id/')
-    expect(localizedUrl('/apps', 'id')).toBe('https://labs.kct.co.id/id/apps')
-    expect(localizedUrl('/apps', 'en')).toBe('https://labs.kct.co.id/apps')
+    expect(absoluteUrl('/')).toBe('https://hub.kct.co.id/')
+    expect(localizedUrl('/apps', 'id')).toBe('https://hub.kct.co.id/id/apps')
+    expect(localizedUrl('/apps', 'en')).toBe('https://hub.kct.co.id/apps')
   })
 
   it('lists every locale plus x-default', () => {
     const alt = buildAlternates('/apps/al-quran-imam', 'id')
-    expect(alt.canonical).toBe('https://labs.kct.co.id/id/apps/al-quran-imam')
+    expect(alt.canonical).toBe('https://hub.kct.co.id/id/apps/al-quran-imam')
     expect(alt.languages).toEqual({
-      en: 'https://labs.kct.co.id/apps/al-quran-imam',
-      id: 'https://labs.kct.co.id/id/apps/al-quran-imam',
-      'x-default': 'https://labs.kct.co.id/apps/al-quran-imam',
+      en: 'https://hub.kct.co.id/apps/al-quran-imam',
+      id: 'https://hub.kct.co.id/id/apps/al-quran-imam',
+      'x-default': 'https://hub.kct.co.id/apps/al-quran-imam',
     })
   })
 
   it('gives untranslated template pages a single default-locale canonical', () => {
     expect(buildSingleLanguageAlternates('/posts')).toEqual({
-      canonical: 'https://labs.kct.co.id/posts',
+      canonical: 'https://hub.kct.co.id/posts',
     })
   })
 
   it('emits one sitemap entry per locale with hreflang alternates', () => {
     const entries = localizedSitemapEntries('/apps', '2026-01-01T00:00:00.000Z')
     expect(entries.map((e) => e.loc)).toEqual([
-      'https://labs.kct.co.id/apps',
-      'https://labs.kct.co.id/id/apps',
+      'https://hub.kct.co.id/apps',
+      'https://hub.kct.co.id/id/apps',
     ])
     expect(entries[0].alternateRefs?.map((r) => r.hreflang)).toEqual(['en', 'id', 'x-default'])
   })
@@ -85,7 +85,7 @@ describe('JSON-LD', () => {
   it('never invents ratings, offers or download counts', () => {
     const schema = mobileApplicationSchema({
       name: 'Jejak Uang',
-      url: 'https://labs.kct.co.id/apps/jejak-uang',
+      url: 'https://hub.kct.co.id/apps/jejak-uang',
       locale: 'en',
       platforms: ['android'],
       installUrl: 'https://play.google.com/store/apps/details?id=id.jejakuang.app',

@@ -1,0 +1,27 @@
+// KCT Hub admin branding (src/components/AdminBrand). The admin always sets data-theme on <html>.
+.kct-hub-admin-logo {
+  display: inline-flex;
+
+  img {
+    width: auto;
+    height: 48px;
+  }
+}
+
+.kct-hub-admin-logo__dark {
+  display: none;
+}
+
+html[data-theme='dark'] {
+  .kct-hub-admin-logo__light {
+    display: none;
+  }
+
+  .kct-hub-admin-logo__dark {
+    display: block;
+  }
+}
+
+.kct-hub-admin-icon {
+  border-radius: 6px;
+}

@@ -100,8 +100,8 @@ export async function generateMetadata({ params }: Pick<LayoutArgs, 'params'>): 
     twitter: { card: 'summary_large_image' },
     icons: {
       icon: [
-        { url: '/favicon.ico', sizes: '32x32' },
-        { url: '/favicon.svg', type: 'image/svg+xml' },
+        // KCT Hub mark. No SVG variant: only raster artwork exists (see docs on requesting an SVG).
+        { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
         { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
       ],
       apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],

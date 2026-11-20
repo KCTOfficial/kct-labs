@@ -1,4 +1,4 @@
-# KCT Labs — production image (Next.js 16 standalone + Payload 3, Postgres).
+# KCT Hub — production image (Next.js 16 standalone + Payload 3, Postgres).
 #
 # No `# syntax=` directive on purpose: the engine's built-in Dockerfile frontend already supports
 # everything used here (RUN --mount secret/cache, COPY --chown) and avoids pulling/running an
@@ -9,8 +9,8 @@
 #   migrator → one-off container that runs `payload migrate` (needs full deps + source).
 #
 # Build (BuildKit required; the env file is mounted as a secret, never stored in a layer):
-#   docker build --secret id=env,src=/srv/kct-labs/.env --target migrator -t kct-labs-migrator:<tag> .
-#   docker build --secret id=env,src=/srv/kct-labs/.env --target runner   -t kct-labs:<tag> .
+#   docker build --secret id=env,src=/srv/kct-hub/.env --target migrator -t kct-hub-migrator:<tag> .
+#   docker build --secret id=env,src=/srv/kct-hub/.env --target runner   -t kct-hub:<tag> .
 #
 # NOTE: `next build` prerenders pages from the database, so the build needs network access to
 # Postgres and the schema must already be migrated (deploy.sh runs migrations before this build).

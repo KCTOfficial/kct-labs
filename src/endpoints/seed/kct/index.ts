@@ -71,7 +71,7 @@ const ensureMedia = async (payload: Payload, filePath: string, alt: string): Pro
 }
 
 /**
- * Idempotent, non-destructive seed for KCT Labs content (EN + ID).
+ * Idempotent, non-destructive seed for KCT Hub content (EN + ID).
  * - Upserts app categories and apps by slug; never deletes documents.
  * - Fills Home every run; fills Header/Footer only when they are still empty (never overwrites edits).
  */

@@ -1,16 +1,16 @@
-# KCT Labs — production runtime on the VPS. Used by deploy/deploy.sh (images are built by
+# KCT Hub — production runtime on the VPS. Used by deploy/deploy.sh (images are built by
 # deploy.sh with the env file passed as a BuildKit secret; do not `build` from here).
 #
 #   IMAGE_TAG=<git-sha> ENV_FILE=<APP_DIR>/.env.prod MEDIA_DIR=<DATA_DIR>/media APP_PORT=<PORT> \
-#     docker compose -p kct-labs -f docker-compose.prod.yml up -d
+#     docker compose -p kct-hub -f docker-compose.prod.yml up -d
 #
 # Sized for a small VPS: ~4 GB RAM + 8 GB swap, possibly shared with other workloads. The database is an external/managed Postgres (DATABASE_URL in the env file).
-name: kct-labs
+name: kct-hub
 
 services:
   app:
-    image: kct-labs:${IMAGE_TAG:?IMAGE_TAG is required}
-    container_name: kct-labs-app
+    image: kct-hub:${IMAGE_TAG:?IMAGE_TAG is required}
+    container_name: kct-hub-app
     restart: unless-stopped
     init: true # reaps zombie processes (sharp/child processes) and forwards SIGTERM cleanly
     stop_grace_period: 20s
