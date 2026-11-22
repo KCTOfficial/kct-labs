@@ -9,6 +9,8 @@ import { format, localizeHref, type Dictionary, type Locale } from '@/i18n'
 import type { App, Home } from '@/payload-types'
 import { cn } from '@/utilities/ui'
 
+import { phoneSlot } from './scrollStoryConfig'
+
 export type ShowcaseApp = Pick<App, 'id' | 'name' | 'screenshots'>
 
 type Props = {
@@ -39,16 +41,24 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
       : []),
   ].filter((s) => s.value !== '00')
 
-  return (
-    <section className="relative overflow-hidden" aria-labelledby="hero-title">
+  const hasPhones = phones.length > 0
+
+  const section = (
+    <section
+      aria-labelledby="hero-title"
+      className={cn('relative overflow-hidden', hasPhones && 'story-pin')}
+      data-story="hero"
+    >
       <div aria-hidden="true" className="bg-blueprint pointer-events-none absolute inset-0" />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-40 top-0 size-[720px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-sky)_25%,transparent),transparent_70%)]"
+        data-story-part="hero-glow-a"
       />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -left-48 top-[420px] h-[600px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-navy)_33%,transparent),transparent_70%)]"
+        data-story-part="hero-glow-b"
       />
       <div
         aria-hidden="true"
@@ -56,7 +66,7 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
       />
 
       <div className="site-container relative grid gap-10 pb-0 pt-9 lg:grid-cols-[600px_1fr] lg:gap-10 lg:pt-[72px]">
-        <div className="flex flex-col gap-5 lg:gap-7 lg:pt-14">
+        <div className="flex flex-col gap-5 lg:gap-7 lg:pt-14" data-story-part="hero-copy">
           {hero?.badge && <Chip className="self-start text-[11px] lg:text-xs">{hero.badge}</Chip>}
           <h1
             className="font-display text-[38px] font-semibold leading-[1.08] tracking-[-0.02em] text-foreground lg:text-[64px] lg:leading-[1.05] lg:tracking-[-0.023em]"
@@ -106,7 +116,7 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
           )}
         </div>
 
-        {phones.length > 0 && (
+        {hasPhones && (
           <div
             aria-hidden="true"
             className="relative mx-auto h-[380px] w-full max-w-[343px] lg:h-[748px] lg:max-w-[700px]"
@@ -116,28 +126,46 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
                 firstMedia(app.screenshots),
                 format(dict.app.screenshotAlt, { name: app.name, index: 1 }),
               )
+              // Pose wrapper keeps the stage position/rotation (Tailwind `rotate`/`translate`
+              // properties); the scroll story animates only the inner node, so they never collide.
               return (
-                <PhoneFrame
+                <div
                   className={cn(
                     'absolute',
                     phones.length === 1
                       ? 'left-1/2 top-0 w-[46%] -translate-x-1/2 lg:w-[37%]'
                       : STAGE[i],
-                    'max-lg:rounded-[26px] max-lg:p-1.5 [&>div]:max-lg:rounded-[20px]',
                   )}
-                  image={image}
                   key={app.id}
-                  // Only the centre phone is preloaded (high priority); the side phones load eagerly
-                  // without a preload so they don't compete with the CSS and the <h1> (mobile LCP).
-                  eager
-                  priority={phones.length === 1 || i === 1}
-                  sizes="(min-width: 1024px) 260px, 170px"
-                />
+                >
+                  <div data-story-part={`phone-${phoneSlot(phones.length, i)}`}>
+                    <PhoneFrame
+                      className="w-full max-lg:rounded-[26px] max-lg:p-1.5 [&>div]:max-lg:rounded-[20px]"
+                      image={image}
+                      // Only the centre phone is preloaded (high priority); the side phones load
+                      // eagerly without a preload so they don't compete with the CSS and the <h1>.
+                      eager
+                      priority={phones.length === 1 || i === 1}
+                      sizes="(min-width: 1024px) 260px, 170px"
+                    />
+                  </div>
+                </div>
               )
             })}
           </div>
         )}
       </div>
     </section>
+  )
+
+  if (!hasPhones) return section
+
+  // Scroll-story track: on desktop CSS makes the hero sticky while the spacer scrolls by
+  // (server-rendered, so nothing shifts when the animation script loads).
+  return (
+    <div data-story-track="hero">
+      {section}
+      <div aria-hidden="true" className="story-spacer [--story-len:80vh]" />
+    </div>
   )
 }

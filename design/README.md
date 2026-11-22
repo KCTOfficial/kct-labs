@@ -17,6 +17,10 @@ Di kode: komponen `BrandLogo` (`src/components/site/BrandLogo.tsx`) merender ked
 
 Halus dan profesional: 150–300 ms, hanya `transform`/`opacity`, mati total di `prefers-reduced-motion`. Primitive di `globals.css`: `.skeleton` (shimmer dari token; ukuran sama dengan konten asli agar tanpa CLS), `.reveal` (muncul saat scroll, CSS `animation-timeline: view()`, progressive enhancement; tidak untuk hero/LCP maupun di dalam elemen `overflow`), `.header-elevate` (bayangan header saat scroll), `.qv-dialog` (popup: modal tengah di desktop, bottom sheet di mobile). **Popup quick-view**: klik kartu → ikon, status, tagline, deskripsi singkat, kategori/umur/unduhan, ≤ 4 screenshot, ≤ 4 sorotan, tombol Google Play + "Lihat detail lengkap"; URL berubah ke `/apps/<slug>`. Frame di `kct-hub.pen` belum memuat komponen ini (Pencil tidak berjalan saat implementasi) — perbarui file desain bila perlu.
 
+## Scroll story Beranda (desktop)
+
+Terinspirasi everylastdrop.co.uk: gerak di-_scrub_ oleh posisi scroll dan berbalik saat scroll ke atas. Hanya di desktop ≥ 1024 px dengan mouse, tanpa reduced-motion (GSAP ScrollTrigger, dimuat lazy). Hero dan Sorotan menempel di bawah header selama 80vh/90vh (perlu tinggi layar ≥ 760 px): ponsel hero menyebar dan teks memudar halus; di Sorotan ponsel masuk dari samping lalu fitur menyala satu per satu. Section lain: kartu katalog naik bertahap, garis progres "Cara kerja" terisi, teks Tentang parallax, pita CTA membesar. Batas: rotasi ≤ 6°, geser ≤ 80 px, skala ≤ 1.03, hanya transform/opacity. Mobile/tablet memakai `.reveal` CSS.
+
 ## Isi file .pen
 
 | Frame                                     | Keterangan                                                                                                                                                                            |

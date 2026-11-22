@@ -551,3 +551,78 @@ html:has(.qv-dialog[open]) {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * Home scroll story (src/components/home/scrollStory.ts + HomeScrollStory.tsx).
+ * Pinned sections are sticky inside a server-rendered track with a spacer, so the layout is final
+ * from the first paint (no CLS when the GSAP chunk arrives). The @media gate below MUST match
+ * PIN_QUERY in scrollStoryConfig.ts. `data-scroll-story` on <html>: "on" = GSAP running,
+ * "off" = GSAP failed to load → sticky/spacer released.
+ * ------------------------------------------------------------------------------------------- */
+:root {
+  /* Sticky header height on desktop: 78px + 1px border (src/Header/Component.client.tsx). */
+  --story-top: 79px;
+}
+
+.story-spacer,
+.story-line {
+  display: none;
+}
+
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) and (min-height: 760px) and (scripting: enabled) {
+  html:not([data-scroll-story='off']) .story-pin {
+    position: sticky;
+    top: var(--story-top);
+    /* Fill the viewport while stuck, otherwise the empty spacer would show below the section. */
+    min-height: calc(100vh - var(--story-top));
+  }
+
+  html:not([data-scroll-story='off']) .story-pin--center {
+    display: grid;
+    align-content: center;
+  }
+
+  html:not([data-scroll-story='off']) .story-spacer {
+    display: block;
+    height: var(--story-len, 80vh);
+  }
+}
+
+/* GSAP owns home motion on desktop: never let the CSS `.reveal` fight it over transform/opacity. */
+html[data-scroll-story='on'] #main-content .reveal {
+  animation: none;
+}
+
+html[data-scroll-story='on'] .story-line {
+  display: block;
+}
+
+html[data-scroll-story='on'] [data-story-part^='phone-'],
+html[data-scroll-story='on'] [data-story-part^='featured-phone-'],
+html[data-scroll-story='on'] [data-story-part$='-glow'],
+html[data-scroll-story='on'] [data-story-part$='-glow-a'],
+html[data-scroll-story='on'] [data-story-part$='-glow-b'] {
+  will-change: transform;
+}
+
+/* Keyboard users must always see what has focus, whatever the scroll progress. */
+html[data-scroll-story='on'] [data-story-part]:focus-within {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+@media print {
+  .story-spacer {
+    display: none !important;
+  }
+
+  .story-pin {
+    position: static !important;
+    min-height: 0 !important;
+  }
+
+  [data-story-part] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

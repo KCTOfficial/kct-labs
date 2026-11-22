@@ -4,6 +4,7 @@ import React from 'react'
 
 import { HomeCatalog } from '@/components/home/HomeCatalog'
 import { HomeHero, type ShowcaseApp } from '@/components/home/HomeHero'
+import { HomeScrollStory } from '@/components/home/HomeScrollStory'
 import { HomeAbout, HomeCta, HomeFeatured, HomeProcess } from '@/components/home/HomeSections'
 import { appHref } from '@/components/site/AppCard'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -99,6 +100,17 @@ export default async function HomePage({ params }: Args) {
       {showProcess && <HomeProcess dict={dict} index={processIndex} process={home.process} />}
       {showAbout && <HomeAbout about={home.about} index={aboutIndex} locale={locale} />}
       {showCta && <HomeCta cta={home.cta} />}
+      {/* Desktop scroll-scrubbed motion; rebuilt whenever the rendered layout changes. */}
+      <HomeScrollStory
+        layoutKey={[
+          showFeatured,
+          showProcess,
+          showAbout,
+          showCta,
+          showcase.map((app) => app.id).join('.'),
+          catalog.docs.length,
+        ].join('|')}
+      />
     </>
   )
 }
