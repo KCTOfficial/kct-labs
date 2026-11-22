@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
+import { LinkProgress } from '@/components/apps/PendingIndicators'
 import { format, type Dictionary } from '@/i18n'
 import { cn } from '@/utilities/ui'
 
@@ -19,7 +20,8 @@ export const pageWindow = (current: number, total: number): Array<number | null>
   return out
 }
 
-const box = 'flex size-10 items-center justify-center rounded-[10px] border font-mono text-sm'
+const box =
+  'relative flex size-10 items-center justify-center rounded-[10px] border font-mono text-sm transition-colors'
 
 const Arrow: React.FC<{
   target: number
@@ -41,6 +43,7 @@ const Arrow: React.FC<{
       rel={target < page ? 'prev' : 'next'}
     >
       {children}
+      <LinkProgress />
     </Link>
   )
 
@@ -85,6 +88,7 @@ export const ListingPagination: React.FC<{
                 href={hrefFor(p)}
               >
                 {p}
+                <LinkProgress />
               </Link>
             </li>
           ),

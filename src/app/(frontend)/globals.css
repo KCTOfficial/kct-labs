@@ -367,3 +367,187 @@
 
 /* The former `html { opacity: 0 }` anti-flash rule was removed: it hid the whole page until the
    Next.js runtime loaded (≈5 s LCP on mobile). The inline theme script in <head> prevents flashes. */
+
+/* ---------------------------------------------------------------------------------------------
+ * UI polish: loading skeletons, scroll reveal, quick-view dialog. Tokens only; every animation
+ * is disabled by the prefers-reduced-motion rule above (and explicitly for .skeleton below).
+ * ------------------------------------------------------------------------------------------- */
+
+/* Shimmer placeholder. Same footprint as the content it stands in for → no layout shift. */
+.skeleton {
+  background-color: var(--surface-2);
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    color-mix(in srgb, var(--foreground) 8%, var(--surface-2)) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s linear infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background-image: none;
+  }
+}
+
+/* Scroll reveal (CSS scroll-driven, no JS). Progressive enhancement: browsers without
+   `animation-timeline` and reduced-motion users get the content fully visible, immediately.
+   Entry range ends early (30%) so anything already in view at load is fully visible. Use only on
+   small blocks (cards, headings) whose nearest scroll container is the viewport — NOT inside
+   horizontally scrolling strips — and never on hero/LCP content. transform/opacity only (no CLS). */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 30%;
+    }
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Header gains a soft shadow once the page scrolls (CSS scroll-driven, no JS / observer).
+   Progressive enhancement: reduced-motion users and browsers without support keep the plain border. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll()) {
+    .header-elevate {
+      animation: header-elevate linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 56px;
+    }
+  }
+}
+
+@keyframes header-elevate {
+  from {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  to {
+    box-shadow: 0 10px 28px -14px color-mix(in srgb, var(--foreground) 30%, transparent);
+  }
+}
+
+/* Quick-view popup (src/components/quick-view). Native <dialog>: centered modal on desktop,
+   bottom sheet on phones. Enter/exit use @starting-style + allow-discrete transitions, which
+   degrade to an instant show/hide where unsupported; reduced-motion zeroes the durations. */
+.qv-dialog {
+  width: min(calc(100% - 2rem), 42rem);
+  max-height: min(90dvh, 52rem);
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--foreground);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 22px;
+  box-shadow: 0 30px 80px -24px color-mix(in srgb, var(--device) 80%, transparent);
+  opacity: 0;
+  translate: 0 16px;
+  transition:
+    opacity 0.22s ease,
+    translate 0.22s ease,
+    overlay 0.22s allow-discrete,
+    display 0.22s allow-discrete;
+}
+
+.qv-dialog[open] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@starting-style {
+  .qv-dialog[open] {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+.qv-dialog::backdrop {
+  background: color-mix(in srgb, var(--device) 0%, transparent);
+  transition:
+    background-color 0.22s ease,
+    overlay 0.22s allow-discrete,
+    display 0.22s allow-discrete;
+}
+
+.qv-dialog[open]::backdrop {
+  background: color-mix(in srgb, var(--device) 72%, transparent);
+}
+
+@starting-style {
+  .qv-dialog[open]::backdrop {
+    background: color-mix(in srgb, var(--device) 0%, transparent);
+  }
+}
+
+@media (width < 48rem) {
+  .qv-dialog {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-bottom: 0;
+    border-radius: 22px 22px 0 0;
+    translate: 0 32px;
+  }
+}
+
+/* Scroll lock without layout shift (gutter stays reserved while the page can't scroll). */
+html:has(.qv-dialog[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+/* Sticky so it stays reachable while the content scrolls; overlaps the first row of the body. */
+.qv-close {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0.75rem 0.75rem -3.25rem auto;
+  color: var(--text-secondary);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.qv-close:hover {
+  color: var(--foreground);
+  background: var(--surface-2);
+}
+
+.qv-close:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

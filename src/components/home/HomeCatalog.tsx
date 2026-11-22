@@ -40,7 +40,7 @@ export const HomeCatalog: React.FC<Props> = ({
     <section aria-labelledby="catalog-title" className="scroll-mt-20" id="apps">
       <div className="site-container flex flex-col gap-5 py-14 lg:gap-10 lg:py-28">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex max-w-[620px] flex-col gap-3 lg:gap-4">
+          <div className="reveal flex max-w-[620px] flex-col gap-3 lg:gap-4">
             {catalog?.eyebrow && <Eyebrow index={index}>{catalog.eyebrow}</Eyebrow>}
             <h2
               className="font-display text-[30px] font-semibold leading-[1.12] tracking-[-0.02em] text-foreground lg:text-[44px] lg:leading-[1.1]"
@@ -87,12 +87,12 @@ export const HomeCatalog: React.FC<Props> = ({
 
         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {apps.map((app, i) => (
-            <li className={cn(i >= MOBILE_VISIBLE && 'max-md:hidden')} key={app.id}>
+            <li className={cn('reveal', i >= MOBILE_VISIBLE && 'max-md:hidden')} key={app.id}>
               <AppCard app={app} dict={dict} locale={locale} />
             </li>
           ))}
           {hasService && service && (
-            <li className="max-md:hidden">
+            <li className="reveal max-md:hidden">
               <div className="flex h-full flex-col justify-between gap-4 rounded-lg border border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-navy)_35%,transparent),color-mix(in_srgb,var(--brand-sky)_8%,transparent))] p-6">
                 <div className="flex flex-col gap-3">
                   <span className="flex size-14 items-center justify-center rounded-[16px] border border-primary">

@@ -7,6 +7,9 @@ export const id: Dictionary = {
     defaultDescription:
       'Jelajahi aplikasi yang dirancang dan dikembangkan oleh PT Kreasindo Cipta Teknologi (KCT) untuk keseharian dan bisnis, tersedia di Google Play.',
   },
+  common: {
+    loading: 'Memuat…',
+  },
   a11y: {
     skipToContent: 'Langsung ke konten',
     mainNavigation: 'Navigasi utama',
@@ -83,6 +86,14 @@ export const id: Dictionary = {
     contactSupport: 'Hubungi dukungan',
     moreApps: 'Aplikasi lain dari KCT',
     developerName: 'PT KCT',
+  },
+  quickView: {
+    loading: 'Memuat detail aplikasi…',
+    error: 'Detail aplikasi tidak dapat dimuat.',
+    retry: 'Coba lagi',
+    viewFullDetails: 'Lihat detail lengkap',
+    screenshots: 'Tangkapan layar',
+    highlights: 'Sorotan',
   },
   platforms: { android: 'Android', ios: 'iOS', web: 'Web' },
   home: {

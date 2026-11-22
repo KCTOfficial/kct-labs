@@ -43,7 +43,7 @@ export const HomeFeatured: React.FC<{
   return (
     <section aria-labelledby="featured-title" className="border-y border-border bg-bg-raised">
       <div className="site-container flex flex-col gap-5 py-14 lg:flex-row lg:items-center lg:gap-20 lg:py-28">
-        <div className="relative order-2 hidden aspect-square w-full max-w-[620px] shrink-0 overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle_at_50%_45%,color-mix(in_srgb,var(--brand-sky)_20%,transparent),transparent_70%)] lg:order-1 lg:block lg:w-[45%]">
+        <div className="reveal relative order-2 hidden aspect-square w-full max-w-[620px] shrink-0 overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle_at_50%_45%,color-mix(in_srgb,var(--brand-sky)_20%,transparent),transparent_70%)] lg:order-1 lg:block lg:w-[45%]">
           {ORBITS.map((size) => (
             <span
               aria-hidden="true"
@@ -76,7 +76,7 @@ export const HomeFeatured: React.FC<{
         </div>
 
         <div className="order-1 flex flex-1 flex-col gap-5 lg:order-2 lg:gap-8">
-          <div className="flex flex-col gap-3 lg:gap-4">
+          <div className="reveal flex flex-col gap-3 lg:gap-4">
             {featured?.eyebrow && <Eyebrow index={index}>{featured.eyebrow}</Eyebrow>}
             <h2 className={h2Class} id="featured-title">
               {featured?.title}
@@ -102,7 +102,7 @@ export const HomeFeatured: React.FC<{
             <ul className="flex flex-col gap-3 lg:gap-5">
               {featured.features.map((f) => (
                 <li
-                  className="flex items-center gap-3 lg:items-start lg:gap-4"
+                  className="reveal flex items-center gap-3 lg:items-start lg:gap-4"
                   key={f.id ?? f.title}
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft lg:size-11 lg:rounded-[12px]">
@@ -156,7 +156,7 @@ export const HomeProcess: React.FC<{
   return (
     <section aria-labelledby="process-title" className="scroll-mt-20" id="process">
       <div className="site-container flex flex-col gap-5 py-14 lg:gap-14 lg:py-28">
-        <div className="flex max-w-[640px] flex-col gap-3 lg:gap-4">
+        <div className="reveal flex max-w-[640px] flex-col gap-3 lg:gap-4">
           {process?.eyebrow && <Eyebrow index={index}>{process.eyebrow}</Eyebrow>}
           <h2 className={h2Class} id="process-title">
             {process?.title}
@@ -167,7 +167,9 @@ export const HomeProcess: React.FC<{
             </p>
           )}
         </div>
-        <ol className="grid overflow-hidden rounded-lg border border-border lg:grid-cols-4">
+        {/* `reveal` goes on the <ol>, not the <li>s: overflow-hidden makes the <ol> a scroll container,
+            which would hijack the children's view() timeline (they would never animate). */}
+        <ol className="reveal grid overflow-hidden rounded-lg border border-border lg:grid-cols-4">
           {steps.map((step, i) => (
             <li
               className={cn(
@@ -216,7 +218,7 @@ export const HomeAbout: React.FC<{ about: Home['about']; index: number; locale: 
     id="about"
   >
     <div className="site-container grid gap-10 py-14 lg:grid-cols-[480px_1fr] lg:gap-20 lg:py-28">
-      <div className="flex flex-col gap-5 lg:gap-6">
+      <div className="reveal flex flex-col gap-5 lg:gap-6">
         {about?.eyebrow && <Eyebrow index={index}>{about.eyebrow}</Eyebrow>}
         <h2 className={h2Class} id="about-title">
           {about?.title}
@@ -241,7 +243,7 @@ export const HomeAbout: React.FC<{ about: Home['about']; index: number; locale: 
         <ul className="grid scroll-mt-20 gap-5 sm:grid-cols-2" id="services">
           {about.services.map((s) => (
             <li
-              className="flex flex-col gap-3.5 rounded-md border border-border bg-surface p-7"
+              className="reveal flex flex-col gap-3.5 rounded-md border border-border bg-surface p-7"
               key={s.id ?? s.title}
             >
               <SiteIcon className="size-[26px] text-primary" name={s.icon} />
@@ -264,7 +266,7 @@ export const HomeCta: React.FC<{ cta: Home['cta'] }> = ({ cta }) => {
   return (
     <section aria-labelledby="cta-title" className="scroll-mt-20" id="contact">
       <div className="site-container pb-14 pt-2 lg:py-24">
-        <div className="relative flex flex-col gap-6 overflow-hidden rounded-[24px] border border-border-strong bg-brand-navy p-7 lg:flex-row lg:items-center lg:justify-between lg:rounded-[28px] lg:p-16">
+        <div className="reveal relative flex flex-col gap-6 overflow-hidden rounded-[24px] border border-border-strong bg-brand-navy p-7 lg:flex-row lg:items-center lg:justify-between lg:rounded-[28px] lg:p-16">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -right-1/4 -top-1/2 size-[900px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-sky)_60%,transparent),transparent_65%)]"

@@ -79,11 +79,15 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({
     setOpen(false)
   }
 
-  // Lock page scroll and support Escape while the mobile menu is open.
+  // While the mobile menu is open: lock page scroll, make the page behind it inert (keyboard and
+  // screen-reader focus stay inside the header + menu) and support Escape. The menu panel must stay
+  // outside <header> (backdrop-filter containing block) so the page content is inerted instead.
   useEffect(() => {
     if (!open) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const behind = [document.getElementById('main-content'), document.querySelector('footer')]
+    behind.forEach((element) => element?.setAttribute('inert', ''))
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setOpen(false)
@@ -93,13 +97,14 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = previous
+      behind.forEach((element) => element?.removeAttribute('inert'))
       window.removeEventListener('keydown', onKey)
     }
   }, [open])
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border bg-nav-bg backdrop-blur-xl">
+      <header className="header-elevate sticky top-0 z-40 border-b border-border bg-nav-bg backdrop-blur-xl">
         <div className="site-container flex h-[72px] items-center justify-between gap-6 lg:h-[78px]">
           <div className="hidden lg:block">
             <Brand href={homeHref} />
@@ -117,8 +122,12 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({
                     <NavLink
                       active={active}
                       className={cn(
-                        'text-[15px] font-medium transition-colors hover:text-foreground',
-                        active ? 'text-foreground' : 'text-text-secondary',
+                        'relative text-[15px] font-medium transition-colors hover:text-foreground',
+                        'after:absolute after:inset-x-0 after:-bottom-2 after:h-0.5 after:origin-left after:rounded-full after:bg-primary',
+                        'after:transition-transform after:duration-200 hover:after:scale-x-100',
+                        active
+                          ? 'text-foreground after:scale-x-100'
+                          : 'text-text-secondary after:scale-x-0',
                       )}
                       item={item}
                     />
@@ -167,9 +176,11 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({
       <div
         className={cn(
           'fixed inset-x-0 bottom-0 top-[72px] z-40 overflow-y-auto bg-background lg:hidden',
-          open ? 'block' : 'hidden',
+          'transition-[opacity,translate,visibility] duration-200 ease-out',
+          open ? 'visible translate-y-0 opacity-100' : 'invisible -translate-y-2 opacity-0',
         )}
         id={menuId}
+        inert={!open}
       >
         <nav aria-label={dict.a11y.mainNavigation} className="px-4 pt-4">
           <ul>

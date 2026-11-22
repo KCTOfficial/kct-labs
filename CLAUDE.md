@@ -43,6 +43,8 @@ Catatan pengelola (tidak dimuat ke konteks Claude):
   - Saat Local API dipanggil dengan `user`, set `overrideAccess: false`; teruskan `req` ke operasi nested di hooks agar tetap dalam transaksi.
   - Copywriting: nama situs **KCT Hub** (pakai `SITE_NAME` dari `src/utilities/seo/constants.ts`, jangan hardcode; jangan pakai lagi "KCT Labs"). Nuansa "lab" hanya untuk visual; jangan memakai istilah "eksperimen/laboratorium" di konten.
   - Logo situs: komponen `BrandLogo` + aset `public/brand/*` yang diturunkan dari `design/images/brand/kct-hub/` (`design/scripts/generate-brand-assets.py`); jangan edit PNG turunan manual. Logo perusahaan `public/kct-logo.png` khusus JSON-LD `Organization`. Teks brand di database diganti lewat `pnpm rebrand:content` (dry-run default).
+  - Quick-view (popup kartu app): `src/components/quick-view/` + endpoint `GET /next/quick-view` (`src/app/(frontend)/next/quick-view/route.ts`, memakai `getAppBySlug` ter-cache). Kartu hanya menambah `data-quick-view`; `QuickViewProvider` (layout) mencegat klik di fase capture, `pushState` URL `/apps/<slug>`, dan jatuh ke navigasi biasa untuk modifier-click, tanpa JS, 404/archived, atau error. Dialog harus di luar `<main>`, tanpa `<h1>`/`<article>` (tes e2e menghitungnya). Tutup popup hanya lewat `requestClose` (satu `history.back()`); `router.push` ke URL yang sama dengan entri pushState **menggantinya** (tumpukan history tetap bersih). Flag `QUICK_VIEW_ENABLED=false` (dibaca saat build) mematikannya.
+  - Animasi: `.reveal` (scroll-driven `view()`) jangan dipasang di dalam elemen `overflow-hidden/auto` (jadi scroll container → timeline rusak) dan jangan di hero/LCP; `.skeleton` untuk placeholder (setara ukuran konten asli, tanpa CLS). `loading.tsx` tidak tampil bila hanya query string berubah → pakai `LinkProgress`/`FormPendingIcon` (`components/apps/PendingIndicators.tsx`); pencarian & urutan memakai `next/form`.
   - Nama teknis `kct-hub` (image/container/compose/`/srv/kct-hub`); server lama `kct-labs` dimigrasi sekali dengan `deploy/migrate-from-kct-labs.sh` (docs/DEPLOYMENT.md bagian I).
 
 ## Peran
@@ -170,3 +172,13 @@ Tujuan: setiap halaman aplikasi dan halaman publik terindeks dengan benar, tampi
 - Sebutkan path berkas saat merujuk kode atau temuan. Tandai asumsi dengan "Asumsi:" beserta dasarnya.
 - Jika ragu tentang perilaku library/API (Payload, Next.js), periksa skill/dokumentasi; jangan mengarang nama method atau opsi.
 - Akhiri tugas dengan laporan singkat: perubahan, berkas yang diubah, hasil verifikasi (termasuk SEO), serta risiko yang perlu ditinjau.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

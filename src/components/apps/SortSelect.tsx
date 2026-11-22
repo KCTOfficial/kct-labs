@@ -1,13 +1,15 @@
 'use client'
 
 import { ChevronsUpDown } from 'lucide-react'
+import Form from 'next/form'
 import React from 'react'
 
+import { FormPendingIcon } from '@/components/apps/PendingIndicators'
 import { cn } from '@/utilities/ui'
 
 /**
- * Sort control inside a GET form. Submits on change; the visible "Apply" button keeps it usable
- * when JavaScript is unavailable.
+ * Sort control inside a GET form (`next/form`: client-side navigation). Submits on change; the
+ * "Apply" button in <noscript> keeps it usable when JavaScript is unavailable.
  */
 export const SortSelect: React.FC<{
   action: string
@@ -19,7 +21,7 @@ export const SortSelect: React.FC<{
   id: string
   className?: string
 }> = ({ action, label, applyLabel, value, options, hidden, id, className }) => (
-  <form action={action} className={cn('relative flex items-center', className)} method="get">
+  <Form action={action} className={cn('relative flex items-center', className)}>
     {Object.entries(hidden).map(([name, v]) =>
       v ? <input key={name} name={name} type="hidden" value={v} /> : null,
     )}
@@ -39,14 +41,16 @@ export const SortSelect: React.FC<{
         </option>
       ))}
     </select>
-    <ChevronsUpDown
-      aria-hidden="true"
-      className="pointer-events-none absolute right-3.5 size-4 text-text-muted"
-    />
+    <span className="pointer-events-none absolute right-3.5 flex size-4 items-center justify-center text-text-muted">
+      <FormPendingIcon
+        className="size-4 text-primary"
+        idle={<ChevronsUpDown aria-hidden="true" className="size-4" />}
+      />
+    </span>
     <noscript>
       <button className="ml-2 text-sm text-primary" type="submit">
         {applyLabel}
       </button>
     </noscript>
-  </form>
+  </Form>
 )

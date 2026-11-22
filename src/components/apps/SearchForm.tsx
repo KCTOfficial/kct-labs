@@ -1,12 +1,15 @@
 import { Search } from 'lucide-react'
+import Form from 'next/form'
 import React from 'react'
 
+import { FormPendingIcon } from '@/components/apps/PendingIndicators'
 import type { Dictionary } from '@/i18n'
 import { SEARCH_MAX_LENGTH } from '@/utilities/apps/params'
 import { cn } from '@/utilities/ui'
 
 /**
- * Plain GET form → `/apps?q=…`. Works without JavaScript and keeps search results crawlable/shareable.
+ * GET form → `/apps?q=…` via `next/form`: client-side navigation (no full reload, shows the listing
+ * skeleton) and, without JavaScript, a plain GET form. Results stay crawlable/shareable.
  * `hidden` carries the active filters (category, sort) so searching doesn't reset them.
  */
 export const SearchForm: React.FC<{
@@ -18,16 +21,18 @@ export const SearchForm: React.FC<{
   /** Must be unique per page when several search forms are rendered. */
   id?: string
 }> = ({ action, dict, defaultValue, hidden, className, id = 'app-search' }) => (
-  <form
+  <Form
     action={action}
     className={cn(
       'flex h-12 items-center gap-2.5 rounded-[12px] border border-border bg-surface px-4 focus-within:border-primary',
       className,
     )}
-    method="get"
     role="search"
   >
-    <Search aria-hidden="true" className="size-[18px] shrink-0 text-text-muted" />
+    <FormPendingIcon
+      className="size-[18px] shrink-0 text-primary"
+      idle={<Search aria-hidden="true" className="size-[18px] shrink-0 text-text-muted" />}
+    />
     <label className="sr-only" htmlFor={id}>
       {dict.listing.searchLabel}
     </label>
@@ -48,5 +53,5 @@ export const SearchForm: React.FC<{
     <button className="sr-only" type="submit">
       {dict.listing.searchSubmit}
     </button>
-  </form>
+  </Form>
 )

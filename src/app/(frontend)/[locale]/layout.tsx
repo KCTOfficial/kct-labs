@@ -7,6 +7,8 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
+import { QuickViewProvider } from '@/components/quick-view/QuickViewProvider'
+import type { QuickViewLabels } from '@/components/quick-view/types'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { getDictionary, isLocale, localeTags, locales } from '@/i18n'
@@ -49,6 +51,20 @@ export default async function RootLayout({ children, params }: LayoutArgs) {
 
   const { isEnabled } = await draftMode()
   const dict = getDictionary(locale)
+  // Rollback switch: QUICK_VIEW_ENABLED=false (read at build time → redeploy) turns the popup off;
+  // cards then behave as plain links. Never active in draft/preview mode (it shows published data).
+  const quickViewEnabled = process.env.QUICK_VIEW_ENABLED !== 'false' && !isEnabled
+  const quickViewLabels: QuickViewLabels = {
+    close: dict.a11y.close,
+    loading: dict.quickView.loading,
+    error: dict.quickView.error,
+    retry: dict.quickView.retry,
+    viewFullDetails: dict.quickView.viewFullDetails,
+    getOnGooglePlay: dict.app.getOnGooglePlay,
+    screenshots: dict.quickView.screenshots,
+    highlights: dict.quickView.highlights,
+    ageRating: dict.detail.ageRating,
+  }
 
   return (
     <html
@@ -78,6 +94,7 @@ export default async function RootLayout({ children, params }: LayoutArgs) {
             {children}
           </main>
           <Footer locale={locale} />
+          <QuickViewProvider enabled={quickViewEnabled} labels={quickViewLabels} />
         </Providers>
       </body>
     </html>

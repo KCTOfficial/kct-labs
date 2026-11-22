@@ -222,6 +222,8 @@ Downtime: beberapa detik saat container diganti (satu instance). Untuk zero-down
 | Container unhealthy | `docker logs --tail 200 kct-hub-app`. |
 | Upload gagal `413` | Naikkan `client_max_body_size` di Nginx. |
 
+**Popup quick-view (flag, endpoint, rollback):** kartu app membuka popup lewat `GET /next/quick-view?slug=&locale=` (JSON read-only, hanya app published non-archived, `Cache-Control: private, max-age=30`; diblokir robots `/next/`). Endpoint publik ini sebaiknya diberi rate limit di nginx (contoh `limit_req` sudah ada di `deploy/nginx/kct-hub.conf.example`). **Rollback tanpa mengubah kode:** set `QUICK_VIEW_ENABLED=false` di `.env.prod` lalu `FORCE_BUILD=1 ./deploy/deploy.sh` (flag dibaca saat build karena halaman statis); kartu kembali menjadi link biasa, SEO tidak terpengaruh.
+
 **Backup rutin (rekomendasi):** snapshot otomatis harian dari provider DB (retensi ≥ 7 hari, uji restore berkala) + backup harian folder `<DATA_DIR>/media` (rsync/rclone ke object storage). Untuk skala lebih besar/multi-server pindahkan media ke S3-compatible storage (`@payloadcms/storage-s3`).
 
 ---

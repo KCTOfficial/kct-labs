@@ -9,6 +9,9 @@ export const en = {
     defaultDescription:
       'Explore apps designed and developed by PT Kreasindo Cipta Teknologi (KCT) for everyday life and business, available on Google Play.',
   },
+  common: {
+    loading: 'Loading…',
+  },
   a11y: {
     skipToContent: 'Skip to content',
     mainNavigation: 'Main navigation',
@@ -85,6 +88,14 @@ export const en = {
     contactSupport: 'Contact support',
     moreApps: 'More apps from KCT',
     developerName: 'PT KCT',
+  },
+  quickView: {
+    loading: 'Loading app details…',
+    error: "App details couldn't be loaded.",
+    retry: 'Try again',
+    viewFullDetails: 'View full details',
+    screenshots: 'Screenshots',
+    highlights: 'Highlights',
   },
   platforms: { android: 'Android', ios: 'iOS', web: 'Web' },
   home: {

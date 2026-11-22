@@ -20,6 +20,8 @@ export const downloadsText = (label: string | null | undefined, dict: Dictionary
 /**
  * App card (design: Components / AppCard). The whole card is clickable through the name link's
  * pseudo-element, which keeps a single, descriptive link per card for screen readers and crawlers.
+ * `data-quick-view` lets QuickViewProvider open the popup on a plain click; the link itself is a
+ * normal, crawlable `<a href="/apps/<slug>">` (modifier clicks, no JS and failures just navigate).
  */
 export const AppCard: React.FC<{
   app: AppCardData
@@ -36,8 +38,11 @@ export const AppCard: React.FC<{
     <article
       className={cn(
         'group relative flex h-full flex-col gap-[18px] rounded-lg border border-border bg-surface p-6',
-        'transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-border-strong',
+        'transition-[border-color,transform,scale] duration-200 hover:-translate-y-0.5 hover:border-border-strong',
         'focus-within:border-primary',
+        // The whole card is the link's pseudo-element: reflect press/keyboard focus on the card itself.
+        'has-[a:active]:translate-y-0 has-[a:active]:scale-[0.99]',
+        'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-background',
         className,
       )}
     >
@@ -49,6 +54,7 @@ export const AppCard: React.FC<{
       <Heading className="font-display text-[22px] font-semibold leading-tight text-foreground">
         <Link
           className="after:absolute after:inset-0 after:rounded-lg after:content-[''] focus-visible:outline-none"
+          data-quick-view=""
           href={appHref(app.slug, locale)}
         >
           {app.name}

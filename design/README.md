@@ -13,6 +13,10 @@ Di kode: komponen `BrandLogo` (`src/components/site/BrandLogo.tsx`) merender ked
 
 > Catatan: frame di `kct-hub.pen` masih memakai wordmark lama "KCT labs" sampai diperbarui di Pencil; implementasi kode mengikuti logo resmi di atas.
 
+## Motion, loading & popup (diimplementasikan di kode)
+
+Halus dan profesional: 150–300 ms, hanya `transform`/`opacity`, mati total di `prefers-reduced-motion`. Primitive di `globals.css`: `.skeleton` (shimmer dari token; ukuran sama dengan konten asli agar tanpa CLS), `.reveal` (muncul saat scroll, CSS `animation-timeline: view()`, progressive enhancement; tidak untuk hero/LCP maupun di dalam elemen `overflow`), `.header-elevate` (bayangan header saat scroll), `.qv-dialog` (popup: modal tengah di desktop, bottom sheet di mobile). **Popup quick-view**: klik kartu → ikon, status, tagline, deskripsi singkat, kategori/umur/unduhan, ≤ 4 screenshot, ≤ 4 sorotan, tombol Google Play + "Lihat detail lengkap"; URL berubah ke `/apps/<slug>`. Frame di `kct-hub.pen` belum memuat komponen ini (Pencil tidak berjalan saat implementasi) — perbarui file desain bila perlu.
+
 ## Isi file .pen
 
 | Frame                                     | Keterangan                                                                                                                                                                            |

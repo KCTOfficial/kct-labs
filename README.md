@@ -15,6 +15,7 @@ Panduan kerja untuk developer/AI (konvensi, aturan SEO, hal yang sering keliru) 
 - Halaman: beranda, daftar app (`/apps`, filter kategori berbasis URL), detail app (`/apps/<slug>`), pencarian, serta Pages/Posts bawaan template.
 - Collection KCT: `Apps` (draft/publish, icon, screenshot, fitur, link Play Store, status rilis) dan `AppCategories`; global `Home`, `Header`, `Footer`.
 - SEO: metadata unik per halaman, canonical + `hreflang` (en, id, x-default), Open Graph/Twitter, JSON-LD (`Organization`, `WebSite`, `ItemList`, `BreadcrumbList`, `MobileApplication`), sitemap dinamis kedua locale, `robots.txt`, 404 asli, redirect 301 lewat plugin Redirects.
+- UI: skeleton loading, animasi muncul saat scroll (CSS, hormati `prefers-reduced-motion`), indikator "pending" pada filter/urutan/pencarian/paginasi, menu mobile beranimasi, dan **popup quick-view** (klik kartu app → detail ringkas dengan URL `/apps/<slug>` yang bisa dibagikan; kartu tetap link biasa tanpa JS).
 - Performa: halaman statis + revalidasi on-demand (`revalidateTag`) saat konten dipublish, `next/image`, CSS inline. Lighthouse mobile ≥ 90, SEO/Accessibility/Best Practices 100.
 
 ## Pengembangan lokal
@@ -49,6 +50,7 @@ Lalu panggil `POST /api/apps/revalidate` (login admin) atau restart server agar 
 | `CRON_SECRET`            | Autentikasi job terjadwal                                        |
 | `PREVIEW_SECRET`         | Validasi request preview draft                                   |
 | `DISALLOW_INDEXING`      | `true` di staging → `noindex` + robots Disallow-all              |
+| `QUICK_VIEW_ENABLED`     | `false` mematikan popup quick-view (dibaca saat build)           |
 | `PORT`                   | (produksi) port publik di host; container tetap listen di 3000   |
 
 Contoh: [.env.example](.env.example). Env produksi (`.env.prod`) berisi secret, **tidak** disimpan di repo; buat manual di server dari `.env.example`.

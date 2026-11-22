@@ -6,6 +6,7 @@ import React from 'react'
 
 import { Breadcrumbs } from '@/components/apps/Breadcrumbs'
 import { listingHref, parseListingParams } from '@/components/apps/listingParams'
+import { LinkProgress } from '@/components/apps/PendingIndicators'
 import { ListingPagination } from '@/components/apps/ListingPagination'
 import { EmptyState } from '@/components/apps/ListingStates'
 import { SearchForm } from '@/components/apps/SearchForm'
@@ -30,7 +31,7 @@ const resolveLocale = async (params: Args['params']): Promise<Locale> => {
 
 const chipClass = (active: boolean) =>
   cn(
-    'inline-flex whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors',
+    'relative inline-flex whitespace-nowrap rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors',
     active
       ? 'border-primary bg-primary text-primary-foreground'
       : 'border-border text-text-secondary hover:border-border-strong hover:text-foreground',
@@ -64,6 +65,7 @@ export default async function AppsPage({ params, searchParams }: Args) {
           href={listingHref(base, { q: query.q, sort: query.sort })}
         >
           {dict.listing.all} · {stats.totalApps}
+          <LinkProgress />
         </Link>
       </li>
       {stats.categories.map((c) => (
@@ -74,6 +76,7 @@ export default async function AppsPage({ params, searchParams }: Args) {
             href={listingHref(base, { q: query.q, sort: query.sort, category: c.slug })}
           >
             {c.title} · {c.count}
+            <LinkProgress />
           </Link>
         </li>
       ))}
@@ -193,8 +196,8 @@ export default async function AppsPage({ params, searchParams }: Args) {
           <EmptyState dict={dict} resetHref={base} />
         ) : (
           <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-            {result.docs.map((app) => (
-              <li key={app.id}>
+            {result.docs.map((app, i) => (
+              <li className={cn(i >= 3 && 'reveal')} key={app.id}>
                 <AppCard app={app} dict={dict} headingLevel="h2" locale={locale} />
               </li>
             ))}

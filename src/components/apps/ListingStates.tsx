@@ -23,14 +23,31 @@ export const EmptyState: React.FC<{ dict: Dictionary; resetHref: string }> = ({
   </div>
 )
 
+/**
+ * Placeholder with the same structure, padding and gaps as `AppCard` (icon row, name, 3 text
+ * lines, footer row, divider, link row) so swapping it for real content causes no layout shift.
+ */
 export const SkeletonCard: React.FC = () => (
   <div
     aria-hidden="true"
-    className="flex h-[340px] flex-col gap-[18px] rounded-lg border border-border bg-surface p-6"
+    className="flex h-full flex-col gap-[18px] rounded-lg border border-border bg-surface p-6"
   >
-    <div className="size-14 animate-pulse rounded-[16px] bg-surface-2" />
-    <div className="h-3.5 w-[180px] animate-pulse rounded-md bg-surface-2" />
-    <div className="h-3.5 w-full animate-pulse rounded-md bg-surface-2" />
-    <div className="h-3.5 w-[240px] animate-pulse rounded-md bg-surface-2" />
+    <div className="flex items-center justify-between gap-3">
+      <div className="skeleton size-14 rounded-[15px]" />
+      <div className="skeleton h-[30px] w-[72px] rounded-full" />
+    </div>
+    <div className="skeleton h-7 w-2/3 rounded-md" />
+    <div className="flex flex-col gap-[9px]">
+      <div className="skeleton h-3.5 w-full rounded-md" />
+      <div className="skeleton h-3.5 w-full rounded-md" />
+      <div className="skeleton h-3.5 w-3/5 rounded-md" />
+    </div>
+    <div className="flex-1" />
+    <div className="flex items-center justify-between gap-3">
+      <div className="skeleton h-6 w-24 rounded-[6px]" />
+      <div className="skeleton h-3.5 w-20 rounded-md" />
+    </div>
+    <div className="h-px w-full bg-border" />
+    <div className="skeleton h-5 w-28 rounded-md" />
   </div>
 )
