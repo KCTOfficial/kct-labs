@@ -74,6 +74,7 @@ export interface Config {
     users: User;
     apps: App;
     'app-categories': AppCategory;
+    'document-types': DocumentType;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -98,6 +99,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     apps: AppsSelect<false> | AppsSelect<true>;
     'app-categories': AppCategoriesSelect<false> | AppCategoriesSelect<true>;
+    'document-types': DocumentTypesSelect<false> | DocumentTypesSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -907,6 +909,33 @@ export interface AppCategory {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document-types".
+ */
+export interface DocumentType {
+  id: number;
+  title?: string | null;
+  icon?: ('shield-check' | 'scroll-text' | 'file-check' | 'user-x' | 'lock' | 'file-text') | null;
+  /**
+   * Lower numbers appear first.
+   */
+  sortOrder?: number | null;
+  /**
+   * Google Play requires this document (e.g. Privacy Policy).
+   */
+  requiredForPlay?: boolean | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  /**
+   * Cannot be changed after creation.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1126,6 +1155,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'app-categories';
         value: number | AppCategory;
+      } | null)
+    | ({
+        relationTo: 'document-types';
+        value: number | DocumentType;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1549,6 +1582,20 @@ export interface AppsSelect<T extends boolean = true> {
 export interface AppCategoriesSelect<T extends boolean = true> {
   title?: T;
   sortOrder?: T;
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document-types_select".
+ */
+export interface DocumentTypesSelect<T extends boolean = true> {
+  title?: T;
+  icon?: T;
+  sortOrder?: T;
+  requiredForPlay?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;

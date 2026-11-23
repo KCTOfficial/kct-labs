@@ -5,6 +5,7 @@ import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { AppCategories } from './collections/AppCategories'
+import { DocumentTypes } from './collections/DocumentTypes'
 import { Apps } from './collections/Apps'
 import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
@@ -90,6 +91,7 @@ export default buildConfig({
         Users,
         Apps,
         AppCategories,
+        DocumentTypes,
     ],
     cors: [getServerSideURL()].filter(Boolean),
     globals: [Header, Footer, Home],
