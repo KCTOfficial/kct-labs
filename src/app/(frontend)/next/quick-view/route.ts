@@ -6,6 +6,7 @@ import { getDictionary, isLocale } from '@/i18n'
 import { isValidSlug } from '@/utilities/apps/appPath'
 import { getAppBySlug } from '@/utilities/apps/queries'
 import { toQuickView } from '@/utilities/apps/quickView'
+import { getAppLegalDocs } from '@/utilities/legal/queries'
 
 /**
  * `GET /next/quick-view?slug=<slug>&locale=<en|id>` — slim, read-only JSON for the app quick-view
@@ -36,7 +37,8 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   try {
     const app = await getAppBySlug(slug, locale)
-    const view = app ? toQuickView(app, getDictionary(locale)) : null
+    const legal = app && app.status !== 'archived' ? await getAppLegalDocs(app.id, locale) : []
+    const view = app ? toQuickView(app, getDictionary(locale), legal, locale) : null
     if (!view) return respond({ error: 'not_found' }, 404, NO_STORE)
     return respond(view, 200, PRIVATE_SHORT)
   } catch (error) {

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 
 import { getDictionary } from '@/i18n'
 import type { App, AppCategory, Media } from '@/payload-types'
+import type { LegalDocLink } from '@/utilities/legal/queries'
 import {
   QUICK_VIEW_MAX_FEATURES,
+  QUICK_VIEW_MAX_LEGAL,
   QUICK_VIEW_MAX_SCREENSHOTS,
   toQuickView,
 } from '@/utilities/apps/quickView'
@@ -68,6 +70,7 @@ describe('toQuickView', () => {
       ],
       features: ['Offline mode', 'Bookmarks'],
       playStoreUrl: 'https://play.google.com/store/apps/details?id=com.kct.quranx',
+      legal: [],
     })
     expect(Object.keys(view ?? {})).not.toContain('description')
     expect(Object.keys(view ?? {})).not.toContain('id')
@@ -161,5 +164,28 @@ describe('toQuickView', () => {
     expect(view?.downloadsText).toBe('1,000+ unduhan')
     expect(view?.statusLabel).toBe('LIVE')
     expect(JSON.parse(JSON.stringify(view))).toEqual(view)
+  })
+
+  it('passes at most four legal links with locale-aware hrefs (default: none)', () => {
+    const doc = (n: number): LegalDocLink => ({
+      slug: `doc-${n}`,
+      title: `Doc ${n}`,
+      icon: n === 1 ? 'shield-check' : 'file-text',
+      typeSlug: `type-${n}`,
+      effectiveDate: null,
+      hasIndonesian: false,
+    })
+    const docs = Array.from({ length: 6 }, (_, i) => doc(i + 1))
+    const view = toQuickView(makeApp(), en, docs)
+    expect(view?.legal).toHaveLength(QUICK_VIEW_MAX_LEGAL)
+    expect(view?.legal[0]).toEqual({
+      title: 'Doc 1',
+      href: '/apps/al-quran-imam/legal/doc-1',
+      icon: 'shield-check',
+    })
+    expect(toQuickView(makeApp(), id, [doc(2)], 'id')?.legal[0]?.href).toBe(
+      '/id/apps/al-quran-imam/legal/doc-2',
+    )
+    expect(toQuickView(makeApp(), en)?.legal).toEqual([])
   })
 })

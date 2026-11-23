@@ -1,5 +1,13 @@
 import type { Metadata } from 'next'
-import { ArrowLeft, ArrowUpRight, Check, Mail, ShieldCheck } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  FileText,
+  Mail,
+  ShieldCheck,
+} from 'lucide-react'
 import { draftMode } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -8,6 +16,7 @@ import React from 'react'
 import { Breadcrumbs } from '@/components/apps/Breadcrumbs'
 import { ScreenshotGallery } from '@/components/apps/ScreenshotGallery'
 import { ShareButton } from '@/components/apps/ShareButton'
+import { LEGAL_ICON_COMPONENTS } from '@/components/legal/LegalDocNav'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 import { PayloadRedirects } from '@/components/PayloadRedirects'
 import RichText from '@/components/RichText'
@@ -22,6 +31,8 @@ import type { App } from '@/payload-types'
 import { getAppBySlug, getPublicAppSlugs, getRelatedApps } from '@/utilities/apps/queries'
 import { parseDownloads } from '@/utilities/apps/validation'
 import { generateMeta } from '@/utilities/generateMeta'
+import { legalDocPath, legalIndexPath } from '@/utilities/legal/paths'
+import { getAppLegalDocs, resolvePrivacyLink } from '@/utilities/legal/queries'
 import { getCachedRedirects } from '@/utilities/getRedirects'
 import { breadcrumbSchema, mobileApplicationSchema } from '@/utilities/seo/structuredData'
 import { absoluteUrl, localizedUrl } from '@/utilities/seo/urls'
@@ -50,7 +61,14 @@ export default async function AppDetailPage({ params }: Args) {
   if (!app) return <PayloadRedirects url={`/apps/${slug}`} />
 
   const category = typeof app.category === 'object' ? app.category : null
-  const related = await getRelatedApps(app.id, category?.id ?? null, locale, RELATED_LIMIT)
+  const [related, legalDocs] = await Promise.all([
+    getRelatedApps(app.id, category?.id ?? null, locale, RELATED_LIMIT),
+    getAppLegalDocs(app.id, locale),
+  ])
+  // Published documents win; the legacy external URL survives only without a privacy document.
+  const privacyLink = resolvePrivacyLink(legalDocs, app.privacyPolicyUrl, app.slug, locale)
+  const legacyPrivacyUrl = privacyLink?.external ? privacyLink.href : null
+  const hasLegal = legalDocs.length > 0 || legacyPrivacyUrl !== null
   const path = `/apps/${app.slug}`
   const url = localizedUrl(path, locale)
   const platforms = (app.platforms ?? ['android']).map((p) => dict.platforms[p] ?? p)
@@ -244,7 +262,7 @@ export default async function AppDetailPage({ params }: Args) {
           )}
         </div>
 
-        {(infoRows.length > 0 || app.privacyPolicyUrl || app.supportEmail) && (
+        {(infoRows.length > 0 || hasLegal || app.supportEmail) && (
           <aside
             aria-labelledby="app-info-title"
             className="flex h-fit flex-col gap-4 rounded-lg border border-border bg-surface p-7"
@@ -272,21 +290,55 @@ export default async function AppDetailPage({ params }: Args) {
                 ))}
               </dl>
             )}
-            <ul className="flex flex-col gap-2.5 pt-2">
-              {app.privacyPolicyUrl && (
-                <li>
-                  <a
-                    className="inline-flex items-center gap-2.5 text-sm font-medium text-primary"
-                    href={app.privacyPolicyUrl}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <ShieldCheck aria-hidden="true" className="size-4" />
-                    {dict.detail.privacyPolicy}
-                  </a>
-                </li>
-              )}
-              {app.supportEmail && (
+            {hasLegal && (
+              <div className="flex flex-col gap-2.5 pt-2" data-legal-links="">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-muted">
+                  {dict.legal.title}
+                </h3>
+                <ul className="flex flex-col gap-2.5">
+                  {legalDocs.map((doc) => {
+                    const Icon = LEGAL_ICON_COMPONENTS[doc.icon] ?? FileText
+                    return (
+                      <li key={doc.slug}>
+                        <Link
+                          className="inline-flex items-center gap-2.5 text-sm font-medium text-primary"
+                          href={localizeHref(legalDocPath(app.slug, doc.slug), locale)}
+                        >
+                          <Icon aria-hidden="true" className="size-4 shrink-0" />
+                          {doc.title}
+                        </Link>
+                      </li>
+                    )
+                  })}
+                  {legacyPrivacyUrl && (
+                    <li>
+                      <a
+                        className="inline-flex items-center gap-2.5 text-sm font-medium text-primary"
+                        href={legacyPrivacyUrl}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        <ShieldCheck aria-hidden="true" className="size-4" />
+                        {dict.detail.privacyPolicy}
+                      </a>
+                    </li>
+                  )}
+                  {legalDocs.length > 0 && (
+                    <li>
+                      <Link
+                        className="inline-flex items-center gap-2.5 text-sm font-medium text-text-secondary hover:text-primary"
+                        href={localizeHref(legalIndexPath(app.slug), locale)}
+                      >
+                        {dict.legal.allDocuments}
+                        <ArrowRight aria-hidden="true" className="size-4" />
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+            {app.supportEmail && (
+              <ul className="flex flex-col gap-2.5 pt-2">
                 <li>
                   <a
                     className="inline-flex items-center gap-2.5 text-sm font-medium text-primary"
@@ -296,8 +348,8 @@ export default async function AppDetailPage({ params }: Args) {
                     {dict.detail.contactSupport}
                   </a>
                 </li>
-              )}
-            </ul>
+              </ul>
+            )}
           </aside>
         )}
       </div>

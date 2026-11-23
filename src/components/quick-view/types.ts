@@ -11,6 +11,7 @@ export type QuickViewLabels = {
   screenshots: string
   highlights: string
   ageRating: string
+  legal: string
 }
 
 export type QuickViewView =

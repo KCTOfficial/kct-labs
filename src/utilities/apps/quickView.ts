@@ -1,13 +1,20 @@
 import type { ImageSource } from '@/components/site/media'
 import { isMedia, toImageSource } from '@/components/site/media'
 import { format, type Dictionary } from '@/i18n'
+import { localizeHref, type Locale } from '@/i18n/config'
 import type { App } from '@/payload-types'
+import type { LegalIcon } from '@/utilities/legal/constants'
+import { legalDocPath } from '@/utilities/legal/paths'
+import type { LegalDocLink } from '@/utilities/legal/queries'
 
 import { isPlayStoreUrl, parseDownloads } from './validation'
 
 /** Quick-view payload limits: the popup is a teaser, the full page stays the source of truth. */
 export const QUICK_VIEW_MAX_SCREENSHOTS = 4
 export const QUICK_VIEW_MAX_FEATURES = 4
+export const QUICK_VIEW_MAX_LEGAL = 4
+
+export type QuickViewLegalLink = { title: string; href: string; icon: LegalIcon }
 
 /** Slim, JSON-serializable view of an app for the popup. No rich text, no internal ids. */
 export type QuickViewApp = {
@@ -26,6 +33,8 @@ export type QuickViewApp = {
   screenshots: ImageSource[]
   features: string[]
   playStoreUrl: string | null
+  /** Published legal documents (already localized hrefs), in display order. */
+  legal: QuickViewLegalLink[]
 }
 
 const clean = (value: string | null | undefined): string | null => {
@@ -38,7 +47,12 @@ const clean = (value: string | null | undefined): string | null => {
  * Returns `null` for archived apps: they stay reachable by URL on the full page (noindex) but must
  * not be promoted by the popup, so the client falls back to normal navigation.
  */
-export const toQuickView = (app: App, dict: Pick<Dictionary, 'app'>): QuickViewApp | null => {
+export const toQuickView = (
+  app: App,
+  dict: Pick<Dictionary, 'app'>,
+  legal: LegalDocLink[] = [],
+  locale: Locale = 'en',
+): QuickViewApp | null => {
   if (app.status === 'archived') return null
 
   const downloadsLabel =
@@ -79,5 +93,10 @@ export const toQuickView = (app: App, dict: Pick<Dictionary, 'app'>): QuickViewA
     screenshots,
     features,
     playStoreUrl: app.playStoreUrl && isPlayStoreUrl(app.playStoreUrl) ? app.playStoreUrl : null,
+    legal: legal.slice(0, QUICK_VIEW_MAX_LEGAL).map((doc) => ({
+      title: doc.title,
+      href: localizeHref(legalDocPath(app.slug, doc.slug), locale),
+      icon: doc.icon,
+    })),
   }
 }

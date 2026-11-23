@@ -1,11 +1,12 @@
 'use client'
 
-import { ArrowRight, Check, RefreshCw, Store, TriangleAlert, X } from 'lucide-react'
+import { ArrowRight, Check, FileText, RefreshCw, Store, TriangleAlert, X } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useId, useRef } from 'react'
 
 import { buttonClassName, ButtonLink } from '@/components/site/ButtonLink'
+import { LEGAL_ICON_COMPONENTS } from '@/components/legal/LegalDocNav'
 import { StatusChip } from '@/components/site/StatusChip'
 import type { QuickViewApp } from '@/utilities/apps/quickView'
 
@@ -167,6 +168,31 @@ const ReadyBody: React.FC<{
           ))}
         </ul>
       </section>
+    )}
+
+    {app.legal.length > 0 && (
+      <nav aria-label={labels.legal} className="flex flex-col gap-2" data-quick-view-legal="">
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-muted">
+          {labels.legal}
+        </p>
+        <ul className="flex flex-wrap gap-x-4 gap-y-2">
+          {app.legal.map((doc) => {
+            const Icon = LEGAL_ICON_COMPONENTS[doc.icon] ?? FileText
+            return (
+              <li key={doc.href}>
+                <Link
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  href={doc.href}
+                  onClick={(event) => onViewDetails(event, doc.href)}
+                >
+                  <Icon aria-hidden="true" className="size-4 shrink-0" />
+                  {doc.title}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
     )}
 
     <div className="flex flex-col gap-3 sm:flex-row">

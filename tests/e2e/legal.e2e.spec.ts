@@ -9,6 +9,8 @@ const APP_NAME = `Legal App ${suffix}`
 const APP_SLUG = `legal-app-${suffix}`
 const ARCHIVED_SLUG = `legal-archived-${suffix}`
 const EMPTY_SLUG = `legal-empty-${suffix}`
+const LEGACY_SLUG = `legal-legacy-${suffix}`
+const LEGACY_URL = 'https://example.com/privacy'
 const INDEX_PATH = `/apps/${APP_SLUG}/legal`
 const DOC_SLUG = 'privacy-policy'
 const DOC_PATH = `/apps/${APP_SLUG}/legal/${DOC_SLUG}`
@@ -144,6 +146,13 @@ test.describe('Legal document page', () => {
       name: `Legal Empty ${suffix}`,
       slug: EMPTY_SLUG,
       status: 'live',
+    })
+    await api(request, 'apps', {
+      ...appData,
+      name: `Legal Legacy ${suffix}`,
+      slug: LEGACY_SLUG,
+      status: 'live',
+      privacyPolicyUrl: LEGACY_URL,
     })
     await api(request, 'app-documents', {
       app: app.id,
@@ -288,5 +297,56 @@ test.describe('Legal document page', () => {
     const res = await page.goto(`${BASE}/apps/${ARCHIVED_SLUG}/legal`)
     expect(res?.status()).toBe(200)
     expect((await headTags(page)).robots).toContain('noindex')
+  })
+
+  test('detail page lists legal documents as internal links plus the index link', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/apps/${APP_SLUG}`)
+    const group = page.locator('aside [data-legal-links]')
+    await expect(group).toBeVisible()
+    const links = group.locator('a')
+    await expect(links).toHaveCount(3)
+    expect(await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))).toEqual([
+      DOC_PATH,
+      `${INDEX_PATH}/terms-of-service`,
+      INDEX_PATH,
+    ])
+    await expect(links.last()).toHaveText('All legal documents')
+    expect(await links.first().getAttribute('target')).toBeNull()
+    await expect(page.locator('h1')).toHaveCount(1)
+
+    await page.goto(`${BASE}/id/apps/${APP_SLUG}`)
+    expect(await page.locator('aside [data-legal-links] a').first().getAttribute('href')).toBe(
+      `/id${DOC_PATH}`,
+    )
+  })
+
+  test('app without documents keeps the legacy external privacy link', async ({ page }) => {
+    await page.goto(`${BASE}/apps/${LEGACY_SLUG}`)
+    const links = page.locator('aside [data-legal-links] a')
+    await expect(links).toHaveCount(1)
+    expect(await links.getAttribute('href')).toBe(LEGACY_URL)
+    expect(await links.getAttribute('target')).toBe('_blank')
+    expect(await links.getAttribute('rel')).toBe('noopener noreferrer')
+  })
+
+  test('app without documents or legacy URL renders no legal group', async ({ page }) => {
+    await page.goto(`${BASE}/apps/${EMPTY_SLUG}`)
+    await expect(page.locator('h1')).toHaveCount(1)
+    await expect(page.locator('[data-legal-links]')).toHaveCount(0)
+  })
+
+  test('quick-view popup shows a Legal row and stays free of h1/article', async ({ page }) => {
+    await page.goto(`${BASE}/apps?q=${encodeURIComponent(APP_NAME)}`)
+    await page.locator('html[data-qv-ready="true"]').waitFor({ state: 'attached' })
+    await page.locator(`article a[data-quick-view][href$="/apps/${APP_SLUG}"]`).click()
+    const dialog = page.locator('dialog.qv-dialog')
+    await expect(dialog.locator('h2')).toHaveText(APP_NAME)
+    const legal = dialog.locator('[data-quick-view-legal] a')
+    await expect(legal).toHaveCount(2)
+    expect(await legal.first().getAttribute('href')).toBe(DOC_PATH)
+    expect(await dialog.locator('h1, article').count()).toBe(0)
+    await expect(page.locator('h1')).toHaveCount(1)
   })
 })

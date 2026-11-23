@@ -61,6 +61,7 @@ export default async function RootLayout({ children, params }: LayoutArgs) {
     retry: dict.quickView.retry,
     viewFullDetails: dict.quickView.viewFullDetails,
     getOnGooglePlay: dict.app.getOnGooglePlay,
+    legal: dict.legal.title,
     screenshots: dict.quickView.screenshots,
     highlights: dict.quickView.highlights,
     ageRating: dict.detail.ageRating,

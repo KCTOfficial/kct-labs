@@ -53,7 +53,7 @@ test.describe('Quick view — open & close', () => {
     await expect(page.locator('h1')).toHaveText('All Apps')
     await expect(page.locator('main article')).toHaveCount(articlesBefore)
     expect(await dialog(page).evaluate((el) => Boolean(el.closest('main')))).toBe(false)
-    expect(await dialog(page).locator('article').count()).toBe(0)
+    expect(await dialog(page).locator('article, h1').count()).toBe(0)
     // Scroll position is preserved and the page behind is locked.
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore)
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe(
