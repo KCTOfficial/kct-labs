@@ -31,7 +31,7 @@ import type { App } from '@/payload-types'
 import { getAppBySlug } from '@/utilities/apps/queries'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getCachedRedirects } from '@/utilities/getRedirects'
-import { extractToc } from '@/utilities/legal/lexical'
+import { extractToc, firstParagraphText, legalFallbackDescription } from '@/utilities/legal/lexical'
 import { legalDocPath, legalIndexPath } from '@/utilities/legal/paths'
 import {
   getAppLegalDoc,
@@ -41,6 +41,9 @@ import {
 } from '@/utilities/legal/queries'
 import { breadcrumbSchema, webPageSchema } from '@/utilities/seo/structuredData'
 import { localizedUrl } from '@/utilities/seo/urls'
+
+/** Shorter first paragraphs are topped up with the app tagline (SEO: 120–160 chars). */
+const DESCRIPTION_MIN_LENGTH = 120
 
 type Args = { params: Promise<{ locale: string; slug: string; doc: string }> }
 
@@ -70,20 +73,6 @@ const isFallback = (doc: AppLegalDoc, locale: Locale) =>
   locale !== defaultLocale && !doc.hasIndonesian
 
 const docTitle = (doc: AppLegalDoc) => doc.title || doc.slug
-
-type LexicalTextNode = { type?: string; text?: string; children?: LexicalTextNode[] }
-
-const nodeText = (node: LexicalTextNode): string =>
-  node.text ?? (node.children ?? []).map(nodeText).join('')
-
-/** Text of the first non-empty top-level paragraph — the description fallback. */
-const firstParagraph = (content: AppLegalDoc['content']): string | undefined => {
-  const nodes = (content?.root.children ?? []) as LexicalTextNode[]
-  return nodes
-    .filter((n) => n.type === 'paragraph')
-    .map((n) => nodeText(n).trim())
-    .find(Boolean)
-}
 
 const formatDate = (value: string, locale: Locale) =>
   new Intl.DateTimeFormat(localeTags[locale], { dateStyle: 'long', timeZone: 'UTC' }).format(
@@ -256,7 +245,11 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   return generateMeta({
     // Only the SEO group: the document title alone would drop the app name from <title>.
     doc: { meta: doc.meta },
-    fallbackDescription: firstParagraph(doc.content),
+    fallbackDescription: legalFallbackDescription(
+      firstParagraphText(doc.content),
+      app.tagline || app.shortDescription,
+      DESCRIPTION_MIN_LENGTH,
+    ),
     fallbackImage: app.meta?.image ?? app.icon,
     fallbackTitle: `${docTitle(doc)} – ${app.name}`,
     locale,

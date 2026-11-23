@@ -69,6 +69,22 @@ export const demoteH1 = (state: SerializedEditorState): SerializedEditorState =>
   ) as unknown as SerializedEditorState['root'],
 })
 
+const isHeading = (node: LexicalNode | undefined, tag: string) =>
+  node?.type === 'heading' && node.tag === tag
+
+/** A leading `# Title` repeats the page h1, so it is dropped (later h1s are demoted instead). */
+export const dropLeadingH1 = (state: SerializedEditorState): SerializedEditorState => {
+  const root = state.root as unknown as LexicalNode
+  if (!isHeading(root.children?.[0], 'h1')) return state
+  return {
+    ...state,
+    root: {
+      ...root,
+      children: root.children!.slice(1),
+    } as unknown as SerializedEditorState['root'],
+  }
+}
+
 /**
  * Markdown has no raw-HTML node in this editor config, so tags like `<script>` stay plain text.
  */
@@ -78,7 +94,7 @@ export const markdownToLexical = async (
 ): Promise<SerializedEditorState> => {
   const editorConfig = await editorConfigFactory.fromFeatures({ config, features: legalFeatures })
   const state = convertMarkdownToLexical({ editorConfig, markdown })
-  const demoted = demoteH1(state as unknown as SerializedEditorState)
+  const demoted = demoteH1(dropLeadingH1(state as unknown as SerializedEditorState))
   return {
     ...demoted,
     root: neutralizeUnsafeLinks(
@@ -100,18 +116,46 @@ export const headingId = (text: string): string => {
   return slug || FALLBACK_HEADING_ID
 }
 
-/** Top-level h2 headings with ids made unique in document order (`a`, `a-2`, ...). */
+/**
+ * Top-level h2 nodes with text: the TOC entries. Renderers must pair ids with these same nodes
+ * (same order) so anchors match.
+ */
+export const tocHeadingNodes = <T extends object>(state: { root: { children: T[] } }): T[] =>
+  state.root.children.filter((node) => {
+    const n = node as LexicalNode
+    return isHeading(n, 'h2') && nodeText(n).trim() !== ''
+  })
+
+/** Top-level non-empty h2 headings with ids made unique in document order (`a`, `a-2`, ...). */
 export const extractToc = (state: SerializedEditorState): Array<{ id: string; text: string }> => {
   const issued = new Set<string>()
-  const root = state.root as unknown as LexicalNode
-  return (root.children ?? [])
-    .filter((node) => node.type === 'heading' && node.tag === 'h2')
-    .map((node) => {
-      const text = nodeText(node).trim()
-      const base = headingId(text)
-      let id = base
-      for (let n = 2; issued.has(id); n++) id = `${base}-${n}`
-      issued.add(id)
-      return { id, text }
-    })
+  return tocHeadingNodes(state as unknown as { root: { children: LexicalNode[] } }).map((node) => {
+    const text = nodeText(node).trim()
+    const base = headingId(text)
+    let id = base
+    for (let n = 2; issued.has(id); n++) id = `${base}-${n}`
+    issued.add(id)
+    return { id, text }
+  })
+}
+
+/** Text of the first non-empty top-level paragraph. */
+export const firstParagraphText = (state: { root: { children: object[] } } | null | undefined) =>
+  (state?.root.children ?? [])
+    .filter((node) => (node as LexicalNode).type === 'paragraph')
+    .map((node) => nodeText(node as LexicalNode).trim())
+    .find(Boolean)
+
+/**
+ * Description fallback: the first paragraph, topped up with `extra` (tagline/short description)
+ * when it is shorter than `minLength`. Truncation is left to `formatDescription`.
+ */
+export const legalFallbackDescription = (
+  paragraph: string | undefined,
+  extra: string | null | undefined,
+  minLength: number,
+): string | undefined => {
+  const parts = [paragraph?.trim(), extra?.trim()].filter(Boolean)
+  if (!paragraph?.trim() || paragraph.trim().length >= minLength) return parts[0]
+  return parts.join(' ')
 }

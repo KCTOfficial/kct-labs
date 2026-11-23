@@ -7,6 +7,7 @@ import type { JSXConverterArgs, JSXConverters } from '@payloadcms/richtext-lexic
 import React from 'react'
 
 import RichText from '@/components/RichText'
+import { tocHeadingNodes } from '@/utilities/legal/lexical'
 import type { LegalTocItem } from './LegalToc'
 
 type Props = {
@@ -26,10 +27,7 @@ const HEADING_TAGS = new Set(['h2', 'h3', 'h4', 'h5', 'h6'])
  */
 const headingIds = (content: DefaultTypedEditorState, toc: LegalTocItem[]) => {
   const ids = new WeakMap<object, string>()
-  const h2s = content.root.children.filter(
-    (node) => node.type === 'heading' && (node as { tag?: string }).tag === 'h2',
-  )
-  h2s.forEach((node, i) => {
+  tocHeadingNodes(content).forEach((node, i) => {
     if (toc[i]) ids.set(node, toc[i].id)
   })
   return ids

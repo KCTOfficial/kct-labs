@@ -2,7 +2,15 @@ import { getPayload, type SanitizedConfig } from 'payload'
 import config from '@/payload.config'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-import { demoteH1, extractToc, headingId, markdownToLexical } from '@/utilities/legal/lexical'
+import {
+  demoteH1,
+  extractToc,
+  firstParagraphText,
+  headingId,
+  legalFallbackDescription,
+  markdownToLexical,
+  tocHeadingNodes,
+} from '@/utilities/legal/lexical'
 
 type AnyNode = {
   type?: string
@@ -58,6 +66,43 @@ describe('legal lexical conversion', () => {
       .filter((n) => n.type === 'heading')
       .map((n) => n.tag)
     expect(tags).toEqual(['h2', 'h2', 'h3'])
+  })
+
+  it('drops a leading h1 and demotes later h1s', async () => {
+    const state = await markdownToLexical('# Privacy Policy\n\nIntro\n\n# X\n', sanitizedConfig)
+    const top = (state.root as unknown as AnyNode).children ?? []
+    expect(top[0]?.type).toBe('paragraph')
+    expect(JSON.stringify(state)).not.toContain('Privacy Policy')
+    expect(extractToc(state)).toEqual([{ id: 'x', text: 'X' }])
+  })
+
+  it('skips empty h2s in extractToc and tocHeadingNodes alike', () => {
+    const h2 = (text: string) => ({
+      type: 'heading',
+      tag: 'h2',
+      children: text ? [{ type: 'text', text }] : [],
+    })
+    const state = { root: { type: 'root', children: [h2('A'), h2(''), h2('  '), h2('B')] } }
+    const toc = extractToc(state as never)
+    expect(toc.map((t) => t.text)).toEqual(['A', 'B'])
+    expect(tocHeadingNodes(state)).toHaveLength(toc.length)
+  })
+
+  it('fallback description tops up a short first paragraph', () => {
+    const state = {
+      root: {
+        children: [
+          { type: 'heading', tag: 'h2' },
+          { type: 'paragraph', children: [{ text: ' Hi ' }] },
+        ],
+      },
+    }
+    expect(firstParagraphText(state)).toBe('Hi')
+    expect(legalFallbackDescription('Short.', 'Tagline here', 120)).toBe('Short. Tagline here')
+    const long = 'x'.repeat(130)
+    expect(legalFallbackDescription(long, 'Tagline', 120)).toBe(long)
+    expect(legalFallbackDescription(undefined, 'Tagline', 120)).toBe('Tagline')
+    expect(legalFallbackDescription(undefined, null, 120)).toBeUndefined()
   })
 
   it('extractToc returns unique h2 ids only', async () => {

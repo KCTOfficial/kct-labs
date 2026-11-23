@@ -16,6 +16,8 @@ const INTRO =
   'and the choices you have about it. Please read it carefully before using the app every day.'
 
 const MARKDOWN = [
+  '# Privacy Policy',
+  '',
   INTRO,
   '',
   '## Data we collect',
