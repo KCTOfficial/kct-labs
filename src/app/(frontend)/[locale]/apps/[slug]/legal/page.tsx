@@ -13,10 +13,14 @@ import { format, getDictionary, isLocale, localeTags, localizeHref, type Locale 
 import type { App } from '@/payload-types'
 import { getAppBySlug } from '@/utilities/apps/queries'
 import { generateMeta } from '@/utilities/generateMeta'
+import { legalFallbackDescription } from '@/utilities/legal/lexical'
 import { legalDocPath, legalIndexPath } from '@/utilities/legal/paths'
 import { getAppLegalDocs, type LegalDocLink } from '@/utilities/legal/queries'
 import { breadcrumbSchema, itemListSchema } from '@/utilities/seo/structuredData'
 import { localizedUrl } from '@/utilities/seo/urls'
+
+/** Shorter intros are topped up with the app tagline (SEO: 120–160 chars). */
+const DESCRIPTION_MIN_LENGTH = 120
 
 type Args = { params: Promise<{ locale: string; slug: string }> }
 
@@ -157,18 +161,22 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   if (!loaded) notFound()
 
   const { isEnabled: draft } = await draftMode()
-  const { app } = loaded
+  const { app, docs } = loaded
   const dict = getDictionary(locale)
 
   return generateMeta({
     doc: null,
-    fallbackDescription: format(dict.legal.indexIntro, { name: app.name }),
+    fallbackDescription: legalFallbackDescription(
+      format(dict.legal.indexIntro, { name: app.name }),
+      app.tagline || app.shortDescription,
+      DESCRIPTION_MIN_LENGTH,
+    ),
     fallbackImage: app.meta?.image ?? app.icon,
     fallbackTitle: format(dict.legal.indexTitle, { name: app.name }),
     locale,
     noIndex: app.status === 'archived' || draft,
     path: legalIndexPath(app.slug),
-    translated: true,
+    translated: docs.some((d) => d.hasIndonesian),
   }).then((meta) => ({
     ...meta,
     description: meta.description ?? dict.meta.defaultDescription,

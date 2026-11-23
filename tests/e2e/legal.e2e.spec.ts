@@ -120,7 +120,7 @@ test.describe('Legal document page', () => {
       sortOrder: 10,
     })
     const appData = {
-      tagline: 'Tagline',
+      tagline: 'A tagline long enough to top up the generated description of the legal index page.',
       shortDescription: 'Short description',
       icon: mediaId,
       category: category.id,
@@ -252,7 +252,11 @@ test.describe('Legal document page', () => {
     expect(tags.h1).toBe(1)
     expect(tags.jsonLd).toEqual(expect.arrayContaining(['BreadcrumbList', 'ItemList']))
     expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${INDEX_PATH}$`))
-    expect(tags.hreflang).toEqual(expect.arrayContaining(['id', 'en', 'x-default']))
+    // No Indonesian content on any document → no hreflang alternates, as on the doc page.
+    expect(tags.hreflang).not.toContain('id')
+    expect(title).toBe(`Legal documents – ${APP_NAME} | KCT Hub`)
+    expect(tags.description.length).toBeGreaterThanOrEqual(120)
+    expect(tags.description.length).toBeLessThanOrEqual(160)
     expect(tags.robots).not.toContain('noindex')
   })
 
@@ -262,6 +266,12 @@ test.describe('Legal document page', () => {
     expect(await page.locator('main ul[data-legal-index] a').first().getAttribute('href')).toBe(
       `/id${INDEX_PATH}/${DOC_SLUG}`,
     )
+    const tags = await headTags(page)
+    expect(tags.description.length).toBeGreaterThanOrEqual(120)
+    expect(tags.description.length).toBeLessThanOrEqual(160)
+    expect(await page.title()).toMatch(/ \| KCT Hub$/)
+    // No Indonesian content → single EN canonical, as on the doc page.
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${INDEX_PATH}$`))
   })
 
   test('app without documents returns 404', async ({ page }) => {

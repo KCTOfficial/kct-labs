@@ -120,7 +120,7 @@ export const en = {
       'This document is not yet available in Indonesian. Showing the English version.',
     alsoIn: 'Also available in {language}',
     print: 'Print',
-    indexTitle: 'Legal documents — {name}',
+    indexTitle: 'Legal documents – {name}',
     indexIntro: 'Policies and terms that apply to {name}.',
     contactQuestion: 'Questions about this document? Contact us at',
   },

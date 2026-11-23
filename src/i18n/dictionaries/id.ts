@@ -118,7 +118,7 @@ export const id: Dictionary = {
       'Dokumen ini belum tersedia dalam Bahasa Indonesia. Menampilkan versi bahasa Inggris.',
     alsoIn: 'Tersedia juga dalam {language}',
     print: 'Cetak',
-    indexTitle: 'Dokumen legal — {name}',
+    indexTitle: 'Dokumen legal – {name}',
     indexIntro: 'Kebijakan dan ketentuan yang berlaku untuk {name}.',
     contactQuestion: 'Ada pertanyaan tentang dokumen ini? Hubungi kami di',
   },
