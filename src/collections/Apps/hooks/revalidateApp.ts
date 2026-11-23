@@ -4,6 +4,7 @@ import { revalidateTag } from 'next/cache'
 
 import type { App } from '@/payload-types'
 import { APPS_CACHE_TAG, APPS_SITEMAP_CACHE_TAG } from '@/utilities/apps/cacheTags'
+import { APP_DOCUMENTS_CACHE_TAG } from '@/utilities/legal/constants'
 
 /**
  * All app reads go through `unstable_cache` tagged with `apps`, so invalidating the tag refreshes
@@ -12,6 +13,8 @@ import { APPS_CACHE_TAG, APPS_SITEMAP_CACHE_TAG } from '@/utilities/apps/cacheTa
 const revalidate = () => {
   revalidateTag(APPS_CACHE_TAG, 'max')
   revalidateTag(APPS_SITEMAP_CACHE_TAG, 'max')
+  // Legal pages embed the app name/slug.
+  revalidateTag(APP_DOCUMENTS_CACHE_TAG, 'max')
 }
 
 export const revalidateApp: CollectionAfterChangeHook<App> = ({

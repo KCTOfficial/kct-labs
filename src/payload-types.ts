@@ -88,6 +88,9 @@ export interface Config {
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {
+    apps: {
+      legalDocuments: 'app-documents';
+    };
     'payload-folders': {
       documentsAndFolders: 'payload-folders' | 'media';
     };
@@ -862,8 +865,16 @@ export interface App {
    * Android application ID, e.g. com.kct.quranx
    */
   packageId?: string | null;
+  /**
+   * Legacy — used only when this app has no published Privacy Policy document.
+   */
   privacyPolicyUrl?: string | null;
   supportEmail?: string | null;
+  legalDocuments?: {
+    docs?: (number | AppDocument)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   meta?: {
     title?: string | null;
     /**
@@ -886,6 +897,10 @@ export interface App {
    */
   generateSlug?: boolean | null;
   slug: string;
+  /**
+   * Published legal document URLs (linked from Google Play) will return 404 after a slug change. Tick to confirm and update Play Console.
+   */
+  confirmSlugChange?: boolean | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -905,33 +920,6 @@ export interface AppCategory {
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
   generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "document-types".
- */
-export interface DocumentType {
-  id: number;
-  title?: string | null;
-  icon?: ('shield-check' | 'scroll-text' | 'file-check' | 'user-x' | 'lock' | 'file-text') | null;
-  /**
-   * Lower numbers appear first.
-   */
-  sortOrder?: number | null;
-  /**
-   * Google Play requires this document (e.g. Privacy Policy).
-   */
-  requiredForPlay?: boolean | null;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  /**
-   * Cannot be changed after creation.
-   */
   slug: string;
   updatedAt: string;
   createdAt: string;
@@ -980,6 +968,33 @@ export interface AppDocument {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "document-types".
+ */
+export interface DocumentType {
+  id: number;
+  title?: string | null;
+  icon?: ('shield-check' | 'scroll-text' | 'file-check' | 'user-x' | 'lock' | 'file-text') | null;
+  /**
+   * Lower numbers appear first.
+   */
+  sortOrder?: number | null;
+  /**
+   * Google Play requires this document (e.g. Privacy Policy).
+   */
+  requiredForPlay?: boolean | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  /**
+   * Cannot be changed after creation.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1610,6 +1625,7 @@ export interface AppsSelect<T extends boolean = true> {
   packageId?: T;
   privacyPolicyUrl?: T;
   supportEmail?: T;
+  legalDocuments?: T;
   meta?:
     | T
     | {
@@ -1622,6 +1638,7 @@ export interface AppsSelect<T extends boolean = true> {
   publishedAt?: T;
   generateSlug?: T;
   slug?: T;
+  confirmSlugChange?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

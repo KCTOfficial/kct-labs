@@ -26,6 +26,8 @@ import { defaultLocale } from '../../i18n/config'
 
 const requiredDefault = requiredInDefaultLocale(defaultLocale)
 import { revalidateAllEndpoint } from './endpoints/revalidateAll'
+import { cascadeDeleteDocuments } from './hooks/cascadeDeleteDocuments'
+import { guardSlugChange } from './hooks/guardSlugChange'
 import { revalidateApp, revalidateAppDelete } from './hooks/revalidateApp'
 
 export const appStatuses = ['live', 'new', 'beta', 'archived'] as const
@@ -278,11 +280,29 @@ export const Apps: CollectionConfig<'apps'> = {
                 {
                   name: 'privacyPolicyUrl',
                   type: 'text',
-                  admin: { width: '50%' },
+                  admin: {
+                    description:
+                      'Legacy — used only when this app has no published Privacy Policy document.',
+                    width: '50%',
+                  },
                   validate: optionalText(isHttpsUrl, 'Must be an https URL.'),
                 },
                 { name: 'supportEmail', type: 'email', admin: { width: '50%' } },
               ],
+            },
+          ],
+        },
+        {
+          label: 'Legal',
+          fields: [
+            {
+              name: 'legalDocuments',
+              type: 'join',
+              admin: {
+                defaultColumns: ['title', 'documentType', 'slug', '_status', 'updatedAt'],
+              },
+              collection: 'app-documents',
+              on: 'app',
             },
           ],
         },
@@ -328,11 +348,24 @@ export const Apps: CollectionConfig<'apps'> = {
       index: true,
     },
     slugField({ position: 'sidebar', useAsSlug: 'name' }),
+    {
+      // Not stored: confirms a slug change while published legal documents exist (guardSlugChange).
+      name: 'confirmSlugChange',
+      type: 'checkbox',
+      admin: {
+        condition: (data) => Boolean(data?.id && data?.legalDocuments?.docs?.length),
+        description:
+          'Published legal document URLs (linked from Google Play) will return 404 after a slug change. Tick to confirm and update Play Console.',
+        position: 'sidebar',
+      },
+      virtual: true,
+    },
   ],
   hooks: {
     afterChange: [revalidateApp],
     afterDelete: [revalidateAppDelete],
-    beforeChange: [populatePublishedAt],
+    beforeChange: [populatePublishedAt, guardSlugChange],
+    beforeDelete: [cascadeDeleteDocuments],
   },
   versions: {
     drafts: {
