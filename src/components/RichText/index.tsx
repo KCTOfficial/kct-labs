@@ -6,6 +6,7 @@ import {
   type DefaultTypedEditorState,
 } from '@payloadcms/richtext-lexical'
 import {
+  type JSXConverters,
   JSXConvertersFunction,
   LinkJSXConverter,
   RichText as ConvertRichText,
@@ -59,13 +60,18 @@ type Props = {
   data: DefaultTypedEditorState
   enableGutter?: boolean
   enableProse?: boolean
+  /** Node converters that replace the defaults for this render only (e.g. heading ids). */
+  converterOverrides?: JSXConverters<NodeTypes>
 } & React.HTMLAttributes<HTMLDivElement>
 
 export default function RichText(props: Props) {
-  const { className, enableProse = true, enableGutter = true, ...rest } = props
+  const { className, converterOverrides, enableProse = true, enableGutter = true, ...rest } = props
+  const converters: JSXConvertersFunction<NodeTypes> = converterOverrides
+    ? (args) => ({ ...jsxConverters(args), ...converterOverrides })
+    : jsxConverters
   return (
     <ConvertRichText
-      converters={jsxConverters}
+      converters={converters}
       className={cn(
         'payload-richtext',
         {

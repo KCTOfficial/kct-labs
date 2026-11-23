@@ -109,6 +109,21 @@ export const en = {
     rights: 'All rights reserved.',
     contact: 'Contact',
   },
+  legal: {
+    title: 'Legal',
+    lastUpdated: 'Last updated {date}',
+    onThisPage: 'On this page',
+    otherDocs: 'Documents',
+    backToApp: 'Back to {name}',
+    allDocuments: 'All legal documents',
+    fallbackNotice:
+      'This document is not yet available in Indonesian. Showing the English version.',
+    alsoIn: 'Also available in {language}',
+    print: 'Print',
+    indexTitle: 'Legal documents — {name}',
+    indexIntro: 'Policies and terms that apply to {name}.',
+    contactQuestion: 'Questions about this document? Contact us at',
+  },
   notFound: {
     title: 'Page not found',
     body: "The page you're looking for doesn't exist or has been moved.",

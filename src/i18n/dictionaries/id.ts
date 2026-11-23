@@ -107,6 +107,21 @@ export const id: Dictionary = {
     rights: 'Hak cipta dilindungi.',
     contact: 'Kontak',
   },
+  legal: {
+    title: 'Legal',
+    lastUpdated: 'Terakhir diperbarui {date}',
+    onThisPage: 'Di halaman ini',
+    otherDocs: 'Dokumen',
+    backToApp: 'Kembali ke {name}',
+    allDocuments: 'Semua dokumen legal',
+    fallbackNotice:
+      'Dokumen ini belum tersedia dalam Bahasa Indonesia. Menampilkan versi bahasa Inggris.',
+    alsoIn: 'Tersedia juga dalam {language}',
+    print: 'Cetak',
+    indexTitle: 'Dokumen legal — {name}',
+    indexIntro: 'Kebijakan dan ketentuan yang berlaku untuk {name}.',
+    contactQuestion: 'Ada pertanyaan tentang dokumen ini? Hubungi kami di',
+  },
   notFound: {
     title: 'Halaman tidak ditemukan',
     body: 'Halaman yang Anda cari tidak ada atau sudah dipindahkan.',

@@ -82,6 +82,24 @@ export const breadcrumbSchema = (items: Array<{ name: string; url: string }>): J
   })),
 })
 
+/** `WebPage` for plain content pages (e.g. legal documents); part of the site `WebSite`. */
+export const webPageSchema = (args: {
+  name: string
+  url: string
+  dateModified?: string | null
+  inLanguage: Locale
+}): JsonLd =>
+  compact({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: args.name,
+    url: args.url,
+    inLanguage: localeTags[args.inLanguage],
+    dateModified: args.dateModified ?? undefined,
+    isPartOf: { '@id': WEBSITE_ID },
+    publisher: { '@id': ORG_ID },
+  })
+
 export const itemListSchema = (items: Array<{ name: string; url: string }>): JsonLd => ({
   '@context': 'https://schema.org',
   '@type': 'ItemList',

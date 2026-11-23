@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import {
   breadcrumbSchema,
+  webPageSchema,
   compact,
   mobileApplicationSchema,
   serializeJsonLd,
@@ -103,6 +104,15 @@ describe('JSON-LD', () => {
       { name: 'Apps', url: 'b' },
     ]) as { itemListElement: Array<{ position: number }> }
     expect(list.itemListElement.map((i) => i.position)).toEqual([1, 2])
+  })
+
+  it('builds a WebPage without empty fields', () => {
+    const page = webPageSchema({ name: 'Privacy', url: 'https://x/p', inLanguage: 'id' })
+    expect(page).toMatchObject({ '@type': 'WebPage', name: 'Privacy', inLanguage: 'id' })
+    expect(page).not.toHaveProperty('dateModified')
+    expect(
+      webPageSchema({ name: 'P', url: 'u', inLanguage: 'en', dateModified: '2026-01-01' }),
+    ).toHaveProperty('dateModified', '2026-01-01')
   })
 })
 
