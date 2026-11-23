@@ -10,6 +10,7 @@ export type PublishedSnapshot = {
   slug?: string | null
   app?: number | { id: number; slug?: string | null } | null
   markdown: Record<string, string | null | undefined>
+  effectiveDate?: string | null
 }
 
 /**
@@ -28,10 +29,16 @@ export const withRequestLocale = async <T>(req: PayloadRequest, run: () => Promi
 
 const contextKey = (id: number | string) => `appDocumentPublished:${id}`
 
+/**
+ * Must run in `beforeChange`: by `afterChange` the live row already holds the new values.
+ * Cached per document so every hook of one operation sees the same, pre-save state.
+ */
 export const loadPublishedSnapshot = async (
   id: number | string,
   req: PayloadRequest,
 ): Promise<PublishedSnapshot> => {
+  const cached = getPublishedSnapshot(id, req)
+  if (cached) return cached
   const doc = await withRequestLocale(req, () =>
     req.payload.findByID({
       collection: 'app-documents',
@@ -41,7 +48,7 @@ export const loadPublishedSnapshot = async (
       locale: 'all',
       overrideAccess: true,
       req,
-      select: { _status: true, app: true, markdown: true, slug: true },
+      select: { _status: true, app: true, effectiveDate: true, markdown: true, slug: true },
     }),
   )
   const snapshot: PublishedSnapshot = {
@@ -49,6 +56,7 @@ export const loadPublishedSnapshot = async (
     slug: doc.slug,
     app: doc.app as PublishedSnapshot['app'],
     markdown: (doc.markdown ?? {}) as unknown as PublishedSnapshot['markdown'],
+    effectiveDate: doc.effectiveDate,
   }
   req.context[contextKey(id)] = snapshot
   return snapshot
@@ -58,3 +66,7 @@ export const getPublishedSnapshot = (
   id: number | string,
   req: PayloadRequest,
 ): PublishedSnapshot | undefined => req.context[contextKey(id)] as PublishedSnapshot | undefined
+
+export const clearPublishedSnapshot = (id: number | string, req: PayloadRequest): void => {
+  delete req.context[contextKey(id)]
+}

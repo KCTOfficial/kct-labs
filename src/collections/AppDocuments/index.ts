@@ -16,7 +16,7 @@ import { requiredInDefaultLocale } from '../../utilities/apps/validation'
 import { legalEditor } from '../../utilities/legal/lexical'
 import { isValidDocSlug, validateMarkdown } from '../../utilities/legal/validation'
 import { convertMarkdown } from './hooks/convertMarkdown'
-import { redirectOnSlugChange } from './hooks/redirectOnSlugChange'
+import { capturePublishedSlug, redirectOnSlugChange } from './hooks/redirectOnSlugChange'
 import { revalidateAppDocument, revalidateAppDocumentDelete } from './hooks/revalidateAppDocument'
 import { stampEffectiveDate } from './hooks/stampEffectiveDate'
 
@@ -126,6 +126,8 @@ export const AppDocuments: CollectionConfig<'app-documents'> = {
       type: 'code',
       admin: { language: 'markdown' },
       localized: true,
+      // With `locale: 'all'` Payload validates each locale separately with `req.locale` scoped to it
+      // (fields/hooks/beforeChange/promise.js); 'all' only reaches here for an empty object.
       validate: (value: string | null | undefined, { req }) =>
         validateMarkdown(value, {
           required: !req.locale || req.locale === defaultLocale || req.locale === 'all',
@@ -192,7 +194,7 @@ export const AppDocuments: CollectionConfig<'app-documents'> = {
   hooks: {
     afterChange: [redirectOnSlugChange, revalidateAppDocument],
     afterDelete: [revalidateAppDocumentDelete],
-    beforeChange: [convertMarkdown, stampEffectiveDate],
+    beforeChange: [convertMarkdown, capturePublishedSlug, stampEffectiveDate],
   },
   indexes: [
     { fields: ['app', 'slug'], unique: true },

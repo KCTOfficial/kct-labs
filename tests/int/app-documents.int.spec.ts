@@ -73,7 +73,7 @@ describe('AppDocuments collection', () => {
     })
     created.apps.push(app.id)
     appId = app.id
-    for (const name of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+    for (const name of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']) {
       const type = await payload.create({
         collection: 'document-types',
         data: { title: `Doc Type ${name} ${suffix}`, slug: `doc-type-${name}-${suffix}` },
@@ -197,6 +197,29 @@ describe('AppDocuments collection', () => {
     })
   })
 
+  it('validates markdown per locale when saving all locales at once', async () => {
+    const target = await createDoc({ slug: `all-locales-${suffix}` }, 11)
+    const ok = await payload.update({
+      collection: 'app-documents',
+      id: target.id,
+      data: { markdown: { en: MARKDOWN, id: '' } } as never,
+      locale: 'all' as never, // supported at runtime; the generated type omits 'all'
+      context: ctx,
+    })
+    expect(ok.id).toBe(target.id)
+    await expect(
+      payload.update({
+        collection: 'app-documents',
+        id: target.id,
+        data: { markdown: { en: MARKDOWN, id: 'a'.repeat(MARKDOWN_MAX_BYTES + 1) } } as never,
+        locale: 'all' as never, // supported at runtime; the generated type omits 'all'
+        context: ctx,
+      }),
+    ).rejects.toMatchObject({
+      data: { errors: [expect.objectContaining({ message: expect.stringMatching(/too large/i) })] },
+    })
+  })
+
   it('duplicates as a draft with a -copy slug and an empty app', async () => {
     const doc = await createDoc({ slug: `dup-${suffix}` }, 7)
     const copy = await payload.duplicate({
@@ -218,5 +241,75 @@ describe('AppDocuments collection', () => {
         context: ctx,
       }),
     ).rejects.toThrow()
+  })
+
+  describe('draft saved before publish (autosave flow)', () => {
+    const today = () => new Date().toISOString().slice(0, 10)
+
+    const saveDraft = (id: number, data: Record<string, unknown>) =>
+      payload.update({
+        collection: 'app-documents',
+        id,
+        data: { ...data, _status: 'draft' },
+        draft: true,
+        locale: 'en',
+        context: ctx,
+      })
+
+    const publish = (id: number) =>
+      payload.update({
+        collection: 'app-documents',
+        id,
+        data: { _status: 'published' },
+        locale: 'en',
+        context: ctx,
+      })
+
+    it('stamps effectiveDate when the draft changed markdown', async () => {
+      const doc = await createDoc(
+        { slug: `draft-md-${suffix}`, effectiveDate: '2020-01-01T00:00:00.000Z' },
+        8,
+      )
+      await saveDraft(doc.id, {
+        markdown: `${MARKDOWN}
+Draft change.
+`,
+      })
+      const published = await publish(doc.id)
+      expect(published.effectiveDate?.slice(0, 10)).toBe(today())
+    })
+
+    it('creates EN and ID redirects when the draft changed the slug', async () => {
+      const doc = await createDoc({ slug: `draft-old-${suffix}` }, 9)
+      await saveDraft(doc.id, { slug: `draft-new-${suffix}` })
+      await publish(doc.id)
+      const res = await payload.find({
+        collection: 'redirects',
+        where: { from: { like: `/legal/draft-old-${suffix}` } },
+        limit: 10,
+      })
+      created.redirects.push(...res.docs.map((r) => r.id))
+      expect(res.totalDocs).toBe(2)
+      expect(res.docs.every((r) => r.to?.type === 'custom')).toBe(true)
+      expect(res.docs.map((r) => r.to?.url).sort()).toEqual([
+        `/apps/doc-app-${suffix}/legal/draft-new-${suffix}`,
+        `/id/apps/doc-app-${suffix}/legal/draft-new-${suffix}`,
+      ])
+    })
+
+    it('keeps a manual effectiveDate set in the draft', async () => {
+      const doc = await createDoc(
+        { slug: `draft-date-${suffix}`, effectiveDate: '2020-01-01T00:00:00.000Z' },
+        10,
+      )
+      await saveDraft(doc.id, {
+        markdown: `${MARKDOWN}
+Another change.
+`,
+        effectiveDate: '2022-03-04T00:00:00.000Z',
+      })
+      const published = await publish(doc.id)
+      expect(published.effectiveDate).toBe('2022-03-04T00:00:00.000Z')
+    })
   })
 })

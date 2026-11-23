@@ -23,12 +23,12 @@ export const stampEffectiveDate: CollectionBeforeChangeHook<AppDocument> = async
   if (data._status !== 'published') return data
 
   const id = originalDoc?.id
-  // Loaded even when the date is set manually: `redirectOnSlugChange` reuses it after the save.
   const published =
     operation === 'update' && id !== undefined ? await loadPublishedSnapshot(id, req) : undefined
 
-  const isManual =
-    data.effectiveDate !== undefined && !sameInstant(data.effectiveDate, originalDoc?.effectiveDate)
+  // Compared with the live value: under autosave a manual date already sits in the draft.
+  const reference = published ? published.effectiveDate : originalDoc?.effectiveDate
+  const isManual = data.effectiveDate !== undefined && !sameInstant(data.effectiveDate, reference)
   if (isManual) return data
 
   let isChanged = !published?.isPublished
