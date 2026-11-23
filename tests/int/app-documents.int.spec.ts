@@ -2,6 +2,8 @@ import { getPayload, type Payload } from 'payload'
 import config from '@/payload.config'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { CLEANUP_TIMEOUT, cleanupLegalData } from '../helpers/cleanupLegalData'
+
 import { MARKDOWN_MAX_BYTES } from '@/utilities/legal/validation'
 
 /**
@@ -9,7 +11,7 @@ import { MARKDOWN_MAX_BYTES } from '@/utilities/legal/validation'
  * afterwards; existing content is never touched.
  */
 let payload: Payload
-const suffix = `test-${Date.now()}`
+const suffix = `adoc-${Date.now()}`
 const ctx = { disableRevalidate: true }
 const created = {
   docs: [] as number[],
@@ -41,9 +43,6 @@ const createDoc = async (overrides: Record<string, unknown> = {}, typeIndex = 0)
   created.docs.push(doc.id)
   return doc
 }
-
-const deleteDoc = (id: number) =>
-  payload.delete({ collection: 'app-documents', id, context: ctx }).catch(() => {})
 
 describe('AppDocuments collection', () => {
   beforeAll(async () => {
@@ -84,21 +83,21 @@ describe('AppDocuments collection', () => {
     }
   })
 
-  afterAll(async () => {
-    for (const id of created.redirects) {
-      await payload.delete({ collection: 'redirects', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.docs) await deleteDoc(id)
-    for (const id of created.types) {
-      await payload.delete({ collection: 'document-types', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.apps) {
-      await payload.delete({ collection: 'apps', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.categories) {
-      await payload.delete({ collection: 'app-categories', id, context: ctx }).catch(() => {})
-    }
-  })
+  afterAll(
+    () =>
+      cleanupLegalData(
+        payload,
+        {
+          redirects: created.redirects,
+          'app-documents': created.docs,
+          apps: created.apps,
+          'document-types': created.types,
+          'app-categories': created.categories,
+        },
+        suffix,
+      ),
+    CLEANUP_TIMEOUT,
+  )
 
   it('converts markdown to lexical content on create', async () => {
     const doc = await createDoc({}, 0)

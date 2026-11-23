@@ -2,6 +2,8 @@ import { getPayload, type Payload } from 'payload'
 import config from '@/payload.config'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { CLEANUP_TIMEOUT, cleanupLegalData } from '../helpers/cleanupLegalData'
+
 import {
   queryAppLegalDoc,
   queryAppLegalDocs,
@@ -101,20 +103,20 @@ describe('legal queries', () => {
     }
   })
 
-  afterAll(async () => {
-    for (const id of created.docs) {
-      await payload.delete({ collection: 'app-documents', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.types) {
-      await payload.delete({ collection: 'document-types', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.apps) {
-      await payload.delete({ collection: 'apps', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.cats) {
-      await payload.delete({ collection: 'app-categories', id, context: ctx }).catch(() => {})
-    }
-  })
+  afterAll(
+    () =>
+      cleanupLegalData(
+        payload,
+        {
+          'app-documents': created.docs,
+          apps: created.apps,
+          'document-types': created.types,
+          'app-categories': created.cats,
+        },
+        suffix,
+      ),
+    CLEANUP_TIMEOUT,
+  )
 
   it('lists only published docs sorted by documentType.sortOrder, with hasIndonesian', async () => {
     const [liveId] = appIds

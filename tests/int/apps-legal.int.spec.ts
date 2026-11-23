@@ -2,6 +2,8 @@ import { getPayload, type Payload } from 'payload'
 import config from '@/payload.config'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import { CLEANUP_TIMEOUT, cleanupLegalData } from '../helpers/cleanupLegalData'
+
 import { legalDocPath } from '@/utilities/legal/paths'
 
 /**
@@ -9,9 +11,14 @@ import { legalDocPath } from '@/utilities/legal/paths'
  * afterwards; existing content is never touched.
  */
 let payload: Payload
-const suffix = `legal-${Date.now()}`
+const suffix = `appslegal-${Date.now()}`
 const ctx = { disableRevalidate: true }
-const created = { apps: [] as number[], types: [] as number[], categories: [] as number[] }
+const created = {
+  docs: [] as number[],
+  apps: [] as number[],
+  types: [] as number[],
+  categories: [] as number[],
+}
 let categoryId: number
 let mediaId: number
 const typeIds: number[] = []
@@ -36,8 +43,8 @@ const createApp = async (name: string) => {
   return app
 }
 
-const createDoc = (appId: number, typeIndex: number, status: 'draft' | 'published') =>
-  payload.create({
+const createDoc = async (appId: number, typeIndex: number, status: 'draft' | 'published') => {
+  const doc = await payload.create({
     collection: 'app-documents',
     data: {
       app: appId,
@@ -50,6 +57,9 @@ const createDoc = (appId: number, typeIndex: number, status: 'draft' | 'publishe
     locale: 'en',
     context: ctx,
   })
+  created.docs.push(doc.id)
+  return doc
+}
 
 const renameSlug = (id: number, slug: string, extra: Record<string, unknown> = {}) =>
   payload.update({ collection: 'apps', id, data: { slug, ...extra }, context: ctx })
@@ -78,17 +88,20 @@ describe('Apps legal integration', () => {
     }
   })
 
-  afterAll(async () => {
-    for (const id of created.apps) {
-      await payload.delete({ collection: 'apps', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.types) {
-      await payload.delete({ collection: 'document-types', id, context: ctx }).catch(() => {})
-    }
-    for (const id of created.categories) {
-      await payload.delete({ collection: 'app-categories', id, context: ctx }).catch(() => {})
-    }
-  })
+  afterAll(
+    () =>
+      cleanupLegalData(
+        payload,
+        {
+          'app-documents': created.docs,
+          apps: created.apps,
+          'document-types': created.types,
+          'app-categories': created.categories,
+        },
+        suffix,
+      ),
+    CLEANUP_TIMEOUT,
+  )
 
   it('deletes the documents and their redirects together with the app', async () => {
     const app = await createApp('cascade')

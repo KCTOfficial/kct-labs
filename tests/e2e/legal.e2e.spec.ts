@@ -1,10 +1,11 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test'
 
+import { CLEANUP_TIMEOUT, cleanupLegalDataRest } from '../helpers/restCleanup'
 import { seedTestUser, testUser } from '../helpers/seedUser'
 
 /** Creates its own uniquely-named app/doc data through the admin REST API and removes it after. */
 const BASE = 'http://localhost:3000'
-const suffix = Date.now().toString(36)
+const suffix = `e2el-${Date.now().toString(36)}`
 const APP_NAME = `Legal App ${suffix}`
 const APP_SLUG = `legal-app-${suffix}`
 const ARCHIVED_SLUG = `legal-archived-${suffix}`
@@ -176,16 +177,14 @@ test.describe('Legal document page', () => {
   })
 
   test.afterAll(async ({ playwright }) => {
+    test.setTimeout(CLEANUP_TIMEOUT)
     const request = await playwright.request.newContext()
-    for (const { collection, id } of created) {
-      await request.delete(`${BASE}/api/${collection}/${id}`, {
-        headers: { Authorization: `JWT ${token}` },
-      })
-    }
+    await cleanupLegalDataRest(request, BASE, token, created, suffix)
     if (seededUserId !== null) {
-      await request.delete(`${BASE}/api/users/${seededUserId}`, {
+      const res = await request.delete(`${BASE}/api/users/${seededUserId}`, {
         headers: { Authorization: `JWT ${token}` },
       })
+      if (!res.ok()) console.warn(`[cleanup] delete test user failed: ${res.status()}`)
     }
     await request.dispose()
   })

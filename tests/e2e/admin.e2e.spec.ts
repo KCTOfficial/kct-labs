@@ -1,6 +1,7 @@
 import { test, expect, Page } from '@playwright/test'
 import path from 'path'
 import { login } from '../helpers/login'
+import { CLEANUP_TIMEOUT, cleanupLegalDataRest } from '../helpers/restCleanup'
 import { seedTestUser, cleanupTestUser, testUser } from '../helpers/seedUser'
 
 test.describe('Admin Panel', () => {
@@ -45,7 +46,7 @@ test.describe('legal documents', () => {
   test.describe.configure({ mode: 'serial' })
 
   const BASE = 'http://localhost:3000'
-  const suffix = Date.now().toString(36)
+  const suffix = `e2ea-${Date.now().toString(36)}`
   const APP_SLUG = `admin-legal-${suffix}`
   const TERMS_TITLE = `Admin Terms ${suffix}`
   const PRIVACY_TITLE = `Admin Privacy ${suffix}`
@@ -116,11 +117,10 @@ test.describe('legal documents', () => {
   })
 
   test.afterAll(async ({ playwright }) => {
+    test.setTimeout(CLEANUP_TIMEOUT)
     const request = await playwright.request.newContext()
-    // Deleting the app cascades to its documents.
-    for (const { collection, id } of created) {
-      await request.delete(`${BASE}/api/${collection}/${id}`, { headers: auth() })
-    }
+    // Documents added through the UI are not tracked; the suffix sweep removes them.
+    await cleanupLegalDataRest(request, BASE, token, created, suffix)
     await request.dispose()
     await cleanupTestUser()
   })

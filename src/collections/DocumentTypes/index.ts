@@ -8,6 +8,10 @@ import { requiredInDefaultLocale } from '../../utilities/apps/validation'
 import { LEGAL_ICONS } from '../../utilities/legal/constants'
 import { lockSlug } from './hooks/lockSlug'
 import { preventDeleteWhenUsed } from './hooks/preventDeleteWhenUsed'
+import {
+  revalidateDocumentType,
+  revalidateDocumentTypeDelete,
+} from './hooks/revalidateDocumentType'
 
 export const DocumentTypes: CollectionConfig<'document-types'> = {
   slug: 'document-types',
@@ -84,6 +88,8 @@ export const DocumentTypes: CollectionConfig<'document-types'> = {
   ],
   hooks: {
     beforeChange: [lockSlug],
+    afterChange: [revalidateDocumentType],
     beforeDelete: [preventDeleteWhenUsed],
+    afterDelete: [revalidateDocumentTypeDelete],
   },
 }

@@ -1,9 +1,23 @@
 import { getPayload, type Payload } from 'payload'
 import config from '@/payload.config'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { revalidateTag } from 'next/cache'
+
+import { CLEANUP_TIMEOUT, cleanupLegalData } from '../helpers/cleanupLegalData'
+import {
+  revalidateDocumentType,
+  revalidateDocumentTypeDelete,
+} from '@/collections/DocumentTypes/hooks/revalidateDocumentType'
+import { APP_DOCUMENTS_CACHE_TAG } from '@/utilities/legal/constants'
+
+// `revalidateTag` needs a Next request scope; spy on it instead.
+vi.mock('next/cache', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/cache')>()),
+  revalidateTag: vi.fn(),
+}))
 
 let payload: Payload
-const suffix = `test-${Date.now()}`
+const suffix = `doctypes-${Date.now()}`
 const ctx = { disableRevalidate: true }
 const created: number[] = []
 
@@ -22,11 +36,7 @@ describe('DocumentTypes collection', () => {
     payload = await getPayload({ config: await config })
   })
 
-  afterAll(async () => {
-    for (const id of created) {
-      await payload.delete({ collection: 'document-types', id, context: ctx }).catch(() => {})
-    }
-  })
+  afterAll(() => cleanupLegalData(payload, { 'document-types': created }, suffix), CLEANUP_TIMEOUT)
 
   it('creates a type with defaults', async () => {
     const doc = await createType('a')
@@ -124,5 +134,32 @@ describe('DocumentTypes collection', () => {
       overrideAccess: false,
     })
     expect(res.totalDocs).toBe(1)
+  })
+
+  it('registers the cache revalidation hooks', () => {
+    const { hooks } = payload.collections['document-types'].config
+    expect(hooks.afterChange).toContain(revalidateDocumentType)
+    expect(hooks.afterDelete).toContain(revalidateDocumentTypeDelete)
+  })
+
+  it('revalidates legal document caches unless disableRevalidate is set', async () => {
+    const mocked = vi.mocked(revalidateTag)
+    const doc = await createType('hook')
+    mocked.mockClear()
+
+    await payload.update({
+      collection: 'document-types',
+      id: doc.id,
+      data: { title: `Type hook2 ${suffix}` },
+      context: ctx,
+    })
+    expect(mocked).not.toHaveBeenCalled()
+
+    await payload.update({
+      collection: 'document-types',
+      id: doc.id,
+      data: { title: `Type hook3 ${suffix}` },
+    })
+    expect(mocked).toHaveBeenCalledWith(APP_DOCUMENTS_CACHE_TAG, 'max')
   })
 })
