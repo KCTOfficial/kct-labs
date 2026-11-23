@@ -3,6 +3,7 @@
 import { CopyToClipboard, FieldLabel, useDocumentInfo, useFormFields } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 
+import { getServerSideURL } from '@/utilities/getURL'
 import { legalDocPath } from '@/utilities/legal/paths'
 
 import { useAdminApi } from './useAdminApi'
@@ -36,7 +37,8 @@ export const PublicUrlField = () => {
 
   const appSlug = loaded && loaded.appId === appId ? loaded.slug : null
   if (!appSlug || !docSlug) return null
-  const url = `${window.location.origin}${legalDocPath(appSlug, docSlug)}`
+  // The canonical public origin (NEXT_PUBLIC_SERVER_URL), not the admin host.
+  const url = `${getServerSideURL()}${legalDocPath(appSlug, docSlug)}`
 
   return (
     <div className="field-type">

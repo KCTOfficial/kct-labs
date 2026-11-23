@@ -35,6 +35,7 @@ type PublishedDocs = { docs: Array<{ slug?: string | null }>; totalDocs: number 
 export const SlugLockField = (props: Props) => {
   const { id } = useDocumentInfo()
   const confirm = useField<boolean>({ path: CONFIRM_PATH })
+  const { setValue: setConfirm, value: confirmValue } = confirm
   const slug = useField<string>({ potentiallyStalePath: props.path })
   const { openModal, closeModal } = useModal()
   const api = useAdminApi()
@@ -43,6 +44,9 @@ export const SlugLockField = (props: Props) => {
     id ? undefined : { docs: [], totalDocs: 0 },
   )
   const [isAcknowledged, setIsAcknowledged] = useState(false)
+  // Kept in component state: the virtual confirmSlugChange may be dropped from form state after an
+  // autosave, so it is re-applied below while the slug differs from the locked one.
+  const [isUnlockedByUser, setIsUnlockedByUser] = useState(false)
   const [lockedSlug] = useState(() => slug.initialValue ?? slug.value)
 
   useEffect(() => {
@@ -61,7 +65,13 @@ export const SlugLockField = (props: Props) => {
     return () => controller.abort()
   }, [api, id])
 
-  const isUnlocked = confirm.value === true || published?.totalDocs === 0
+  useEffect(() => {
+    if (isUnlockedByUser && confirmValue !== true && slug.value !== lockedSlug) {
+      setConfirm(true, true)
+    }
+  }, [confirmValue, isUnlockedByUser, lockedSlug, setConfirm, slug.value])
+
+  const isUnlocked = isUnlockedByUser || confirm.value === true || published?.totalDocs === 0
 
   if (isUnlocked && published?.totalDocs === 0) return <SlugField {...props} />
   if (isUnlocked) return <TextField {...props} />
@@ -74,6 +84,7 @@ export const SlugLockField = (props: Props) => {
   })
 
   const unlock = () => {
+    setIsUnlockedByUser(true)
     confirm.setValue(true)
     closeModal(MODAL_SLUG)
   }

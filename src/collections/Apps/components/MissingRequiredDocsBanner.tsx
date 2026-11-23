@@ -1,6 +1,6 @@
 'use client'
 
-import { Banner, useDocumentInfo } from '@payloadcms/ui'
+import { Banner, useDocumentInfo, useFormFields } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 
 import { useAdminApi } from '@/collections/AppDocuments/components/useAdminApi'
@@ -21,6 +21,10 @@ const typeId = (value: AppDoc['documentType']) =>
 export const MissingRequiredDocsBanner = () => {
   const { id } = useDocumentInfo()
   const api = useAdminApi()
+  // Refetch when the join table changes (document added, published or deleted from the drawer).
+  const joinSignature = useFormFields(([fields]) =>
+    JSON.stringify(fields.legalDocuments?.value ?? null),
+  )
   const [missing, setMissing] = useState<TypeDoc[]>([])
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export const MissingRequiredDocsBanner = () => {
       setMissing(required.docs.filter((type) => !have.has(String(type.id))))
     })
     return () => controller.abort()
-  }, [api, id])
+  }, [api, id, joinSignature])
 
   if (!missing.length) return null
 

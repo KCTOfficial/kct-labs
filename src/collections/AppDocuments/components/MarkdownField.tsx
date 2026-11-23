@@ -2,7 +2,7 @@
 
 import type { CodeFieldClientProps } from 'payload'
 
-import { Button, CodeField, useField, useLocale } from '@payloadcms/ui'
+import { Button, CodeField, useField, useFormFields, useLocale } from '@payloadcms/ui'
 import { useRef, useState, type ChangeEvent } from 'react'
 
 import {
@@ -43,6 +43,7 @@ export const MarkdownField = (props: CodeFieldClientProps) => {
   const { setValue, value } = useField<string>({ potentiallyStalePath: path })
   const title = useField<string>({ path: 'title' })
   const { code: locale } = useLocale()
+  const docSlug = useFormFields(([fields]) => fields.slug?.value as string | undefined)
   const fileInput = useRef<HTMLInputElement>(null)
   const [mode, setMode] = useState<Mode>('write')
   const [error, setError] = useState<string | null>(null)
@@ -79,9 +80,10 @@ export const MarkdownField = (props: CodeFieldClientProps) => {
     const url = URL.createObjectURL(new Blob([markdown], { type: 'text/markdown;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = url
-    link.download = `document.${locale}.md`
+    link.download = `${docSlug || 'document'}.${locale}.md`
     link.click()
-    URL.revokeObjectURL(url)
+    // Revoking synchronously can cancel the download in some browsers.
+    setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   return (

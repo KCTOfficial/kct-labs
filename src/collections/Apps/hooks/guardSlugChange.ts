@@ -17,8 +17,12 @@ export const guardSlugChange: CollectionBeforeChangeHook<App> = async ({
   req,
 }) => {
   if (operation !== 'update' || !originalDoc?.slug) return data
-  if (data.slug === undefined || data.slug === originalDoc.slug) return data
   if ((data as { confirmSlugChange?: boolean }).confirmSlugChange === true) return data
+  const isSlugChanged = data.slug !== undefined && data.slug !== originalDoc.slug
+  // slugField's generateSlug field hook runs after collection hooks and may rename the slug from
+  // `name`, bypassing the check below, so it is switched off while the slug is locked.
+  const mayGenerateSlug = (data.generateSlug ?? originalDoc.generateSlug) === true
+  if (!isSlugChanged && !mayGenerateSlug) return data
 
   const { totalDocs } = await req.payload.count({
     collection: 'app-documents',
@@ -27,6 +31,7 @@ export const guardSlugChange: CollectionBeforeChangeHook<App> = async ({
     req,
   })
   if (totalDocs === 0) return data
+  if (!isSlugChanged) return { ...data, generateSlug: false }
 
   throw new ValidationError({
     collection: 'apps',

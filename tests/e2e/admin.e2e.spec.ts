@@ -176,7 +176,27 @@ test.describe('legal documents', () => {
     await modal.getByRole('checkbox').check()
     await expect(confirm).toBeEnabled()
     await confirm.click()
-    await expect(page.locator('#field-slug')).toBeEditable()
+    const slugInput = page.locator('#field-slug')
+    await expect(slugInput).toBeEditable()
+
+    // Two edits separated by an autosave (interval 375 ms): neither may be rejected by the guard.
+    await slugInput.fill(`${APP_SLUG}-renamed`)
+    await page.waitForTimeout(1_500)
+    await slugInput.fill(`${APP_SLUG}-renamed-2`)
+    await page.waitForTimeout(1_500)
+    await expect(page.locator('[data-sonner-toast][data-type="error"], .field-error')).toHaveCount(
+      0,
+    )
+    await expect(slugInput).toBeEditable()
+    await expect
+      .poll(async () => {
+        const res = await page.request.get(
+          `${BASE}/api/apps/${appId}?draft=true&depth=0&select[slug]=true`,
+          { headers: auth() },
+        )
+        return ((await res.json()) as { slug: string }).slug
+      })
+      .toBe(`${APP_SLUG}-renamed-2`)
   })
 
   test('deletes a document and removes its row', async () => {

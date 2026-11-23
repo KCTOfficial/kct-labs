@@ -25,11 +25,15 @@ export const LocaleFallbackBanner = () => {
   const copyFromEnglish = async () => {
     if (id === undefined || id === null) return
     setIsCopying(true)
-    // Drafts included: the editor copies the latest English text, not only what is live.
-    const doc = await api<EnglishDoc>(
-      `/app-documents/${encodeURIComponent(String(id))}?locale=${defaultLocale}&fallback-locale=none&depth=0&draft=true&select[markdown]=true&select[title]=true`,
-    )
-    setIsCopying(false)
+    let doc: EnglishDoc | null
+    try {
+      // Drafts included: the editor copies the latest English text, not only what is live.
+      doc = await api<EnglishDoc>(
+        `/app-documents/${encodeURIComponent(String(id))}?locale=${defaultLocale}&fallback-locale=none&depth=0&draft=true&select[markdown]=true&select[title]=true`,
+      )
+    } finally {
+      setIsCopying(false)
+    }
     if (!doc || !hasMarkdownContent(doc.markdown)) {
       toast.error('English content could not be loaded.')
       return

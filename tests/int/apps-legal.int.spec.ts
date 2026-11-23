@@ -130,6 +130,35 @@ describe('Apps legal integration', () => {
     expect(renamed.slug).toBe(`legal-app-locked-3-${suffix}`)
   })
 
+  it('keeps an auto-generated slug when the app is renamed while published documents exist', async () => {
+    // Mirrors an admin autosave draft: no slug yet, so `generateSlug` stays on.
+    const app = await payload.create({
+      collection: 'apps',
+      data: { name: `Legal App Generated ${suffix}`, _status: 'draft' },
+      draft: true,
+      context: ctx,
+    })
+    created.apps.push(app.id)
+    const named = await payload.update({
+      collection: 'apps',
+      id: app.id,
+      data: { name: `Legal App Generated ${suffix}`, generateSlug: true },
+      draft: true,
+      context: ctx,
+    })
+    expect(named.slug).toBeTruthy()
+    await createDoc(app.id, 0, 'published')
+
+    const renamed = await payload.update({
+      collection: 'apps',
+      id: app.id,
+      data: { name: `Legal App Renamed ${suffix}`, generateSlug: true },
+      draft: true,
+      context: ctx,
+    })
+    expect(renamed.slug).toBe(named.slug)
+  })
+
   it('allows a slug change when the app has no published documents', async () => {
     const app = await createApp('free')
     await createDoc(app.id, 0, 'draft')
