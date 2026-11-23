@@ -10,19 +10,26 @@ import { FixedToolbarFeature, HeadingFeature, lexicalEditor } from '@payloadcms/
 import { searchFields } from '@/search/fieldOverrides'
 import { beforeSyncWithSearch } from '@/search/beforeSync'
 
-import { App, Page, Post } from '@/payload-types'
+import { App, AppDocument, Page, Post } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
+import { legalDocPath } from '@/utilities/legal/paths'
 import { SITE_NAME } from '@/utilities/seo/constants'
 import { stripLocalizedFlags } from '@/utilities/withoutLocalization'
 
-const generateTitle: GenerateTitle<Post | Page | App> = ({ doc }) => {
+const generateTitle: GenerateTitle<Post | Page | App | AppDocument> = ({ doc }) => {
   const title = doc && 'name' in doc ? doc.name : doc && 'title' in doc ? doc.title : undefined
   return title ? `${title} | ${SITE_NAME}` : SITE_NAME
 }
 
-const generateURL: GenerateURL<Post | Page | App> = ({ collectionConfig, doc }) => {
+const generateURL: GenerateURL<Post | Page | App | AppDocument> = ({ collectionConfig, doc }) => {
   const url = getServerSideURL()
   if (!doc?.slug) return url
+
+  if (collectionConfig?.slug === 'app-documents') {
+    const app = 'app' in doc ? doc.app : null
+    // The app slug is only known when the relationship is populated; fall back to the site URL.
+    return app && typeof app === 'object' ? `${url}${legalDocPath(app.slug, doc.slug)}` : url
+  }
 
   const prefix =
     collectionConfig?.slug === 'apps' ? '/apps' : collectionConfig?.slug === 'posts' ? '/posts' : ''

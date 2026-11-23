@@ -75,6 +75,7 @@ export interface Config {
     apps: App;
     'app-categories': AppCategory;
     'document-types': DocumentType;
+    'app-documents': AppDocument;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -100,6 +101,7 @@ export interface Config {
     apps: AppsSelect<false> | AppsSelect<true>;
     'app-categories': AppCategoriesSelect<false> | AppCategoriesSelect<true>;
     'document-types': DocumentTypesSelect<false> | DocumentTypesSelect<true>;
+    'app-documents': AppDocumentsSelect<false> | AppDocumentsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -936,6 +938,51 @@ export interface DocumentType {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "app-documents".
+ */
+export interface AppDocument {
+  id: number;
+  app: number | App;
+  documentType: number | DocumentType;
+  title?: string | null;
+  markdown?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  /**
+   * Lowercase kebab-case. Defaults to the document type slug.
+   */
+  slug: string;
+  /**
+   * Shown as "Last updated". Set automatically when markdown changes on publish.
+   */
+  effectiveDate?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1159,6 +1206,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'document-types';
         value: number | DocumentType;
+      } | null)
+    | ({
+        relationTo: 'app-documents';
+        value: number | AppDocument;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1600,6 +1651,29 @@ export interface DocumentTypesSelect<T extends boolean = true> {
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "app-documents_select".
+ */
+export interface AppDocumentsSelect<T extends boolean = true> {
+  app?: T;
+  documentType?: T;
+  title?: T;
+  markdown?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  slug?: T;
+  effectiveDate?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2406,6 +2480,10 @@ export interface TaskSchedulePublish {
       | ({
           relationTo: 'apps';
           value: number | App;
+        } | null)
+      | ({
+          relationTo: 'app-documents';
+          value: number | AppDocument;
         } | null);
     global?: string | null;
     user?: {
