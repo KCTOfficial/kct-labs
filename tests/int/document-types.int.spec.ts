@@ -44,7 +44,10 @@ describe('DocumentTypes collection', () => {
         data: { slug: `changed-${suffix}` },
         context: ctx,
       }),
-    ).rejects.toThrow()
+    ).rejects.toMatchObject({
+      status: 400,
+      message: expect.stringContaining('slug'),
+    })
   })
 
   it('allows updating other fields with the same slug', async () => {

@@ -67,7 +67,16 @@ export const DocumentTypes: CollectionConfig<'document-types'> = {
       overrides: (field) => {
         const slug = field.fields.find((f) => 'name' in f && f.name === 'slug')
         if (slug && 'admin' in slug) {
-          slug.admin = { ...slug.admin, description: 'Cannot be changed after creation.' }
+          slug.admin = {
+            ...slug.admin,
+            description: 'Cannot be changed after creation.',
+            components: {
+              Field: {
+                clientProps: { useAsSlug: 'title' },
+                path: '@/collections/DocumentTypes/components/ImmutableSlugField#ImmutableSlugField',
+              },
+            },
+          }
         }
         return field
       },
