@@ -29,3 +29,14 @@ export const localizedSitemapEntries = (
     ...options,
   }))
 }
+
+/** English-only page (no translation yet): a single entry, no `id` alternate. */
+export const singleLocaleSitemapEntry = (
+  path: string,
+  lastmod: string,
+  options: Pick<ISitemapField, 'changefreq' | 'priority'> = {},
+): ISitemapField => ({
+  loc: localizedUrl(path, defaultLocale),
+  lastmod,
+  ...options,
+})

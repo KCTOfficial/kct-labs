@@ -1,6 +1,8 @@
 import { getServerSideSitemap } from 'next-sitemap'
 
 import { getPublicAppSlugs } from '@/utilities/apps/queries'
+import { getPublicLegalDocPaths } from '@/utilities/legal/queries'
+import { legalSitemapEntries } from '@/utilities/legal/sitemap'
 import { localizedSitemapEntries } from '@/utilities/seo/sitemap'
 
 /**
@@ -8,7 +10,7 @@ import { localizedSitemapEntries } from '@/utilities/seo/sitemap'
  * cached with the `apps`/`apps-sitemap` tags and refreshed by the Apps revalidate hook.
  */
 export async function GET() {
-  const apps = await getPublicAppSlugs()
+  const [apps, legalDocs] = await Promise.all([getPublicAppSlugs(), getPublicLegalDocPaths()])
   const fallback = new Date().toISOString()
 
   const latest = apps.reduce<string | null>(
@@ -28,6 +30,7 @@ export async function GET() {
         priority: 0.8,
       }),
     ),
+    ...legalSitemapEntries(legalDocs),
   ]
 
   return getServerSideSitemap(entries)

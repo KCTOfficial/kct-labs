@@ -14,7 +14,8 @@ import {
   buildSingleLanguageAlternates,
   localizedUrl,
 } from '@/utilities/seo/urls'
-import { localizedSitemapEntries } from '@/utilities/seo/sitemap'
+import { localizedSitemapEntries, singleLocaleSitemapEntry } from '@/utilities/seo/sitemap'
+import { legalSitemapEntries } from '@/utilities/legal/sitemap'
 import { stripLocalizedFlags } from '@/utilities/withoutLocalization'
 
 beforeAll(() => {
@@ -132,5 +133,60 @@ describe('withoutLocalization (backward compatibility)', () => {
       },
     ])
     expect(JSON.stringify(fields)).not.toContain('"localized":true')
+  })
+})
+
+describe('legal documents in the sitemap', () => {
+  const doc = (
+    appSlug: string,
+    docSlug: string,
+    updatedAt: string,
+    hasIndonesian = false,
+    archived = false,
+  ) => ({ appSlug, docSlug, updatedAt, hasIndonesian, archived })
+
+  it('singleLocaleSitemapEntry emits one EN entry without an id alternate', () => {
+    const entry = singleLocaleSitemapEntry('/apps/a/legal', '2026-01-01T00:00:00.000Z')
+    expect(entry.loc).toBe('https://hub.kct.co.id/apps/a/legal')
+    expect(JSON.stringify(entry)).not.toContain('/id/')
+  })
+
+  it('a document with Indonesian content gets both locales with alternates', () => {
+    const entries = legalSitemapEntries([doc('a', 'privacy', '2026-02-01T00:00:00.000Z', true)])
+    const locs = entries.map((e) => e.loc)
+    expect(locs).toContain('https://hub.kct.co.id/apps/a/legal/privacy')
+    expect(locs).toContain('https://hub.kct.co.id/id/apps/a/legal/privacy')
+    const docEntry = entries.find((e) => e.loc === 'https://hub.kct.co.id/apps/a/legal/privacy')
+    expect(docEntry?.alternateRefs?.map((r) => r.hreflang)).toEqual(['en', 'id', 'x-default'])
+    expect(docEntry?.lastmod).toBe('2026-02-01T00:00:00.000Z')
+  })
+
+  it('a document without Indonesian content gets a single EN entry', () => {
+    const locs = legalSitemapEntries([doc('a', 'terms', '2026-02-01T00:00:00.000Z')]).map(
+      (e) => e.loc,
+    )
+    expect(locs).toContain('https://hub.kct.co.id/apps/a/legal/terms')
+    expect(locs).not.toContain('https://hub.kct.co.id/id/apps/a/legal/terms')
+  })
+
+  it('excludes archived apps entirely', () => {
+    expect(legalSitemapEntries([doc('a', 'privacy', '2026-02-01', true, true)])).toEqual([])
+  })
+
+  it('adds the app index once, localized if any doc is translated, with the latest lastmod', () => {
+    const entries = legalSitemapEntries([
+      doc('a', 'privacy', '2026-02-01T00:00:00.000Z'),
+      doc('a', 'terms', '2026-03-01T00:00:00.000Z', true),
+      doc('b', 'privacy', '2026-01-01T00:00:00.000Z'),
+    ])
+    const index = entries.filter((e) => e.loc?.endsWith('/apps/a/legal'))
+    expect(index).toHaveLength(2)
+    expect(index.every((e) => e.lastmod === '2026-03-01T00:00:00.000Z')).toBe(true)
+    expect(entries.filter((e) => e.loc?.endsWith('/apps/b/legal'))).toHaveLength(1)
+    expect(entries.some((e) => e.loc === 'https://hub.kct.co.id/id/apps/b/legal')).toBe(false)
+  })
+
+  it('returns nothing for an empty list', () => {
+    expect(legalSitemapEntries([])).toEqual([])
   })
 })
