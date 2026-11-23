@@ -296,6 +296,16 @@ export const Apps: CollectionConfig<'apps'> = {
           label: 'Legal',
           fields: [
             {
+              name: 'missingRequiredDocs',
+              type: 'ui',
+              admin: {
+                components: {
+                  Field:
+                    '@/collections/Apps/components/MissingRequiredDocsBanner#MissingRequiredDocsBanner',
+                },
+              },
+            },
+            {
               name: 'legalDocuments',
               type: 'join',
               admin: {
@@ -347,16 +357,32 @@ export const Apps: CollectionConfig<'apps'> = {
       admin: { position: 'sidebar' },
       index: true,
     },
-    slugField({ position: 'sidebar', useAsSlug: 'name' }),
+    slugField({
+      position: 'sidebar',
+      useAsSlug: 'name',
+      overrides: (field) => {
+        const slug = field.fields.find((f) => 'name' in f && f.name === 'slug')
+        if (slug && 'admin' in slug) {
+          slug.admin = {
+            ...slug.admin,
+            components: {
+              Field: {
+                clientProps: { useAsSlug: 'name' },
+                path: '@/collections/Apps/components/SlugLockField#SlugLockField',
+              },
+            },
+          }
+        }
+        return field
+      },
+    }),
     {
       // Not stored: confirms a slug change while published legal documents exist (guardSlugChange).
       name: 'confirmSlugChange',
       type: 'checkbox',
       admin: {
-        condition: (data) => Boolean(data?.id && data?.legalDocuments?.docs?.length),
-        description:
-          'Published legal document URLs (linked from Google Play) will return 404 after a slug change. Tick to confirm and update Play Console.',
-        position: 'sidebar',
+        // Owned by SlugLockField, which sets it after the unlock confirmation (published docs only).
+        hidden: true,
       },
       virtual: true,
     },

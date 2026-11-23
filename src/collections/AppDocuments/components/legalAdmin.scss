@@ -1,0 +1,74 @@
+@import '@payloadcms/ui/scss';
+
+.legal-admin {
+  &__banner {
+    margin-bottom: base(1);
+
+    & p {
+      margin: 0;
+    }
+  }
+
+  &__error {
+    color: var(--theme-error-500);
+    margin: base(0.25) 0;
+  }
+
+  &__hint {
+    color: var(--theme-elevation-500);
+    margin: base(0.25) 0;
+  }
+
+  &__url {
+    display: flex;
+    gap: base(0.25);
+    align-items: center;
+    word-break: break-all;
+    margin-bottom: base(1);
+  }
+
+  &__list {
+    margin: base(0.5) 0;
+    padding-left: base(1);
+    word-break: break-all;
+  }
+}
+
+.markdown-field {
+  &__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: base(0.5);
+    align-items: center;
+    margin-bottom: base(0.5);
+
+    & .btn {
+      margin: 0;
+    }
+  }
+
+  &__body {
+    display: grid;
+    gap: base(1);
+
+    &--split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+      @include mid-break {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  }
+
+  &__preview {
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+    padding: base(0.75);
+    max-height: base(30);
+    overflow: auto;
+  }
+
+  &__file {
+    display: none;
+  }
+}

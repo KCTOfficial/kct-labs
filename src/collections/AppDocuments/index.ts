@@ -86,10 +86,26 @@ export const AppDocuments: CollectionConfig<'app-documents'> = {
   },
   admin: {
     defaultColumns: ['title', 'app', 'documentType', '_status', 'updatedAt'],
+    components: {
+      edit: {
+        beforeDocumentControls: [
+          '@/collections/AppDocuments/components/LocaleFallbackBanner#LocaleFallbackBanner',
+        ],
+      },
+    },
     group: 'Apps',
     useAsTitle: 'title',
   },
   fields: [
+    {
+      name: 'deleteImpact',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/collections/AppDocuments/components/DeleteImpactBanner#DeleteImpactBanner',
+        },
+      },
+    },
     {
       type: 'row',
       fields: [
@@ -124,7 +140,12 @@ export const AppDocuments: CollectionConfig<'app-documents'> = {
     {
       name: 'markdown',
       type: 'code',
-      admin: { language: 'markdown' },
+      admin: {
+        components: {
+          Field: '@/collections/AppDocuments/components/MarkdownField#MarkdownField',
+        },
+        language: 'markdown',
+      },
       localized: true,
       // With `locale: 'all'` Payload validates each locale separately with `req.locale` scoped to it
       // (fields/hooks/beforeChange/promise.js); 'all' only reaches here for an empty object.
@@ -181,6 +202,16 @@ export const AppDocuments: CollectionConfig<'app-documents'> = {
       validate: (value: string | null | undefined) =>
         isValidDocSlug(value) ||
         'Use lowercase letters, numbers and hyphens (e.g. privacy-policy).',
+    },
+    {
+      name: 'publicUrl',
+      type: 'ui',
+      admin: {
+        components: {
+          Field: '@/collections/AppDocuments/components/PublicUrlField#PublicUrlField',
+        },
+        position: 'sidebar',
+      },
     },
     {
       name: 'effectiveDate',

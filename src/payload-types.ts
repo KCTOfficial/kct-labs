@@ -897,9 +897,6 @@ export interface App {
    */
   generateSlug?: boolean | null;
   slug: string;
-  /**
-   * Published legal document URLs (linked from Google Play) will return 404 after a slug change. Tick to confirm and update Play Console.
-   */
   confirmSlugChange?: boolean | null;
   updatedAt: string;
   createdAt: string;
