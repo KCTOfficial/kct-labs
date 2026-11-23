@@ -14,8 +14,9 @@ Catatan pengelola (tidak dimuat ke konteks Claude):
 - **Desain:** `design/kct-hub.pen` (hanya via Pencil MCP, terenkripsi — jangan dibaca dengan Read/Grep), spesifikasi & pemetaan CMS di `design/README.md`. Token warna/font di desain adalah sumber kebenaran UI.
 - **Lokasi penting:**
   - Config Payload: `src/payload.config.ts`; plugin (SEO, redirects, search, form builder, nested docs): `src/plugins/index.ts`.
-  - Collections: `src/collections/` (KCT: `Apps`, `AppCategories`); globals: `src/Header/config.ts`, `src/Footer/config.ts`, `src/globals/Home/config.ts`; blocks: `src/blocks/`; heros: `src/heros/`.
+  - Collections: `src/collections/` (KCT: `Apps`, `AppCategories`, dokumen legal: `DocumentTypes`, `AppDocuments`); globals: `src/Header/config.ts`, `src/Footer/config.ts`, `src/globals/Home/config.ts`; blocks: `src/blocks/`; heros: `src/heros/`.
   - Frontend: semua route di `src/app/(frontend)/[locale]/` (root layout ada di sini); Admin & API Payload: `src/app/(payload)/` (jangan diubah manual kecuali perlu).
+  - Dokumen legal per app: route `apps/[slug]/legal` (index) dan `apps/[slug]/legal/[doc]`; utilitas (paths, query, markdown→Lexical, sitemap) di `src/utilities/legal/`.
   - i18n: `src/i18n/` (locale, `localizeHref`, kamus UI `dictionaries/{en,id}.ts`); `src/proxy.ts` me-rewrite URL tanpa prefix → `/en/...` dan me-redirect `/en/...` → tanpa prefix.
   - Data app (query ber-cache + tag): `src/utilities/apps/queries.ts`; validator murni: `src/utilities/apps/validation.ts`; komponen UI: `src/components/{site,home,apps,seo}/`.
   - Utilitas SEO: `src/utilities/generateMeta.ts`, `src/utilities/seo/` (URL/hreflang, teks, JSON-LD, sitemap); sitemap: `src/app/(frontend)/(sitemaps)/*/route.ts` + `next-sitemap.config.cjs`.
@@ -32,7 +33,7 @@ Catatan pengelola (tidak dimuat ke konteks Claude):
   - Migrasi DB: `pnpm payload migrate:create <nama>` lalu `pnpm payload migrate` (wajib konfirmasi, lihat bawah).
   - Isi konten awal (idempoten, tidak menghapus): `pnpm seed:kct`, lalu `POST /api/apps/revalidate` (login admin) atau restart agar cache Next.js ter-refresh.
 - **Hal yang sering keliru:**
-  - Dev mode Postgres memakai schema push otomatis; untuk staging/produksi perubahan skema **harus** lewat file migrasi. Proyek belum punya baseline migrasi.
+  - Dev mode Postgres memakai schema push otomatis; untuk staging/produksi perubahan skema **harus** lewat file migrasi. Baseline migrasi: `src/migrations/20261109_113225_initial.ts`.
   - Localization aktif: field `localized: true` pindah ke tabel `*_locales`. Collection lama (Pages, Posts, Forms, Search) sengaja dibuat non-localized (`withoutLocalization`, `stripLocalizedFlags`, `searchPlugin({ localize: false })`) — jangan dilepas tanpa migrasi data.
   - `required` pada field localized = wajib di **semua** locale. Pakai `validate: requiredInDefaultLocale(defaultLocale)` agar terjemahan opsional (fallback EN).
   - Select bernama `status` di collection ber-draft bentrok dengan enum `_status` (`enum_<slug>_status`) → beri `enumName` eksplisit.
@@ -46,6 +47,8 @@ Catatan pengelola (tidak dimuat ke konteks Claude):
   - Quick-view (popup kartu app): `src/components/quick-view/` + endpoint `GET /next/quick-view` (`src/app/(frontend)/next/quick-view/route.ts`, memakai `getAppBySlug` ter-cache). Kartu hanya menambah `data-quick-view`; `QuickViewProvider` (layout) mencegat klik di fase capture, `pushState` URL `/apps/<slug>`, dan jatuh ke navigasi biasa untuk modifier-click, tanpa JS, 404/archived, atau error. Dialog harus di luar `<main>`, tanpa `<h1>`/`<article>` (tes e2e menghitungnya). Tutup popup hanya lewat `requestClose` (satu `history.back()`); `router.push` ke URL yang sama dengan entri pushState **menggantinya** (tumpukan history tetap bersih). Flag `QUICK_VIEW_ENABLED=false` (dibaca saat build) mematikannya.
   - Animasi: `.reveal` (scroll-driven `view()`) jangan dipasang di dalam elemen `overflow-hidden/auto` (jadi scroll container → timeline rusak) dan jangan di hero/LCP; `.skeleton` untuk placeholder (setara ukuran konten asli, tanpa CLS). `loading.tsx` tidak tampil bila hanya query string berubah → pakai `LinkProgress`/`FormPendingIcon` (`components/apps/PendingIndicators.tsx`); pencarian & urutan memakai `next/form`.
   - Scroll story Beranda (GSAP ScrollTrigger, **desktop saja**): `src/components/home/scrollStoryConfig.ts` (query + helper, impor statis), `scrollStory.ts` (builder per section, **hanya** di-`import()` bersama GSAP) dan `HomeScrollStory.tsx` (lazy-load saat idle/input pertama). Section yang "menempel" memakai **track sticky dari server** (`[data-story-track]` + `.story-spacer`), **bukan** `pin` GSAP (pin = CLS + memindahkan node React → crash saat navigasi). Query `@media` di `globals.css` harus sama dengan `PIN_QUERY` (`scrollStoryConfig.ts`). GSAP hanya men-scrub `transform`/`opacity` lewat `data-story-part`; class Tailwind `rotate`/`translate` ditaruh di pose wrapper, bukan di elemen yang dianimasikan. Satu elemen hanya boleh dianimasikan satu ScrollTrigger per properti (pakai wrapper "drift" terpisah). Jangan `autoAlpha` (keluar dari Tab order); jangan transform target anchor (`#apps`, `#about`, …). Mobile/tablet/reduced-motion/tanpa JS tidak memuat GSAP (tetap `.reveal`).
+  - Local API bersarang dengan `req` + `locale` menimpa `req.locale` milik request induk; bungkus dengan `withRequestLocale` (`src/collections/AppDocuments/hooks/publishedSnapshot.ts`).
+  - E2E satu berkas: `pnpm test:e2e <file>` (tanpa `--`).
   - Nama teknis `kct-hub` (image/container/compose/`/srv/kct-hub`); server lama `kct-labs` dimigrasi sekali dengan `deploy/migrate-from-kct-labs.sh` (docs/DEPLOYMENT.md bagian I).
 
 ## Peran

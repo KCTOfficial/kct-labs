@@ -80,6 +80,16 @@ Dipilih Global (bukan Page + blocks) agar skema `pages` yang sudah ada tidak ber
 
 `header`: `navItems[].localizedLabel`, `cta` (label, url). `footer`: `navItems[].localizedLabel`, `tagline`, `columns[]`, `contact` (email, WhatsApp, telepon, alamat), `copyrightHolder`.
 
+## Dokumen legal (per app)
+
+- Collection `document-types` (`src/collections/DocumentTypes/`): `title`* , `icon`, `sortOrder`, `requiredForPlay` (mis. Privacy Policy wajib untuk Google Play), `slug` (terkunci setelah dibuat; tipe yang masih dipakai tidak bisa dihapus). Seed: `pnpm seed:kct` (privacy-policy, terms-of-service, terms-and-conditions, account-deletion).
+- Collection `app-documents` (`src/collections/AppDocuments/`): `app` → `apps`, `documentType` → `document-types`, `title`*, `markdown`* (dikonversi ke `content` Lexical saat disimpan), `slug` (default = slug tipe, unik per app), `effectiveDate` ("Last updated", di-stamp otomatis saat markdown berubah ketika publish), SEO, drafts.
+- URL: `/apps/<app>/legal` (index) dan `/apps/<app>/legal/<doc>` (+ `/id/...`); helper `src/utilities/legal/paths.ts`, query/validator/sitemap di `src/utilities/legal/`. Ditautkan dari detail app dan quick-view; masuk sitemap.
+- Alur admin: buat tipe (sekali) → di Apps › App Documents pilih app + tipe, isi judul & markdown (EN wajib), publish. Judul halaman (satu-satunya `<h1>`) diambil dari field Title: `# H1` di **awal** markdown dibuang, `# H1` berikutnya diturunkan menjadi `h2`.
+- ID opsional: field kosong fallback ke EN. Mengganti slug dokumen yang sudah terbit otomatis membuat redirect 301 (kedua locale).
+
+`*` = diterjemahkan.
+
 ## Multi-bahasa (English default, Indonesia)
 
 - URL: English tanpa prefix (`/`, `/apps/al-quran-imam`), Indonesia di `/id/...`. `/en/...` → 308 ke versi tanpa prefix. URL lama tetap valid.
