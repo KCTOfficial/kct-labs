@@ -17,7 +17,37 @@ const legalFeatures: LegalFeatures = ({ defaultFeatures }) => [
 
 export const legalEditor = lexicalEditor({ features: legalFeatures })
 
-type LexicalNode = { type?: string; tag?: string; text?: string; children?: LexicalNode[] }
+type LexicalNode = {
+  type?: string
+  tag?: string
+  text?: string
+  fields?: { url?: string }
+  children?: LexicalNode[]
+}
+
+const LINK_NODE_TYPES = new Set(['link', 'autolink'])
+const SAFE_URL_SCHEMES = new Set(['http:', 'https:', 'mailto:'])
+const URL_SCHEME = /^([a-z][a-z0-9+.-]*:)/i
+
+/** Relative URLs and http(s)/mailto only; control chars and whitespace are stripped as browsers do. */
+const isSafeUrl = (url: string | undefined): boolean => {
+  if (!url) return false
+  const scheme = url.replace(/[\u0000-\u0020\u007f]/g, '').match(URL_SCHEME)?.[1]
+  return !scheme || SAFE_URL_SCHEMES.has(scheme.toLowerCase())
+}
+
+/** Replaces links with unsafe URLs by their children so the text survives without the href. */
+const neutralizeUnsafeLinks = (node: LexicalNode): LexicalNode => {
+  if (!node.children) return node
+  const children = node.children.flatMap((child) => {
+    const cleaned = neutralizeUnsafeLinks(child)
+    if (LINK_NODE_TYPES.has(cleaned.type ?? '') && !isSafeUrl(cleaned.fields?.url)) {
+      return cleaned.children ?? []
+    }
+    return [cleaned]
+  })
+  return { ...node, children }
+}
 
 const FALLBACK_HEADING_ID = 'section'
 
@@ -48,7 +78,13 @@ export const markdownToLexical = async (
 ): Promise<SerializedEditorState> => {
   const editorConfig = await editorConfigFactory.fromFeatures({ config, features: legalFeatures })
   const state = convertMarkdownToLexical({ editorConfig, markdown })
-  return demoteH1(state as unknown as SerializedEditorState)
+  const demoted = demoteH1(state as unknown as SerializedEditorState)
+  return {
+    ...demoted,
+    root: neutralizeUnsafeLinks(
+      demoted.root as unknown as LexicalNode,
+    ) as unknown as SerializedEditorState['root'],
+  }
 }
 
 const nodeText = (node: LexicalNode): string =>
@@ -66,15 +102,16 @@ export const headingId = (text: string): string => {
 
 /** Top-level h2 headings with ids made unique in document order (`a`, `a-2`, ...). */
 export const extractToc = (state: SerializedEditorState): Array<{ id: string; text: string }> => {
-  const seen = new Map<string, number>()
+  const issued = new Set<string>()
   const root = state.root as unknown as LexicalNode
   return (root.children ?? [])
     .filter((node) => node.type === 'heading' && node.tag === 'h2')
     .map((node) => {
       const text = nodeText(node).trim()
       const base = headingId(text)
-      const count = (seen.get(base) ?? 0) + 1
-      seen.set(base, count)
-      return { id: count === 1 ? base : `${base}-${count}`, text }
+      let id = base
+      for (let n = 2; issued.has(id); n++) id = `${base}-${n}`
+      issued.add(id)
+      return { id, text }
     })
 }

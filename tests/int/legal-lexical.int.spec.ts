@@ -37,8 +37,9 @@ describe('legal lexical conversion', () => {
     const withScript = nodes.filter((n) =>
       JSON.stringify({ ...n, children: undefined }).includes('<script>'),
     )
-    expect(withScript.length).toBeGreaterThan(0)
-    expect(withScript.every((n) => n.type === 'text')).toBe(true)
+    expect(withScript).toHaveLength(1)
+    expect(withScript[0]?.type).toBe('text')
+    expect(withScript[0]?.text).toContain('<script>alert(1)</script>')
   })
 
   it('demoteH1 is recursive and leaves other headings', () => {
@@ -65,6 +66,28 @@ describe('legal lexical conversion', () => {
       { id: 'a', text: 'A' },
       { id: 'a-2', text: 'A' },
     ])
+  })
+
+  it('extractToc ids stay unique when a slug collides with a suffix', async () => {
+    const state = await markdownToLexical('## A\n## A\n## A 2', sanitizedConfig)
+    const ids = extractToc(state).map((t) => t.id)
+    expect(ids.slice(0, 2)).toEqual(['a', 'a-2'])
+    expect(new Set(ids).size).toBe(3)
+  })
+
+  it('neutralizes unsafe link urls but keeps safe ones', async () => {
+    const state = await markdownToLexical(
+      '[x](javascript:alert(1)) [m](mailto:a@b.c) [r](/apps) [h](https://e.x)',
+      sanitizedConfig,
+    )
+    const nodes = flatten(state.root as unknown as AnyNode)
+    const urls = nodes
+      .filter((n) => n.type === 'link' || n.type === 'autolink')
+      .map((n) => n.fields?.url)
+    expect(urls.some((u) => /javascript:/i.test(u ?? ''))).toBe(false)
+    expect(urls).toEqual(expect.arrayContaining(['mailto:a@b.c', '/apps', 'https://e.x']))
+    // Label text survives (as a plain text node, never as a link href).
+    expect(nodes.some((n) => n.type === 'text' && (n.text ?? '').includes('x'))).toBe(true)
   })
 
   it('headingId slugifies text', () => {
