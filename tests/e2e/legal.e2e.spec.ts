@@ -8,6 +8,8 @@ const suffix = Date.now().toString(36)
 const APP_NAME = `Legal App ${suffix}`
 const APP_SLUG = `legal-app-${suffix}`
 const ARCHIVED_SLUG = `legal-archived-${suffix}`
+const EMPTY_SLUG = `legal-empty-${suffix}`
+const INDEX_PATH = `/apps/${APP_SLUG}/legal`
 const DOC_SLUG = 'privacy-policy'
 const DOC_PATH = `/apps/${APP_SLUG}/legal/${DOC_SLUG}`
 
@@ -112,6 +114,11 @@ test.describe('Legal document page', () => {
       title: `Legal Type ${suffix}`,
       slug: `legal-type-${suffix}`,
     })
+    const termsType = await api(request, 'document-types', {
+      title: `Legal Terms Type ${suffix}`,
+      slug: `legal-terms-type-${suffix}`,
+      sortOrder: 10,
+    })
     const appData = {
       tagline: 'Tagline',
       shortDescription: 'Short description',
@@ -131,6 +138,20 @@ test.describe('Legal document page', () => {
       name: `Legal Archived ${suffix}`,
       slug: ARCHIVED_SLUG,
       status: 'archived',
+    })
+    await api(request, 'apps', {
+      ...appData,
+      name: `Legal Empty ${suffix}`,
+      slug: EMPTY_SLUG,
+      status: 'live',
+    })
+    await api(request, 'app-documents', {
+      app: app.id,
+      documentType: termsType.id,
+      slug: 'terms-of-service',
+      title: 'Terms of Service',
+      markdown: '# Terms\n\nUse the app fairly.\n',
+      _status: 'published',
     })
     for (const appId of [app.id, archived.id]) {
       await api(request, 'app-documents', {
@@ -211,6 +232,50 @@ test.describe('Legal document page', () => {
 
   test('archived app keeps the page reachable but noindex', async ({ page }) => {
     const res = await page.goto(`${BASE}/apps/${ARCHIVED_SLUG}/legal/${DOC_SLUG}`)
+    expect(res?.status()).toBe(200)
+    expect((await headTags(page)).robots).toContain('noindex')
+  })
+
+  test('index lists published documents in order, linking to each', async ({ page }) => {
+    const res = await page.goto(`${BASE}${INDEX_PATH}`)
+    expect(res?.status()).toBe(200)
+    const items = page.locator('main ul[data-legal-index] a')
+    await expect(items).toHaveCount(2)
+    await expect(items.nth(0)).toContainText('Privacy Policy')
+    await expect(items.nth(1)).toContainText('Terms of Service')
+    expect(await items.nth(0).getAttribute('href')).toBe(`${INDEX_PATH}/${DOC_SLUG}`)
+    expect(await items.nth(1).getAttribute('href')).toBe(`${INDEX_PATH}/terms-of-service`)
+
+    const title = await page.title()
+    expect(title.length).toBeLessThanOrEqual(60)
+    const tags = await headTags(page)
+    expect(tags.h1).toBe(1)
+    expect(tags.jsonLd).toEqual(expect.arrayContaining(['BreadcrumbList', 'ItemList']))
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${INDEX_PATH}$`))
+    expect(tags.hreflang).toEqual(expect.arrayContaining(['id', 'en', 'x-default']))
+    expect(tags.robots).not.toContain('noindex')
+  })
+
+  test('/id index links to prefixed document paths', async ({ page }) => {
+    const res = await page.goto(`${BASE}/id${INDEX_PATH}`)
+    expect(res?.status()).toBe(200)
+    expect(await page.locator('main ul[data-legal-index] a').first().getAttribute('href')).toBe(
+      `/id${INDEX_PATH}/${DOC_SLUG}`,
+    )
+  })
+
+  test('app without documents returns 404', async ({ page }) => {
+    const res = await page.goto(`${BASE}/apps/${EMPTY_SLUG}/legal`)
+    expect(res?.status()).toBe(404)
+  })
+
+  test('unknown app index returns 404', async ({ page }) => {
+    const res = await page.goto(`${BASE}/apps/no-such-app-${suffix}/legal`)
+    expect(res?.status()).toBe(404)
+  })
+
+  test('archived app index is reachable but noindex', async ({ page }) => {
+    const res = await page.goto(`${BASE}/apps/${ARCHIVED_SLUG}/legal`)
     expect(res?.status()).toBe(200)
     expect((await headTags(page)).robots).toContain('noindex')
   })
