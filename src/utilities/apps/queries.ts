@@ -266,11 +266,19 @@ export const getShowcaseApps = unstable_cache(
       locale,
       overrideAccess: false,
       pagination: false,
-      select: { name: true, slug: true, screenshots: true, status: true },
+      select: {
+        name: true,
+        slug: true,
+        shortDescription: true,
+        screenshots: true,
+        status: true,
+      },
       sort: SORTS.featured,
       where: { and: [publicWhere, { screenshots: { exists: true } }] },
     })
-    return result.docs as Array<Pick<App, 'id' | 'name' | 'slug' | 'screenshots' | 'status'>>
+    return result.docs as Array<
+      Pick<App, 'id' | 'name' | 'slug' | 'shortDescription' | 'screenshots' | 'status'>
+    >
   },
   ['showcase-apps'],
   { tags: [APPS_CACHE_TAG] },

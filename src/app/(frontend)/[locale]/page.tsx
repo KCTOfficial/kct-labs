@@ -10,6 +10,7 @@ import { appHref } from '@/components/site/AppCard'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { getDictionary, isLocale, type Locale } from '@/i18n'
 import type { App } from '@/payload-types'
+import { HERO_SHOWCASE_MAX, normalizeShowcase } from '@/utilities/apps/heroShowcase'
 import { getCatalogStats, getHome, getShowcaseApps, listApps } from '@/utilities/apps/queries'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getCachedLocalizedGlobal } from '@/utilities/getGlobals'
@@ -43,8 +44,10 @@ export default async function HomePage({ params }: Args) {
   ])
 
   // Showcase: editor-picked apps, otherwise the top featured apps.
-  const picked = (home.hero?.showcaseApps ?? []).filter(isPublicApp)
-  const showcase: ShowcaseApp[] = picked.length ? picked : await getShowcaseApps(locale, 3)
+  const picked = normalizeShowcase((home.hero?.showcaseApps ?? []).filter(isPublicApp))
+  const showcase: ShowcaseApp[] = picked.length
+    ? picked
+    : normalizeShowcase(await getShowcaseApps(locale, HERO_SHOWCASE_MAX))
 
   const showFeatured = Boolean(
     home.featured?.enabled && home.featured?.title && isPublicApp(home.featured?.app),

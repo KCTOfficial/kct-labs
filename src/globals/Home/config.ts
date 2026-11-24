@@ -12,6 +12,7 @@ import { anyone } from '../../access/anyone'
 import { authenticated } from '../../access/authenticated'
 import { iconSelect } from '../../fields/iconSelect'
 import { defaultLocale } from '../../i18n/config'
+import { HERO_SHOWCASE_MAX } from '../../utilities/apps/heroShowcase'
 import {
   isSafeHref,
   isValidPhone,
@@ -96,11 +97,10 @@ export const Home: GlobalConfig = {
               name: 'showcaseApps',
               type: 'relationship',
               admin: {
-                description:
-                  'Up to 3 apps shown in the phone stage (their first screenshot is used). Empty = featured apps.',
+                description: `Up to ${HERO_SHOWCASE_MAX} apps rotate in the phone stage (their first screenshot is used; the first app starts in the centre). Empty = featured apps.`,
               },
               hasMany: true,
-              maxRows: 3,
+              maxRows: HERO_SHOWCASE_MAX,
               relationTo: 'apps',
             },
           ],
