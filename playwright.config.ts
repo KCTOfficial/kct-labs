@@ -35,6 +35,8 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
+    // Popup tests exercise the opt-in quick-view; a reused server must be started with the same flag.
+    env: { QUICK_VIEW_CARDS: 'true' },
     reuseExistingServer: true,
     url: 'http://localhost:3000',
   },

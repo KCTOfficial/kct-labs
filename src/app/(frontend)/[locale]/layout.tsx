@@ -9,6 +9,7 @@ import React from 'react'
 import { AdminBar } from '@/components/AdminBar'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { QuickViewProvider } from '@/components/quick-view/QuickViewProvider'
+import { isQuickViewEnabled } from '@/components/quick-view/config'
 import type { QuickViewLabels } from '@/components/quick-view/types'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
@@ -52,9 +53,8 @@ export default async function RootLayout({ children, params }: LayoutArgs) {
 
   const { isEnabled } = await draftMode()
   const dict = getDictionary(locale)
-  // Rollback switch: QUICK_VIEW_ENABLED=false (read at build time → redeploy) turns the popup off;
-  // cards then behave as plain links. Never active in draft/preview mode (it shows published data).
-  const quickViewEnabled = process.env.QUICK_VIEW_ENABLED !== 'false' && !isEnabled
+  // Cards are plain links to the full page by default; the popup is opt-in (see quick-view/config).
+  const quickViewEnabled = isQuickViewEnabled(isEnabled)
   const quickViewLabels: QuickViewLabels = {
     close: dict.a11y.close,
     loading: dict.quickView.loading,

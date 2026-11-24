@@ -20,7 +20,8 @@ export const downloadsText = (label: string | null | undefined, dict: Dictionary
 /**
  * App card (design: Components / AppCard). The whole card is clickable through the name link's
  * pseudo-element, which keeps a single, descriptive link per card for screen readers and crawlers.
- * `data-quick-view` lets QuickViewProvider open the popup on a plain click; the link itself is a
+ * `data-quick-view` lets QuickViewProvider open the popup on a plain click (only when opted in via
+ * `QUICK_VIEW_CARDS`; otherwise the card goes straight to the full page); the link itself is a
  * normal, crawlable `<a href="/apps/<slug>">` (modifier clicks, no JS and failures just navigate).
  */
 export const AppCard: React.FC<{
