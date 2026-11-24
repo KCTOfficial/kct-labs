@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { QuickViewProvider } from '@/components/quick-view/QuickViewProvider'
 import type { QuickViewLabels } from '@/components/quick-view/types'
 import { Footer } from '@/Footer/Component'
@@ -97,6 +98,7 @@ export default async function RootLayout({ children, params }: LayoutArgs) {
           <Footer locale={locale} />
           <QuickViewProvider enabled={quickViewEnabled} labels={quickViewLabels} />
         </Providers>
+        <GoogleAnalytics isPreview={isEnabled} />
       </body>
     </html>
   )

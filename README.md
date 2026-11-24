@@ -42,16 +42,17 @@ Lalu panggil `POST /api/apps/revalidate` (login admin) atau restart server agar 
 
 ### Variabel lingkungan
 
-| Variabel                 | Keterangan                                                       |
-| ------------------------ | ---------------------------------------------------------------- |
-| `DATABASE_URL`           | Connection string PostgreSQL                                     |
-| `PAYLOAD_SECRET`         | Secret enkripsi JWT (64 hex acak)                                |
-| `NEXT_PUBLIC_SERVER_URL` | URL publik tanpa trailing slash (dipakai canonical, OG, sitemap) |
-| `CRON_SECRET`            | Autentikasi job terjadwal                                        |
-| `PREVIEW_SECRET`         | Validasi request preview draft                                   |
-| `DISALLOW_INDEXING`      | `true` di staging → `noindex` + robots Disallow-all              |
-| `QUICK_VIEW_ENABLED`     | `false` mematikan popup quick-view (dibaca saat build)           |
-| `PORT`                   | (produksi) port publik di host; container tetap listen di 3000   |
+| Variabel                        | Keterangan                                                           |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`                  | Connection string PostgreSQL                                         |
+| `PAYLOAD_SECRET`                | Secret enkripsi JWT (64 hex acak)                                    |
+| `NEXT_PUBLIC_SERVER_URL`        | URL publik tanpa trailing slash (dipakai canonical, OG, sitemap)     |
+| `CRON_SECRET`                   | Autentikasi job terjadwal                                            |
+| `PREVIEW_SECRET`                | Validasi request preview draft                                       |
+| `DISALLOW_INDEXING`             | `true` di staging → `noindex` + robots Disallow-all                  |
+| `QUICK_VIEW_ENABLED`            | `false` mematikan popup quick-view (dibaca saat build)               |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ID GA4 (`G-XXXXXXXXXX`); kosong = analytics mati (dibaca saat build) |
+| `PORT`                          | (produksi) port publik di host; container tetap listen di 3000       |
 
 Contoh: [.env.example](.env.example). Env produksi (`.env.prod`) berisi secret, **tidak** disimpan di repo; buat manual di server dari `.env.example`.
 

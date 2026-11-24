@@ -7,6 +7,8 @@ declare global {
       VERCEL_PROJECT_PRODUCTION_URL: string
       /** "true" on staging/preview: noindex + Disallow-all robots.txt */
       DISALLOW_INDEXING?: string
+      /** GA4 Measurement ID (G-XXXXXXXXXX). Read at build time; empty = analytics off. */
+      NEXT_PUBLIC_GA_MEASUREMENT_ID?: string
     }
   }
 }

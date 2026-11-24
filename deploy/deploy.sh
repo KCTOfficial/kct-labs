@@ -171,6 +171,9 @@ preflight() {
   fi
   check_host_conflicts
   [[ "$(env_value DISALLOW_INDEXING)" == "true" ]] && warn "DISALLOW_INDEXING=true → site will be NOINDEX (ok only for staging)"
+  # A malformed ID silently disables Google Analytics, so surface it (warn, not die: analytics must never block a deploy).
+  value="$(env_value NEXT_PUBLIC_GA_MEASUREMENT_ID)"
+  [[ -z "$value" || "$value" =~ ^G-[A-Za-z0-9]{6,14}$ ]] || warn "NEXT_PUBLIC_GA_MEASUREMENT_ID must look like G-XXXXXXXXXX (got: $value) → Google Analytics will be DISABLED"
 
   # Images and build layers live in Docker's root dir, which may be on another disk than the repo.
   local free_gb docker_root run_free_mb run_free_inodes
