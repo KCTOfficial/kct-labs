@@ -172,7 +172,7 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     >
       <div
         aria-hidden="true"
-        className="relative h-[380px] touch-pan-y lg:h-[748px]"
+        className="relative h-[380px] touch-pan-y touch-pinch-zoom lg:h-[748px]"
         onClickCapture={(event) => {
           // Swallow the click that can follow a swipe so it never opens an app page.
           if (performance.now() - swipedAt.current < SWIPE_CLICK_GUARD_MS) {
@@ -229,11 +229,11 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
         <div
           aria-atomic="true"
           aria-live={running ? 'off' : 'polite'}
-          className="min-h-[5.5rem] min-w-0 flex-1 text-center"
+          className="h-[6.25rem] min-w-0 flex-1 text-center"
         >
           <div className={cn(changed && 'hero-caption-in')} data-hero-caption key={shown.id}>
             <Link
-              className="font-display text-base font-semibold text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="block line-clamp-1 font-display text-base font-semibold text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               data-hero-caption-link
               href={shown.href}
             >

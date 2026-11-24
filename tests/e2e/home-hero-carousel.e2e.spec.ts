@@ -401,9 +401,33 @@ test.describe('Home hero carousel — touch swipe', () => {
     await expect(page).toHaveURL(new RegExp(`${href}$`), { timeout: 30_000 })
   })
 
-  test('the phone area only lets the browser pan vertically', async ({ page }) => {
+  test('the phone area pans vertically but still allows pinch-zoom (WCAG 1.4.4)', async ({
+    page,
+  }) => {
     await open(page)
     const touchAction = await stageArea(page).evaluate((el) => getComputedStyle(el).touchAction)
-    expect(touchAction).toBe('pan-y')
+    expect(touchAction).toBe('pan-y pinch-zoom')
+  })
+})
+
+test.describe('Home hero carousel — caption layout (mobile)', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('the caption keeps one fixed height whatever its content (no layout shift per step)', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/`)
+    await ready(page)
+    const wrapper = page.locator('[data-hero-caption]').locator('xpath=..')
+    const height = async () => Math.round((await wrapper.boundingBox())!.height)
+    const baseline = await height()
+    // Worst case: a long wrapping name and a description far over three lines.
+    await page.evaluate(() => {
+      document.querySelector('[data-hero-caption-link]')!.textContent =
+        'An unusually long application name that wraps over several lines on a phone'
+      document.querySelector('[data-hero-caption-text]')!.textContent =
+        'Lorem ipsum dolor sit amet '.repeat(12)
+    })
+    expect(await height()).toBe(baseline)
   })
 })
