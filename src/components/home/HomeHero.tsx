@@ -2,16 +2,16 @@ import { ArrowRight, Store } from 'lucide-react'
 import React from 'react'
 
 import { ButtonLink } from '@/components/site/ButtonLink'
+import { appHref } from '@/components/site/AppCard'
 import { firstMedia, toImageSource } from '@/components/site/media'
-import { PhoneFrame } from '@/components/site/PhoneFrame'
 import { Chip } from '@/components/site/StatusChip'
 import { format, localizeHref, type Dictionary, type Locale } from '@/i18n'
 import type { App, Home } from '@/payload-types'
 import { cn } from '@/utilities/ui'
 
-import { phoneSlot } from './scrollStoryConfig'
+import { HeroStage, type HeroApp } from './HeroStage'
 
-export type ShowcaseApp = Pick<App, 'id' | 'name' | 'screenshots'>
+export type ShowcaseApp = Pick<App, 'id' | 'name' | 'slug' | 'shortDescription' | 'screenshots'>
 
 type Props = {
   hero: Home['hero']
@@ -23,16 +23,18 @@ type Props = {
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
-// Desktop stage positions follow the design (Hero / Device Stage): left, centre (front), right.
-const STAGE = [
-  'left-0 top-[60px] z-10 w-[44%] -rotate-3 lg:left-[4%] lg:top-[140px] lg:w-[37%] lg:-rotate-6',
-  'left-1/2 top-0 z-20 w-[50%] -translate-x-1/2 lg:left-[31%] lg:top-[40px] lg:w-[37%] lg:translate-x-0',
-  'right-0 top-[60px] z-10 w-[44%] rotate-3 lg:left-[59%] lg:right-auto lg:top-[150px] lg:w-[37%] lg:rotate-6',
-]
-const ORDER = [1, 0, 2] // show the first app in the centre
-
 export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict }) => {
-  const phones = ORDER.map((i) => showcase[i]).filter(Boolean)
+  // The stage owns which app sits where (and rotates them); the first app starts in the centre.
+  const apps: HeroApp[] = showcase.map((app) => ({
+    id: app.id,
+    name: app.name,
+    href: appHref(app.slug, locale),
+    shortDescription: app.shortDescription?.trim() || null,
+    image: toImageSource(
+      firstMedia(app.screenshots),
+      format(dict.app.screenshotAlt, { name: app.name, index: 1 }),
+    ),
+  }))
   const statItems = [
     { value: pad(stats.totalApps), label: dict.home.statApps },
     { value: pad(stats.totalCategories), label: dict.home.statCategories },
@@ -41,7 +43,7 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
       : []),
   ].filter((s) => s.value !== '00')
 
-  const hasPhones = phones.length > 0
+  const hasPhones = apps.length > 0
 
   const section = (
     <section
@@ -117,42 +119,17 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
         </div>
 
         {hasPhones && (
-          <div
-            aria-hidden="true"
-            className="relative mx-auto h-[380px] w-full max-w-[343px] lg:h-[748px] lg:max-w-[700px]"
-          >
-            {phones.map((app, i) => {
-              const image = toImageSource(
-                firstMedia(app.screenshots),
-                format(dict.app.screenshotAlt, { name: app.name, index: 1 }),
-              )
-              // Pose wrapper keeps the stage position/rotation (Tailwind `rotate`/`translate`
-              // properties); the scroll story animates only the inner node, so they never collide.
-              return (
-                <div
-                  className={cn(
-                    'absolute',
-                    phones.length === 1
-                      ? 'left-1/2 top-0 w-[46%] -translate-x-1/2 lg:w-[37%]'
-                      : STAGE[i],
-                  )}
-                  key={app.id}
-                >
-                  <div data-story-part={`phone-${phoneSlot(phones.length, i)}`}>
-                    <PhoneFrame
-                      className="w-full max-lg:rounded-[26px] max-lg:p-1.5 [&>div]:max-lg:rounded-[20px]"
-                      image={image}
-                      // Only the centre phone is preloaded (high priority); the side phones load
-                      // eagerly without a preload so they don't compete with the CSS and the <h1>.
-                      eager
-                      priority={phones.length === 1 || i === 1}
-                      sizes="(min-width: 1024px) 260px, 170px"
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <HeroStage
+            apps={apps}
+            key={apps.map((app) => app.id).join('.')}
+            labels={{
+              carousel: dict.home.heroCarousel,
+              prev: dict.home.heroPrev,
+              next: dict.home.heroNext,
+              pause: dict.home.heroPause,
+              play: dict.home.heroPlay,
+            }}
+          />
         )}
       </div>
     </section>

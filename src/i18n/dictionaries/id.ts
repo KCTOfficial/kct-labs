@@ -102,6 +102,11 @@ export const id: Dictionary = {
     statCategories: 'kategori',
     statTopDownloads: 'unduhan teratas',
     viewAll: 'Lihat semua {count} aplikasi',
+    heroCarousel: 'Aplikasi unggulan',
+    heroPrev: 'Aplikasi sebelumnya',
+    heroNext: 'Aplikasi berikutnya',
+    heroPause: 'Jeda tayangan',
+    heroPlay: 'Putar tayangan',
   },
   footer: {
     rights: 'Hak cipta dilindungi.',

@@ -104,6 +104,11 @@ export const en = {
     statCategories: 'categories',
     statTopDownloads: 'top downloads',
     viewAll: 'View all {count} apps',
+    heroCarousel: 'Featured apps',
+    heroPrev: 'Previous app',
+    heroNext: 'Next app',
+    heroPause: 'Pause slideshow',
+    heroPlay: 'Start slideshow',
   },
   footer: {
     rights: 'All rights reserved.',

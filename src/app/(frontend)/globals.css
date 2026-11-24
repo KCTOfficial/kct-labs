@@ -626,3 +626,55 @@ html[data-scroll-story='on'] [data-story-part]:focus-within {
     transform: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * Home hero phone carousel (src/components/home/HeroStage.tsx). Phones stay put; the screen inside
+ * each one slides. transform only. KEEP IN SYNC with HERO_SLIDE_MS / HERO_STAGGER_MS in
+ * heroCarouselModel.ts (500ms + 0/60/120ms delay per slot). Reduced-motion users get the global
+ * near-zero transition duration above (and JS commits their step immediately).
+ * ------------------------------------------------------------------------------------------- */
+.hero-track > [data-role='prev'] {
+  transform: translateX(-100%);
+}
+
+.hero-track > [data-role='next'] {
+  transform: translateX(100%);
+}
+
+.hero-track[data-slide='next'] {
+  transform: translateX(-100%);
+}
+
+.hero-track[data-slide='prev'] {
+  transform: translateX(100%);
+}
+
+.hero-track[data-slide] {
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hero-track[data-slide][data-slot='center'] {
+  transition-delay: 60ms;
+}
+
+.hero-track[data-slide][data-slot='right'] {
+  transition-delay: 120ms;
+}
+
+.hero-caption-in {
+  animation: hero-caption-in 250ms ease-out both;
+}
+
+@keyframes hero-caption-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Buttons stay laid out (no shift) but invisible until JS can drive them: no dead controls. */
+[data-hero-carousel][data-ready='false'] .hero-controls {
+  visibility: hidden;
+}

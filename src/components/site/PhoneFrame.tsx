@@ -19,7 +19,9 @@ export const PhoneFrame: React.FC<{
    */
   eager?: boolean
   sizes: string
-}> = ({ image, className, priority, eager, sizes }) => (
+  /** Custom screen content (e.g. the hero carousel's sliding layers); replaces `image`. */
+  screen?: React.ReactNode
+}> = ({ image, className, priority, eager, sizes, screen }) => (
   <div
     className={cn(
       'aspect-[260/540] rounded-[38px] border border-border-strong bg-device p-2 shadow-[0_30px_60px_rgba(0,0,0,0.4)]',
@@ -27,7 +29,8 @@ export const PhoneFrame: React.FC<{
     )}
   >
     <div className="relative size-full overflow-hidden rounded-[30px] bg-surface-2">
-      {image && (
+      {screen}
+      {!screen && image && (
         <Image
           alt={image.alt}
           className="object-cover object-top"
