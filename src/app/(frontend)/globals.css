@@ -678,6 +678,31 @@ html[data-scroll-story='on'] [data-story-part]:focus-within {
   }
 }
 
+/* Autoplay countdown: the fill of the active progress segment IS the clock (its animationend steps
+ * the carousel). transform only. KEEP IN SYNC duration with HERO_AUTOPLAY_MS in
+ * heroCarouselModel.ts (5000ms). `data-running='false'` freezes it in place (hover, keyboard focus,
+ * hidden tab, out of view) and it resumes where it stopped. Reduced motion: no animation (so no
+ * animationend, no autoplay) and the active segment is drawn full. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-progress-fill {
+    animation: hero-progress 5000ms linear forwards;
+    transform-origin: left;
+  }
+
+  .hero-progress-fill[data-running='false'] {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* Buttons stay laid out (no shift) but invisible until JS can drive them: no dead controls. */
 [data-hero-carousel][data-ready='false'] .hero-controls {
   visibility: hidden;

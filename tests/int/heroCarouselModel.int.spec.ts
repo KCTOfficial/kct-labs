@@ -10,7 +10,8 @@ import {
   isAutoplayRunning,
   layerWindow,
   screenIndexes,
-  stageAppIndexes,
+  slotScreenIndex,
+  stageSlots,
   stepActive,
   swipeDirection,
   wrapIndex,
@@ -37,17 +38,31 @@ describe('wrapIndex', () => {
   })
 })
 
-describe('stageAppIndexes (left, centre, right)', () => {
-  it('handles 0, 1 and 2 apps like the current hero', () => {
-    expect(stageAppIndexes(0, 0)).toEqual([])
-    expect(stageAppIndexes(0, 1)).toEqual([0])
-    expect(stageAppIndexes(0, 2)).toEqual([1, 0])
-    expect(stageAppIndexes(1, 2)).toEqual([0, 1])
+describe('stageSlots (phones of one app)', () => {
+  it('one phone per screenshot, at least the centre one, at most three', () => {
+    expect(stageSlots(0)).toEqual(['center'])
+    expect(stageSlots(1)).toEqual(['center'])
+    expect(stageSlots(2)).toEqual(['left', 'center'])
+    expect(stageSlots(3)).toEqual(['left', 'center', 'right'])
+    expect(stageSlots(10)).toEqual(['left', 'center', 'right'])
+  })
+})
+
+describe('slotScreenIndex (screenshot of an app in a stage slot)', () => {
+  it('maps left/centre/right to screenshots 2/1/3', () => {
+    expect(['left', 'center', 'right'].map((s) => slotScreenIndex(3, s as 'left'))).toEqual([
+      1, 0, 2,
+    ])
+    expect(slotScreenIndex(10, 'right')).toBe(2)
   })
 
-  it('puts the previous app left and the next app right for 3+ apps, wrapping at the ends', () => {
-    expect(stageAppIndexes(0, 3)).toEqual([2, 0, 1])
-    expect(stageAppIndexes(7, 8)).toEqual([6, 7, 0])
+  it('returns null for a slot the app has no phone in', () => {
+    expect(slotScreenIndex(0, 'center')).toBeNull()
+    expect(slotScreenIndex(1, 'left')).toBeNull()
+    expect(slotScreenIndex(1, 'right')).toBeNull()
+    expect(slotScreenIndex(1, 'center')).toBe(0)
+    expect(slotScreenIndex(2, 'left')).toBe(1)
+    expect(slotScreenIndex(2, 'right')).toBeNull()
   })
 })
 
@@ -65,7 +80,7 @@ describe('stepActive', () => {
 })
 
 describe('layerWindow', () => {
-  it('lists previous, current and next app of a phone', () => {
+  it('lists previous, current and next app shown by every phone', () => {
     expect(layerWindow(0, 8)).toEqual([7, 0, 1])
     expect(layerWindow(7, 8)).toEqual([6, 7, 0])
   })
@@ -88,7 +103,6 @@ describe('isAutoplayRunning', () => {
   const clean: AutoplayState = {
     count: 3,
     reducedMotion: false,
-    userPaused: false,
     interacting: false,
     pageHidden: false,
     inView: true,
@@ -105,7 +119,6 @@ describe('isAutoplayRunning', () => {
 
   it.each([
     ['reducedMotion', { reducedMotion: true }],
-    ['userPaused', { userPaused: true }],
     ['interacting', { interacting: true }],
     ['pageHidden', { pageHidden: true }],
     ['out of view', { inView: false }],

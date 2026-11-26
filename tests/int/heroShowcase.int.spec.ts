@@ -70,14 +70,16 @@ describe('toHeroApp', () => {
       'Foo screenshot 2',
       'Foo screenshot 3',
     ])
-    expect(hero.image).toEqual(hero.screens[0])
+    // Screenshot 1 is the centre phone (and the LCP); the legacy single `image` field is gone.
+    expect(hero.screens[0]!.src).toContain('/media/s1.png')
+    expect('image' in hero).toBe(false)
     expect(hero.shortDescription).toBe('desc')
   })
 
   it('has no screens and a null icon when nothing is populated', () => {
     const hero = toHeroApp(make([7], 9), 'en', dict)
     expect(hero.screens).toEqual([])
-    expect(hero.image).toBeNull()
+    expect('image' in hero).toBe(false)
     expect(hero.icon).toBeNull()
   })
 

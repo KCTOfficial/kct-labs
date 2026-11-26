@@ -14,6 +14,11 @@ const captionLink = (page: Page) => page.locator('[data-hero-caption-link]')
 const hrefOf = (page: Page, slot: 'left' | 'center' | 'right') =>
   phoneLink(page, slot).getAttribute('href')
 
+const phoneLinks = (page: Page) => page.locator('[data-hero-phone-link]')
+const fill = (page: Page) => page.getByTestId('hero-progress-fill')
+const fillWidth = (page: Page) =>
+  fill(page).evaluate((el) => Math.round(el.getBoundingClientRect().width))
+
 const ready = async (page: Page) => {
   await expect(group(page)).toHaveAttribute('data-ready', 'true', { timeout: 15_000 })
 }
@@ -27,16 +32,65 @@ test.describe('Home hero carousel — desktop', () => {
   test('SSR: centre phone and caption agree, phone links are decorative', async ({ page }) => {
     await page.goto(`${BASE}/`)
     await expect(page.locator('h1')).toHaveCount(1)
-    const links = page.locator('[data-hero-phone-link]')
+    const links = phoneLinks(page)
     await expect(links).toHaveCount(3)
+    const centre = await hrefOf(page, 'center')
+    expect(centre).toMatch(/^\/apps\/[a-z0-9-]+$/)
     for (const link of await links.all()) {
       await expect(link).toHaveAttribute('aria-hidden', 'true')
       await expect(link).toHaveAttribute('tabindex', '-1')
+      await expect(link).toHaveAttribute('href', centre!)
     }
-    const centre = await hrefOf(page, 'center')
-    expect(centre).toMatch(/^\/apps\/[a-z0-9-]+$/)
     await expect(captionLink(page)).toHaveAttribute('href', centre!)
     await expect(page.locator('[data-hero-caption-text]')).not.toBeEmpty()
+  })
+
+  test('three phones belong to one app (alt text names the same app)', async ({ page }) => {
+    await page.goto(`${BASE}/`)
+    const name = (await captionLink(page).textContent())!.trim()
+    expect(name.length).toBeGreaterThan(0)
+    const alts = await page
+      .locator('[data-hero-phone-link] [data-role="cur"] img')
+      .evaluateAll((imgs) => imgs.map((img) => img.getAttribute('alt') ?? ''))
+    expect(alts).toHaveLength(3)
+    for (const alt of alts) expect(alt).toContain(name)
+    expect(new Set(alts).size).toBe(3) // three different screenshots, not one repeated
+    // Content of the active app is server-rendered.
+    const html = await (await page.request.get(`${BASE}/`)).text()
+    expect(html).toContain(name)
+  })
+
+  test('one progress segment per app, the active one filling in orange', async ({ page }) => {
+    await page.goto(`${BASE}/`)
+    await ready(page)
+    const total = Number(await group(page).getAttribute('data-count'))
+    const segments = page.locator('[data-hero-progress] button')
+    await expect(segments).toHaveCount(total)
+    await expect(segments.first()).toHaveAttribute('aria-current', 'true')
+    await expect(segments.first()).toHaveAttribute('aria-label', /^Show .+/)
+    await expect(fill(page)).toHaveCount(1)
+    const colours = await fill(page).evaluate((el) => {
+      const probe = document.createElement('span')
+      probe.style.color = 'var(--accent-orange)'
+      document.body.append(probe)
+      const expected = getComputedStyle(probe).color
+      probe.remove()
+      return { actual: getComputedStyle(el).backgroundColor, expected }
+    })
+    expect(colours.actual).toBe(colours.expected)
+  })
+
+  test('clicking a segment shows that app', async ({ page }) => {
+    await page.goto(`${BASE}/`)
+    await ready(page)
+    const segments = page.locator('[data-hero-progress] button')
+    const target = segments.nth(1)
+    const label = (await target.getAttribute('aria-label'))!
+    await target.click()
+    await settled(page)
+    expect(await activeIndex(page)).toBe(1)
+    await expect(target).toHaveAttribute('aria-current', 'true')
+    await expect(captionLink(page)).toHaveText(label.replace(/^Show /, ''))
   })
 
   test('without JavaScript the caption and phone links work and buttons stay hidden', async ({
@@ -54,26 +108,27 @@ test.describe('Home hero carousel — desktop', () => {
     }
   })
 
-  test('next moves the right app to the centre, prev moves it back, and it wraps', async ({
+  test('next shows the next app on every phone, prev moves it back, and it wraps', async ({
     page,
   }) => {
     await page.goto(`${BASE}/`)
     await ready(page)
     const startCentre = await hrefOf(page, 'center')
-    const right = await hrefOf(page, 'right')
 
     await page.getByRole('button', { name: 'Next app' }).click()
     await settled(page)
-    expect(await hrefOf(page, 'center')).toBe(right)
-    await expect(captionLink(page)).toHaveAttribute('href', right!)
+    const nextCentre = await hrefOf(page, 'center')
+    expect(nextCentre).not.toBe(startCentre)
+    await expect(captionLink(page)).toHaveAttribute('href', nextCentre!)
+    for (const link of await phoneLinks(page).all()) {
+      await expect(link).toHaveAttribute('href', nextCentre!)
+    }
 
     await page.getByRole('button', { name: 'Previous app' }).click()
     await settled(page)
     expect(await hrefOf(page, 'center')).toBe(startCentre)
 
-    const count = await page.locator('[data-hero-phone-link]').count()
     const total = Number(await group(page).getAttribute('data-count'))
-    expect(total).toBeGreaterThanOrEqual(count)
     for (let i = 0; i < total; i++) {
       await page.getByRole('button', { name: 'Next app' }).click()
       await settled(page)
@@ -128,10 +183,11 @@ test.describe('Home hero carousel — desktop', () => {
     expect(travelling.every((x, i) => i === 0 || x <= travelling[i - 1]! + 0.01)).toBe(true)
   })
 
-  test('each phone links to its own detail page', async ({ page }) => {
+  test('each phone links to the detail page of the app on stage', async ({ page }) => {
     for (const slot of ['left', 'center', 'right'] as const) {
       await page.goto(`${BASE}/`)
       const href = await hrefOf(page, slot)
+      await expect(captionLink(page)).toHaveAttribute('href', href!)
       await phoneLink(page, slot).click()
       // Generous timeout: the first visit of /apps/<slug> compiles the route on a fresh dev server.
       await expect(page).toHaveURL(new RegExp(`${href}$`), { timeout: 30_000 })
@@ -234,17 +290,39 @@ test.describe('Home hero carousel — autoplay', () => {
     await expect.poll(() => activeIndex(page), { timeout: STEP_TIMEOUT }).toBe((afterAuto + 2) % n)
   })
 
-  test('the pause button stops and restarts it', async ({ page }) => {
+  test('there is no pause button and hover freezes the fill instead of resetting it', async ({
+    page,
+  }) => {
+    const start = await open(page)
+    await expect(page.getByRole('button', { name: /slideshow/i })).toHaveCount(0)
+    await page.waitForTimeout(1500)
+    await group(page).hover()
+    const frozen = await fillWidth(page)
+    expect(frozen).toBeGreaterThan(0)
+    await page.waitForTimeout(1000)
+    expect(Math.abs((await fillWidth(page)) - frozen)).toBeLessThanOrEqual(2)
+    expect(await activeIndex(page)).toBe(start)
+    // Live region stays quiet while autoplay runs and announces while it is stopped.
+    await expect(page.locator('[data-hero-carousel] [aria-live]')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    )
+    await parkMouse(page)
+    // Resumes where it stopped (grows from the frozen width, never back to zero).
+    await expect.poll(() => fillWidth(page), { timeout: 2000 }).toBeGreaterThan(frozen + 2)
+    await expect(page.locator('[data-hero-carousel] [aria-live]')).toHaveAttribute(
+      'aria-live',
+      'off',
+    )
+  })
+
+  test('one full fill steps exactly one app', async ({ page }) => {
     const start = await open(page)
     const n = await total(page)
-    await page.getByRole('button', { name: 'Pause slideshow' }).click()
-    await parkMouse(page)
-    await expect(page.getByRole('button', { name: 'Start slideshow' })).toBeVisible()
-    await page.waitForTimeout(QUIET_MS)
-    expect(await activeIndex(page)).toBe(start)
-    await page.getByRole('button', { name: 'Start slideshow' }).click()
-    await parkMouse(page)
     await expect.poll(() => activeIndex(page), { timeout: STEP_TIMEOUT }).toBe((start + 1) % n)
+    // The next fill starts from zero: no second step follows right away.
+    await page.waitForTimeout(2500)
+    expect(await activeIndex(page)).toBe((start + 1) % n)
   })
 
   test('a manual step restarts the countdown', async ({ page }) => {
@@ -262,13 +340,23 @@ test.describe('Home hero carousel — autoplay', () => {
     await expect.poll(() => activeIndex(page), { timeout: STEP_TIMEOUT }).toBe((start + 2) % n)
   })
 
-  test('reduced motion: no autoplay, no pause button, manual steps are instant', async ({
+  test('reduced motion: no autoplay, a static full segment, manual steps are instant', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     const start = await open(page)
     const n = await total(page)
-    await expect(page.getByRole('button', { name: 'Pause slideshow' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: /slideshow/i })).toHaveCount(0)
+    const track = await fill(page).evaluate((el) => {
+      const style = getComputedStyle(el)
+      return {
+        animation: style.animationName,
+        width: Math.round(el.getBoundingClientRect().width),
+        trackWidth: Math.round(el.parentElement!.getBoundingClientRect().width),
+      }
+    })
+    expect(track.animation).toBe('none')
+    expect(track.width).toBe(track.trackWidth)
     await page.waitForTimeout(QUIET_MS)
     expect(await activeIndex(page)).toBe(start)
     await nextButton(page).click()
@@ -346,8 +434,11 @@ test.describe('Home hero carousel — touch swipe', () => {
   const open = async (page: Page) => {
     await page.goto(`${BASE}/`)
     await ready(page)
-    // Keep autoplay out of the way: these tests are about the gesture only.
-    await page.getByRole('button', { name: 'Pause slideshow' }).tap()
+    // Keep autoplay out of the way: these tests are about the gesture only. There is no pause
+    // button any more, so stop the fill clock (the only autoplay timer) for this page.
+    await page.addStyleTag({
+      content: '.hero-progress-fill { animation-play-state: paused !important; }',
+    })
     return { start: await activeIndex(page), n: await total(page) }
   }
 

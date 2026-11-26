@@ -107,8 +107,7 @@ export const en = {
     heroCarousel: 'Featured apps',
     heroPrev: 'Previous app',
     heroNext: 'Next app',
-    heroPause: 'Pause slideshow',
-    heroPlay: 'Start slideshow',
+    heroGoTo: 'Show {name}',
   },
   footer: {
     rights: 'All rights reserved.',

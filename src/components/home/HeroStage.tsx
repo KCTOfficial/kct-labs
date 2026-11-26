@@ -1,33 +1,33 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
-import Link from 'next/link'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { ImageSource } from '@/components/site/media'
+import { format } from '@/i18n'
 import type { Media } from '@/payload-types'
 import { cn } from '@/utilities/ui'
 
 import {
   HERO_SLIDE_MS,
   HERO_STAGGER_MS,
-  stageAppIndexes,
+  stageSlots,
   stepActive,
   swipeDirection,
   type SlideDirection,
 } from './heroCarouselModel'
+import { HeroCaptionCard } from './HeroCaptionCard'
 import { HeroPhone } from './HeroPhone'
-import { phoneSlot } from './scrollStoryConfig'
+import { HeroProgress } from './HeroProgress'
+import type { PhoneSlot } from './scrollStoryConfig'
 import { useHeroAutoplay, useReducedMotion } from './useHeroAutoplay'
 
-/** Serializable app data for the stage; `href` is already localized and `image.alt` resolved. */
+/** Serializable app data for the stage; `href` is already localized and screen alts resolved. */
 export type HeroApp = {
   id: number
   name: string
   href: string
   shortDescription: string | null
-  /** First screen (kept until the stage renders `screens`). */
-  image: ImageSource | null
   /** Up to `HERO_MAX_SCREENS` populated screenshots. */
   screens: ImageSource[]
   icon: Pick<Media, 'url' | 'updatedAt' | 'width' | 'height' | 'alt'> | null
@@ -37,16 +37,19 @@ export type HeroLabels = {
   carousel: string
   prev: string
   next: string
-  pause: string
-  play: string
+  /** Segment label template with a `{name}` placeholder ("Show {name}"). */
+  goTo: string
 }
 
 // Desktop stage positions follow the design (Hero / Device Stage): left, centre (front), right.
-const STAGE = [
-  'left-0 top-[60px] z-10 w-[44%] -rotate-3 lg:left-[4%] lg:top-[140px] lg:w-[37%] lg:-rotate-6',
-  'left-1/2 top-0 z-20 w-[50%] -translate-x-1/2 lg:left-[31%] lg:top-[40px] lg:w-[37%] lg:translate-x-0',
-  'right-0 top-[60px] z-10 w-[44%] rotate-3 lg:left-[59%] lg:right-auto lg:top-[150px] lg:w-[37%] lg:rotate-6',
-]
+const STAGE: Record<PhoneSlot, string> = {
+  left: 'left-0 top-[60px] z-10 w-[44%] -rotate-3 lg:left-[4%] lg:top-[140px] lg:w-[37%] lg:-rotate-6',
+  center:
+    'left-1/2 top-0 z-20 w-[50%] -translate-x-1/2 lg:left-[31%] lg:top-[40px] lg:w-[37%] lg:translate-x-0',
+  right:
+    'right-0 top-[60px] z-10 w-[44%] rotate-3 lg:left-[59%] lg:right-auto lg:top-[150px] lg:w-[37%] lg:rotate-6',
+}
+/** Used only when no app has more than one phone, so the centre pose never jumps between apps. */
 const SINGLE = 'left-1/2 top-0 w-[46%] -translate-x-1/2 lg:w-[37%]'
 
 /** Neighbour screens load after the page's `load` event + idle, never during the LCP. */
@@ -73,7 +76,6 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     () => false,
   )
   const [changed, setChanged] = useState(false)
-  const [userPaused, setUserPaused] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [keyboardFocus, setKeyboardFocus] = useState(false)
   const reducedMotion = useReducedMotion()
@@ -130,19 +132,31 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     [count, reducedMotion],
   )
 
+  /** Segment click: jump straight to that app (no chained slides); ignored mid-transition. */
+  const select = useCallback(
+    (index: number) => {
+      if (animating.current || index === active) return
+      setNeighborsReady(true)
+      setChanged(true)
+      setActive(index)
+    },
+    [active],
+  )
+
   const { running } = useHeroAutoplay({
     rootRef,
     count,
     reducedMotion,
-    userPaused,
     interacting: hovered || keyboardFocus,
-    resetKey: active,
-    onTick: () => go('next'),
   })
 
-  const stage = stageAppIndexes(active, count)
-  // The caption already shows the app arriving in the centre while the screens slide.
-  const shown = apps[slide ? stepActive(active, count, slide) : active]!
+  // Phones belong to the active app; they change (mount/unmount) only when a step commits.
+  const slots = stageSlots(apps[active]!.screens.length)
+  const singleLayout = apps.every((app) => stageSlots(app.screens.length).length === 1)
+  // Caption and indicator already show the app arriving on stage while the screens slide, so its
+  // fill (keyed by this index) starts a full countdown at once and can never end mid-slide.
+  const shownIndex = slide ? stepActive(active, count, slide) : active
+  const shown = apps[shownIndex]!
 
   return (
     <div
@@ -203,80 +217,53 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
           go(direction)
         }}
       >
-        {stage.map((appIndex, position) => (
-          <div
-            className={cn('absolute', stage.length === 1 ? SINGLE : STAGE[position])}
-            key={position}
-          >
+        {slots.map((slot) => (
+          // Keyed by slot: the centre phone (and its loaded screens) survives a change of phone count.
+          <div className={cn('absolute', singleLayout ? SINGLE : STAGE[slot])} key={slot}>
             <HeroPhone
-              appIndex={appIndex}
+              appIndex={active}
               apps={apps}
               neighborsReady={neighborsReady}
               slide={slide}
-              slot={phoneSlot(stage.length, position)}
+              slot={slot}
             />
           </div>
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-3 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-30 lg:mx-auto lg:mt-0 lg:w-[66%]">
-        {count > 1 && (
-          <button
-            aria-label={labels.prev}
-            className={CONTROL_CLASS}
-            onClick={() => go('prev')}
-            type="button"
-          >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-          </button>
-        )}
+      <div className="mt-4 flex flex-col items-center gap-2 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-30 lg:mx-auto lg:mt-0 lg:w-[66%]">
         {/* Stable live region around the keyed caption: quiet while autoplay runs, polite after. */}
-        <div
-          aria-atomic="true"
-          aria-live={running ? 'off' : 'polite'}
-          className="h-[6.25rem] min-w-0 flex-1 text-center"
-        >
-          <div className={cn(changed && 'hero-caption-in')} data-hero-caption key={shown.id}>
-            <Link
-              className="block line-clamp-1 font-display text-base font-semibold text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              data-hero-caption-link
-              href={shown.href}
-            >
-              {shown.name}
-            </Link>
-            {shown.shortDescription && (
-              <p
-                className="mt-1 line-clamp-3 text-sm leading-relaxed text-text-secondary"
-                data-hero-caption-text
-              >
-                {shown.shortDescription}
-              </p>
-            )}
-          </div>
+        <div aria-atomic="true" aria-live={running ? 'off' : 'polite'} className="w-full">
+          <HeroCaptionCard animate={changed} app={shown} />
         </div>
         {count > 1 && (
-          <button
-            aria-label={labels.next}
-            className={CONTROL_CLASS}
-            onClick={() => go('next')}
-            type="button"
-          >
-            <ChevronRight aria-hidden="true" className="size-5" />
-          </button>
-        )}
-        {count > 1 && !reducedMotion && (
-          <button
-            aria-label={userPaused ? labels.play : labels.pause}
-            className={CONTROL_CLASS}
-            onClick={() => setUserPaused((paused) => !paused)}
-            type="button"
-          >
-            {userPaused ? (
-              <Play aria-hidden="true" className="size-4" />
-            ) : (
-              <Pause aria-hidden="true" className="size-4" />
-            )}
-          </button>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              aria-label={labels.prev}
+              className={CONTROL_CLASS}
+              onClick={() => go('prev')}
+              type="button"
+            >
+              <ChevronLeft aria-hidden="true" className="size-5" />
+            </button>
+            <HeroProgress
+              active={shownIndex}
+              count={count}
+              labels={apps.map((app) => format(labels.goTo, { name: app.name }))}
+              onComplete={() => go('next')}
+              onSelect={select}
+              // Paused until hydrated: a fill that ended before React listened would never step.
+              running={ready && running}
+            />
+            <button
+              aria-label={labels.next}
+              className={CONTROL_CLASS}
+              onClick={() => go('next')}
+              type="button"
+            >
+              <ChevronRight aria-hidden="true" className="size-5" />
+            </button>
+          </div>
         )}
       </div>
     </div>

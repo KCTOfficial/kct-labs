@@ -105,8 +105,7 @@ export const id: Dictionary = {
     heroCarousel: 'Aplikasi unggulan',
     heroPrev: 'Aplikasi sebelumnya',
     heroNext: 'Aplikasi berikutnya',
-    heroPause: 'Jeda tayangan',
-    heroPlay: 'Putar tayangan',
+    heroGoTo: 'Tampilkan {name}',
   },
   footer: {
     rights: 'Hak cipta dilindungi.',

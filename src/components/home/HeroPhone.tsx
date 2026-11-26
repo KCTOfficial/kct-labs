@@ -6,7 +6,7 @@ import React from 'react'
 
 import { PhoneFrame } from '@/components/site/PhoneFrame'
 
-import { layerWindow, stepActive, type SlideDirection } from './heroCarouselModel'
+import { layerWindow, slotScreenIndex, stepActive, type SlideDirection } from './heroCarouselModel'
 import type { HeroApp } from './HeroStage'
 import type { PhoneSlot } from './scrollStoryConfig'
 
@@ -17,7 +17,7 @@ type Layer = { index: number; role: LayerRole }
 
 type Props = {
   apps: HeroApp[]
-  /** App index this phone shows right now (committed state, before a running slide). */
+  /** Active app index (committed state, before a running slide). */
   appIndex: number
   slot: PhoneSlot
   slide: SlideDirection | null
@@ -26,8 +26,11 @@ type Props = {
 }
 
 /**
- * One phone of the hero stage. The pose wrapper (position/rotation) lives in HeroStage. The anchor is a decorative mouse/touch shortcut
- * (aria-hidden, not tabbable): keyboard users reach the centre app through the caption link.
+ * One phone of the hero stage. Every phone belongs to the active app and shows the screenshot of
+ * its slot; its prev/next layers hold the neighbour apps' screenshot for the same slot (empty
+ * screen when that app has no phone there). The pose wrapper (position/rotation) lives in
+ * HeroStage. The anchor is a decorative mouse/touch shortcut (aria-hidden, not tabbable): keyboard
+ * users reach the app through the caption link.
  */
 export const HeroPhone: React.FC<Props> = ({ apps, appIndex, slot, slide, neighborsReady }) => {
   const count = apps.length
@@ -52,20 +55,22 @@ export const HeroPhone: React.FC<Props> = ({ apps, appIndex, slot, slide, neighb
     )
   }
 
-  // While sliding, the link already points at the app arriving on this screen.
+  // While sliding, the link already points at the app arriving on the stage.
   const target = apps[slide ? stepActive(appIndex, count, slide) : curIndex]!
 
   const screen = (
     <div className="hero-track absolute inset-0" data-slide={slide ?? undefined} data-slot={slot}>
       {layers.map(({ index, role }) => {
         const app = apps[index]!
-        // Same preload policy as the static hero: only the first app in the centre is the LCP.
+        const shot = slotScreenIndex(app.screens.length, slot)
+        const image = shot === null ? null : (app.screens[shot] ?? null)
+        // Same preload policy as the static hero: only screenshot 1 of the first app (centre) is the LCP.
         const priority = slot === 'center' && index === 0
         return (
           <div className="absolute inset-0 bg-surface-2" data-role={role} key={app.id}>
-            {app.image && (
+            {image && (
               <Image
-                alt={app.image.alt}
+                alt={image.alt}
                 className="object-cover object-top"
                 draggable={false}
                 fetchPriority={priority ? undefined : 'low'}
@@ -73,7 +78,7 @@ export const HeroPhone: React.FC<Props> = ({ apps, appIndex, slot, slide, neighb
                 loading={priority ? undefined : 'eager'}
                 priority={priority}
                 sizes={SIZES}
-                src={app.image.src}
+                src={image.src}
               />
             )}
           </div>

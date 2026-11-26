@@ -113,8 +113,7 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
               carousel: dict.home.heroCarousel,
               prev: dict.home.heroPrev,
               next: dict.home.heroNext,
-              pause: dict.home.heroPause,
-              play: dict.home.heroPlay,
+              goTo: dict.home.heroGoTo,
             }}
           />
         )}

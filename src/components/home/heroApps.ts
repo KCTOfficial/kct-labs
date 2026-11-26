@@ -23,7 +23,6 @@ export const toHeroApp = (app: ShowcaseApp, locale: Locale, dict: Dictionary): H
     name: app.name,
     href: appHref(app.slug, locale),
     shortDescription: app.shortDescription?.trim() || null,
-    image: screens[0] ?? null,
     screens,
     icon: isMedia(app.icon)
       ? {
