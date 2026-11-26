@@ -299,29 +299,37 @@ Mulai rilis ini **Bahasa Indonesia adalah locale default**: URL tanpa prefix (`/
 - Field wajib (`requiredInDefaultLocale`) kini wajib di **tab Indonesia**; tab English opsional. Dokumen lama yang hanya berisi English **tidak bisa disimpan di tab Indonesia** sampai semua field wajib ID diisi (tab English tetap bisa disimpan). Ini disengaja: konten ID menjadi sumber utama.
 - Dokumen legal: banner "No … content yet" muncul di tab yang belum punya markdown dan menawarkan *Copy from* bahasa lain.
 - `pnpm rebrand:content` (bila masih dipakai) menyimpan per locale; pada dokumen lama EN-only, penyimpanan di locale ID bisa gagal validasi (dicatat sebagai failure di log) sampai field ID diisi.
+- **Aturan editorial baru:** karena English **tidak punya fallback**, app/kategori yang hanya diisi dalam Bahasa Indonesia tetap mendapat halaman `/en/...` dengan teks kosong (nama ada, tagline/deskripsi/fitur kosong). Sebelum app seperti itu diterbitkan, isi tab English: tagline, short description, description, dan features (serta judul kategorinya).
+- **Keputusan pemilik (TERBUKA, belum diimplementasikan):** apakah halaman EN dari app yang hanya berisi Indonesia harus diberi `noindex` dan/atau dikeluarkan dari sitemap & `hreflang`. Saat ini halaman tersebut tetap terindeks dan diiklankan lewat sitemap/`hreflang`.
 - REST API Payload **tanpa** `?locale=` tidak menerapkan fallback per locale untuk locale default (perilaku Payload `sanitizeLocales`). Konsumen REST/GraphQL yang butuh cadangan EN harus mengirim `?locale=id` (fallback ke EN berlaku) atau `?locale=en`. Frontend memakai Local API sehingga tidak terdampak.
 
 **Pemeriksaan sebelum deploy (pemilik)**
 
 1. Bukti tanpa migrasi, di DB dev: `pnpm payload migrate:create locale_default_id` → hasilnya harus **kosong** (tanpa perubahan skema); hapus berkas kosong yang dibuat. Bila ada diff, **jangan deploy** — laporkan.
-2. Data yang masih EN-only (akan tampil EN dengan pemberitahuan / fallback di URL ID) — read-only di DB produksi:
+2. Data publik yang masih EN-only (akan tampil EN dengan pemberitahuan / fallback di URL ID) — read-only di DB produksi; hanya dokumen yang terbit (`_status = 'published'`) dan app yang tidak diarsipkan (`status <> 'archived'`), karena draft/arsip tidak tampil di situs:
 
    ```sql
-   -- Dokumen legal tanpa markdown Indonesia
-   SELECT d.id, d.slug
+   -- Dokumen legal terbit (milik app terbit & tidak diarsipkan) tanpa markdown Indonesia
+   SELECT d.id, d.slug, a.slug AS app_slug
    FROM app_documents d
-   WHERE NOT EXISTS (
-     SELECT 1 FROM app_documents_locales l
-     WHERE l._parent_id = d.id AND l._locale = 'id' AND coalesce(l.markdown, '') <> ''
-   );
+   JOIN apps a ON a.id = d.app_id
+   WHERE d._status = 'published'
+     AND a._status = 'published'
+     AND a.status <> 'archived'
+     AND NOT EXISTS (
+       SELECT 1 FROM app_documents_locales l
+       WHERE l._parent_id = d.id AND l._locale = 'id' AND coalesce(l.markdown, '') <> ''
+     );
 
-   -- App tanpa tagline Indonesia
+   -- App terbit & tidak diarsipkan tanpa tagline Indonesia
    SELECT a.id, a.slug
    FROM apps a
-   WHERE NOT EXISTS (
-     SELECT 1 FROM apps_locales l
-     WHERE l._parent_id = a.id AND l._locale = 'id' AND coalesce(l.tagline, '') <> ''
-   );
+   WHERE a._status = 'published'
+     AND a.status <> 'archived'
+     AND NOT EXISTS (
+       SELECT 1 FROM apps_locales l
+       WHERE l._parent_id = a.id AND l._locale = 'id' AND coalesce(l.tagline, '') <> ''
+     );
    ```
 
 **Urutan rilis**
@@ -336,3 +344,9 @@ Mulai rilis ini **Bahasa Indonesia adalah locale default**: URL tanpa prefix (`/
 **Rollback**
 
 Kembalikan `defaultLocale` ke `'en'` di `src/i18n/config.ts` (`fallbackLocales = { id: 'en' }` tetap benar untuk default EN), atau revert commit rilis ini, deploy, lalu jalankan langkah 3 & 5 di atas. Tidak ada migrasi yang perlu dibatalkan; data per locale tidak berubah.
+
+Perhatian untuk konten yang dibuat **selama** rilis ini (hanya diisi Bahasa Indonesia):
+
+- Setelah rollback, halaman default (English, tanpa prefix) menampilkan field tersebut **kosong**: fallback hanya berlaku `id → en`, tidak sebaliknya.
+- Dokumen tersebut **tidak bisa disimpan dari tab English** (`requiredInDefaultLocale` kembali mewajibkan English) sampai field wajib English diisi.
+- Sebelum rollback, jalankan query pada langkah pemeriksaan di atas dengan `'en'` menggantikan `'id'` untuk menemukan konten yang belum punya English, lalu isi terjemahannya (atau terima teks kosong sementara).
