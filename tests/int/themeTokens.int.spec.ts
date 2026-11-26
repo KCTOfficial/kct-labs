@@ -24,7 +24,9 @@ const parseTokens = (body: string): Tokens => {
 
 const light = parseTokens(block(':root {'))
 const dark = parseTokens(block("[data-theme='dark'] {"))
-const media = parseTokens(block(':root:not([data-theme])', css.indexOf('@media (prefers-color-scheme: dark)')))
+const media = parseTokens(
+  block(':root:not([data-theme])', css.indexOf('@media (prefers-color-scheme: dark)')),
+)
 
 /** Resolves a token (following one `var()` hop) to a solid #rrggbb, falling back to the light base. */
 const tok = (theme: Tokens, name: string): string => {
@@ -32,7 +34,8 @@ const tok = (theme: Tokens, name: string): string => {
   let value = merged[name]
   const ref = /^var\((--[\w-]+)\)$/.exec(value ?? '')
   if (ref) value = merged[ref[1]]
-  if (!value || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error(`${name} is not a solid hex: ${value}`)
+  if (!value || !/^#[0-9a-f]{6}$/i.test(value))
+    throw new Error(`${name} is not a solid hex: ${value}`)
   return value
 }
 
@@ -42,7 +45,9 @@ const channel = (v: number) => {
 }
 const luminance = (hex: string) => {
   const n = parseInt(hex.slice(1), 16)
-  return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255)
+  return (
+    0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255)
+  )
 }
 const contrast = (fgHex: string, bgHex: string): number => {
   const [a, b] = [luminance(fgHex), luminance(bgHex)].sort((x, y) => y - x)
@@ -56,7 +61,9 @@ const themes: [string, Tokens][] = [
 
 describe('theme tokens (KCT Hub logo palette)', () => {
   it.each(themes)('%s: primary-foreground on primary >= 4.5', (_n, t) => {
-    expect(contrast(tok(t, '--primary-foreground'), tok(t, '--primary'))).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(tok(t, '--primary-foreground'), tok(t, '--primary'))).toBeGreaterThanOrEqual(
+      4.5,
+    )
   })
 
   it.each(themes)('%s: foreground on background >= 4.5', (_n, t) => {
@@ -90,6 +97,29 @@ describe('theme tokens (KCT Hub logo palette)', () => {
   it('exposes the orange tokens to Tailwind', () => {
     expect(css).toContain('--color-accent-orange: var(--accent-orange)')
     expect(css).toContain('--color-accent-orange-text: var(--accent-orange-text)')
+  })
+
+  describe('hero progress indicator (WCAG 1.4.11, UI >= 3:1)', () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), 'src/components/home/HeroProgress.tsx'),
+      'utf8',
+    )
+    // Colour tokens used by the track span (unfilled track + inactive dots, incl. hover state).
+    const trackClasses = /'relative block h-1\.5[^']*'[\s\S]*?\)/.exec(source)?.[0] ?? ''
+    const tokens = [...trackClasses.matchAll(/\bbg-([a-z0-9-]+)/g)].map((m) => `--${m[1]}`)
+    const allThemes: [string, Tokens][] = [...themes, ['prefers-color-scheme dark', media]]
+
+    it('reads the track colours from HeroProgress', () => {
+      expect(tokens.length).toBeGreaterThanOrEqual(2) // base + hover
+    })
+
+    it.each(allThemes)('%s: track/dot colours on background and surface >= 3', (_n, t) => {
+      for (const n of tokens) {
+        for (const bg of ['--background', '--surface']) {
+          expect(contrast(tok(t, n), tok(t, bg)), `${n} on ${bg}`).toBeGreaterThanOrEqual(3)
+        }
+      }
+    })
   })
 
   it('the prefers-color-scheme block repeats every [data-theme=dark] token with the same value', () => {

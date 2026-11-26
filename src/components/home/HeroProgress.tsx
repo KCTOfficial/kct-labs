@@ -46,8 +46,9 @@ export const HeroProgress: React.FC<Props> = ({
           >
             <span
               className={cn(
-                'relative block h-1.5 overflow-hidden rounded-full bg-border-strong',
-                isActive ? 'w-8' : 'w-1.5 group-hover:bg-text-muted',
+                // Track and dots need >= 3:1 on background/surface in both themes (WCAG 1.4.11).
+                'relative block h-1.5 overflow-hidden rounded-full bg-text-muted',
+                isActive ? 'w-8' : 'w-1.5 group-hover:bg-text-secondary',
               )}
             >
               {isActive && (
