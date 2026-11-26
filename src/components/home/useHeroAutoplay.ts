@@ -33,7 +33,7 @@ type Options = {
   rootRef: React.RefObject<HTMLElement | null>
   count: number
   reducedMotion: boolean
-  /** Mouse hover or keyboard focus inside the carousel. */
+  /** Mouse hover or keyboard focus inside the carousel, or autoplay stopped by a touch step. */
   interacting: boolean
 }
 
