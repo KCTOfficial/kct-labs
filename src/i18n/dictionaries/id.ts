@@ -85,6 +85,11 @@ export const id: Dictionary = {
     privacyPolicy: 'Kebijakan Privasi',
     contactSupport: 'Hubungi dukungan',
     moreApps: 'Aplikasi lain dari KCT',
+    howItWorks: 'Cara kerja',
+    exploreFeatures: 'Lihat semua fitur',
+    learnMore: 'Pelajari selengkapnya',
+    stepNumber: 'Langkah {n}',
+    categoryApp: 'Aplikasi {category}',
     developerName: 'PT KCT',
   },
   quickView: {

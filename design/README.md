@@ -67,6 +67,12 @@ Implementasi: token → CSS variables di `src/app/(frontend)/globals.css` (`:roo
 `*` = diterjemahkan; wajib hanya di English (Indonesia fallback ke English).
 Akses: publik hanya membaca yang _published_; tulis = admin login. Endpoint `POST /api/apps/revalidate` (admin) menyegarkan semua cache.
 
+**Section halaman detail** (semua opsional; section tanpa isi tidak dirender; referensi visual: `design/app-detail.png`):
+tab **Overview** → `accentColor` (12 preset warna, dipilih lewat grid swatch; kosong = warna brand; preset → token `--app-accent*` di `globals.css`, kontras diuji per tema).
+Tab **Page sections** → `highlights[]` (maks 3: `icon`, `title`, `description`; strip di bawah hero), `howItWorks` (`title`, `description`, `steps[]` maks 4 dengan `image`), `featuresIntro` (judul/pengantar Key Features), `dataControl` (banner data; tautan "Learn more" otomatis ke dokumen legal app bila ada). `features[]` (Key Features) kini juga dikelola di tab ini, bukan di Details: tiap baris punya `icon`, `label`, `description` (opsional; tanpa ikon memakai centang) dan judul baris berupa nama fiturnya. Pindah tab tidak mengubah skema database. Latar motif hero dan banner digambar dengan CSS murni dari warna aksen (`.accent-motif-hero` / `.accent-motif-banner` di `globals.css`); tint di bawah teks dibatasi `--motif-wash` dan kontrasnya diuji.
+`icon` = nama ikon Lucide dari daftar putih append-only `src/fields/appIcons.ts` (±150), dipilih lewat popup bergambar (`src/fields/IconPicker/`); disimpan sebagai teks (bukan enum) sehingga menambah ikon tidak butuh migrasi. Peta ikon (`src/components/site/iconMap.ts`) hanya dipakai Server Component dan picker admin. Home tetap memakai 20 ikonnya (enum) dengan popup yang sama.
+Hero detail memakai tiga screenshot pertama (kiri = #2, tengah = #1, kanan = #3), hanya di desktop. Selisih dengan `design/kct-hub.pen` belum disinkronkan (desain tidak diubah di perubahan ini).
+
 ### Collection `app-categories` — `src/collections/AppCategories/`
 
 `title` (diterjemahkan), `slug`, `sortOrder`. Jumlah per kategori dihitung saat query (1 query untuk semua kategori), tidak disimpan.

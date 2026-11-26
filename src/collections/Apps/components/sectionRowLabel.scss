@@ -1,0 +1,22 @@
+// Admin-only styles for the page-section row titles (Payload theme variables).
+.section-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  &__number {
+    font-variant-numeric: tabular-nums;
+    color: var(--theme-elevation-500);
+  }
+
+  &__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  &__empty {
+    color: var(--theme-elevation-500);
+  }
+}

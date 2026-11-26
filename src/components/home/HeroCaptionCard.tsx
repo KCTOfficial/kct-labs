@@ -12,7 +12,7 @@ import type { HeroApp } from './HeroStage'
  * name link is the keyboard route to the app (the phone links are aria-hidden and not tabbable).
  */
 export const HeroCaptionCard: React.FC<{ app: HeroApp; animate: boolean }> = ({ app, animate }) => (
-  <div className="h-32 overflow-hidden rounded-2xl border border-border bg-surface">
+  <div className="h-32 overflow-hidden rounded-2xl border border-border bg-surface lg:h-[var(--hero-card-h)]">
     <div
       className={cn('flex h-full items-center gap-3 px-4', animate && 'hero-caption-in')}
       data-hero-caption
@@ -22,7 +22,7 @@ export const HeroCaptionCard: React.FC<{ app: HeroApp; animate: boolean }> = ({ 
       <span aria-hidden="true" className="h-14 w-px shrink-0 bg-border" />
       <div className="min-w-0 flex-1 text-left">
         <Link
-          className="line-clamp-1 font-display text-base font-semibold text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="line-clamp-1 font-display text-base font-semibold text-foreground hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring lg:text-[length:calc(var(--hero-card-text)*8/7)]"
           data-hero-caption-link
           href={app.href}
         >
@@ -30,7 +30,7 @@ export const HeroCaptionCard: React.FC<{ app: HeroApp; animate: boolean }> = ({ 
         </Link>
         {app.shortDescription && (
           <p
-            className="mt-1 line-clamp-3 text-sm leading-relaxed text-text-secondary"
+            className="mt-1 line-clamp-3 text-sm leading-relaxed text-text-secondary lg:text-[length:var(--hero-card-text)]"
             data-hero-caption-text
           >
             {app.shortDescription}

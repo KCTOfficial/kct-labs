@@ -19,6 +19,9 @@ import { HorizontalRuleFeatureClient as HorizontalRuleFeatureClient_e70f5e05f09f
 import { BlocksFeatureClient as BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
+import { AccentColorField as AccentColorField_a46a31e09a5616d08b31b9a3fefba545 } from '@/collections/Apps/components/AccentColorField'
+import { IconPickerField as IconPickerField_90c3499d831bd304376724f5c5039f77 } from '@/fields/IconPicker/IconPickerField'
+import { SectionRowLabel as SectionRowLabel_7699bd3ae4f597cb3061dd919800549d } from '@/collections/Apps/components/SectionRowLabel'
 import { MissingRequiredDocsBanner as MissingRequiredDocsBanner_f5f4a7acfba660254ae68117a2691341 } from '@/collections/Apps/components/MissingRequiredDocsBanner'
 import { SlugLockField as SlugLockField_ffe3e60b52fa89e0f002f05d7ceb39e3 } from '@/collections/Apps/components/SlugLockField'
 import { ImmutableSlugField as ImmutableSlugField_1d0f376e680af71fcefcff2b077a2906 } from '@/collections/DocumentTypes/components/ImmutableSlugField'
@@ -73,6 +76,9 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BlocksFeatureClient": BlocksFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
+  "@/collections/Apps/components/AccentColorField#AccentColorField": AccentColorField_a46a31e09a5616d08b31b9a3fefba545,
+  "@/fields/IconPicker/IconPickerField#IconPickerField": IconPickerField_90c3499d831bd304376724f5c5039f77,
+  "@/collections/Apps/components/SectionRowLabel#SectionRowLabel": SectionRowLabel_7699bd3ae4f597cb3061dd919800549d,
   "@/collections/Apps/components/MissingRequiredDocsBanner#MissingRequiredDocsBanner": MissingRequiredDocsBanner_f5f4a7acfba660254ae68117a2691341,
   "@/collections/Apps/components/SlugLockField#SlugLockField": SlugLockField_ffe3e60b52fa89e0f002f05d7ceb39e3,
   "@/collections/DocumentTypes/components/ImmutableSlugField#ImmutableSlugField": ImmutableSlugField_1d0f376e680af71fcefcff2b077a2906,

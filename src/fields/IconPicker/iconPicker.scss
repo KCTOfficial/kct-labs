@@ -1,0 +1,99 @@
+// Admin-only styles for the icon picker (Payload theme variables, no frontend tokens).
+.icon-picker {
+  margin-bottom: calc(var(--base) * 0.75);
+
+  &__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__glyph {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--base) * 0.75);
+    width: min(720px, 92vw);
+    max-height: 80vh;
+    padding: calc(var(--base) * 1.25);
+    background: var(--theme-bg);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-m);
+  }
+
+  &__bar {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__search {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    color: var(--theme-text);
+    background: var(--theme-input-bg);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+  }
+
+  &__clear {
+    padding: 8px 12px;
+    color: var(--theme-text);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+  }
+
+  &__empty {
+    margin: 0;
+    color: var(--theme-elevation-500);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  &__option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px;
+    font-size: 11px;
+    color: var(--theme-text);
+    cursor: pointer;
+    background: var(--theme-elevation-0);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+
+    &:hover {
+      background: var(--theme-elevation-50);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--theme-success-500);
+      outline-offset: 1px;
+    }
+
+    &[aria-selected='true'] {
+      background: var(--theme-success-50);
+      border-color: var(--theme-success-500);
+    }
+  }
+
+  &__name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

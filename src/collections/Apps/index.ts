@@ -22,11 +22,13 @@ import {
   optionalText,
   requiredInDefaultLocale,
 } from '../../utilities/apps/validation'
+import { accentColorField } from '../../fields/accentColorField'
 import { defaultLocale } from '../../i18n/config'
 
 const requiredDefault = requiredInDefaultLocale(defaultLocale)
 import { revalidateAllEndpoint } from './endpoints/revalidateAll'
 import { cascadeDeleteDocuments } from './hooks/cascadeDeleteDocuments'
+import { pageSectionsFields } from './fields/pageSections'
 import { guardSlugChange } from './hooks/guardSlugChange'
 import { revalidateApp, revalidateAppDelete } from './hooks/revalidateApp'
 
@@ -154,6 +156,7 @@ export const Apps: CollectionConfig<'apps'> = {
                 },
               ],
             },
+            accentColorField(),
             {
               type: 'row',
               fields: [
@@ -206,26 +209,11 @@ export const Apps: CollectionConfig<'apps'> = {
               localized: true,
             },
             {
-              name: 'features',
-              type: 'array',
-              admin: { initCollapsed: true },
-              fields: [
-                {
-                  name: 'label',
-                  type: 'text',
-                  localized: true,
-                  maxLength: 120,
-                  validate: requiredDefault,
-                },
-              ],
-              maxRows: 12,
-            },
-            {
               name: 'specs',
               type: 'array',
               admin: {
                 description:
-                  'Extra rows for the "App information" panel (version, size, languages…). Empty rows are hidden.',
+                  'Extra information rows (version, size, languages…). Not shown on the app page at the moment; kept for later use.',
                 initCollapsed: true,
               },
               fields: [
@@ -252,6 +240,12 @@ export const Apps: CollectionConfig<'apps'> = {
               maxRows: 12,
             },
           ],
+        },
+        {
+          label: 'Page sections',
+          description:
+            'Optional blocks on the app page. A block without content is not shown on the site.',
+          fields: pageSectionsFields,
         },
         {
           label: 'Links',

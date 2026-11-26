@@ -299,6 +299,9 @@
   --color-device: var(--device);
   --color-on-brand-accent: var(--on-brand-accent);
   --color-on-brand-muted: var(--on-brand-muted);
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-text: var(--app-accent-text);
+  --color-app-accent-soft: var(--app-accent-soft);
 }
 
 @layer base {
@@ -329,10 +332,343 @@
   /* Hero stage (phones + overlaid caption, desktop): fills the first screen below the header and
    * the hero's top padding, never below 416px (then the hero scrolls) nor above the design's 748px. */
   --hero-stage-h: clamp(26rem, calc(100svh - var(--story-top) - 9rem), 46.75rem);
+  /* Caption card (desktop) scales with the stage so it keeps its proportion to the phones: 8rem tall
+   * at the design's 748px stage (17%), never below 6rem (name + 3 description lines still fit). */
+  --hero-card-h: clamp(6rem, calc(var(--hero-stage-h) * 0.171), 8rem);
+  /* Description text: 14px at the design size, 13px on the shortest stage (name is 8/7 of it). */
+  --hero-card-text: clamp(0.8125rem, calc(var(--hero-stage-h) * 0.0187), 0.875rem);
   /* Phone group width follows the stage height. At 748px the design's phone group is 700px wide and
-   * the centre phone ends 578px down; the caption block (8rem card + 0.5rem gap + 2.75rem controls)
-   * may graze it by 10px, so the group gets `stage - 10.625rem` of height → width × 700/578. */
-  --hero-phones-w: calc((var(--hero-stage-h) - 10.625rem) * 1.2111);
+   * the centre phone ends 578px down; the caption block (card + 0.5rem gap + 2.75rem controls) may
+   * graze it by 10px, so the group gets `stage - card - 2.625rem` of height → width × 700/578.
+   * The graze stays 10px at every size because the card height is part of the offset. */
+  --hero-phones-w: calc((var(--hero-stage-h) - var(--hero-card-h) - 2.625rem) * 1.2111);
+  /* Never wider than the phone group (≈ 90% of it is the visible span of the three phones). */
+  --hero-card-w: min(29rem, calc(var(--hero-phones-w) * 0.9));
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * App accent colour (detail page). `data-accent="<preset>"` on the page sets --app-accent (fills, UI
+ * >= 3:1) and --app-accent-text (text >= 4.5:1) per theme; without it the brand colours apply.
+ * KEEP IN SYNC with src/utilities/apps/accent.ts (admin swatches); tests check contrast and sync.
+ * ------------------------------------------------------------------------------------------- */
+:root {
+  --app-accent: var(--primary);
+  --app-accent-text: var(--primary);
+  /* Also defined here: an app WITHOUT data-accent must still get tinted tiles and banner. */
+  --app-accent-soft: color-mix(in srgb, var(--app-accent) 14%, transparent);
+  /* Strongest accent tint allowed under body text by the decorative motifs below (a test checks
+   * the contrast of every text token on it, for every preset and theme). */
+  --motif-wash: 10%;
+  /* Google Play mark colours: a brand mark, so the same in every theme (see GooglePlayMark). */
+  --gplay-blue: #00a0ff;
+  --gplay-green: #00f076;
+  --gplay-yellow: #ffd500;
+  --gplay-red: #ff3a44;
+}
+
+[data-accent] {
+  --app-accent-soft: color-mix(in srgb, var(--app-accent) 14%, transparent);
+}
+
+[data-accent='blue'] {
+  --app-accent: #2563eb;
+  --app-accent-text: #1d4ed8;
+}
+
+[data-accent='sky'] {
+  --app-accent: #0284c7;
+  --app-accent-text: #0369a1;
+}
+
+[data-accent='cyan'] {
+  --app-accent: #0891b2;
+  --app-accent-text: #0e7490;
+}
+
+[data-accent='teal'] {
+  --app-accent: #0d9488;
+  --app-accent-text: #0f766e;
+}
+
+[data-accent='green'] {
+  --app-accent: #15803d;
+  --app-accent-text: #166534;
+}
+
+[data-accent='lime'] {
+  --app-accent: #4d7c0f;
+  --app-accent-text: #3f6212;
+}
+
+[data-accent='amber'] {
+  --app-accent: #b45309;
+  --app-accent-text: #92400e;
+}
+
+[data-accent='orange'] {
+  --app-accent: #ea580c;
+  --app-accent-text: #c2410c;
+}
+
+[data-accent='red'] {
+  --app-accent: #dc2626;
+  --app-accent-text: #b91c1c;
+}
+
+[data-accent='rose'] {
+  --app-accent: #e11d48;
+  --app-accent-text: #be123c;
+}
+
+[data-accent='pink'] {
+  --app-accent: #db2777;
+  --app-accent-text: #be185d;
+}
+
+[data-accent='purple'] {
+  --app-accent: #9333ea;
+  --app-accent-text: #7e22ce;
+}
+
+[data-theme='dark'] [data-accent='blue'] {
+  --app-accent: #60a5fa;
+  --app-accent-text: #60a5fa;
+}
+
+[data-theme='dark'] [data-accent='sky'] {
+  --app-accent: #38bdf8;
+  --app-accent-text: #38bdf8;
+}
+
+[data-theme='dark'] [data-accent='cyan'] {
+  --app-accent: #22d3ee;
+  --app-accent-text: #22d3ee;
+}
+
+[data-theme='dark'] [data-accent='teal'] {
+  --app-accent: #2dd4bf;
+  --app-accent-text: #2dd4bf;
+}
+
+[data-theme='dark'] [data-accent='green'] {
+  --app-accent: #4ade80;
+  --app-accent-text: #4ade80;
+}
+
+[data-theme='dark'] [data-accent='lime'] {
+  --app-accent: #a3e635;
+  --app-accent-text: #a3e635;
+}
+
+[data-theme='dark'] [data-accent='amber'] {
+  --app-accent: #fbbf24;
+  --app-accent-text: #fbbf24;
+}
+
+[data-theme='dark'] [data-accent='orange'] {
+  --app-accent: #fb923c;
+  --app-accent-text: #fb923c;
+}
+
+[data-theme='dark'] [data-accent='red'] {
+  --app-accent: #f87171;
+  --app-accent-text: #f87171;
+}
+
+[data-theme='dark'] [data-accent='rose'] {
+  --app-accent: #fb7185;
+  --app-accent-text: #fb7185;
+}
+
+[data-theme='dark'] [data-accent='pink'] {
+  --app-accent: #f472b6;
+  --app-accent-text: #f472b6;
+}
+
+[data-theme='dark'] [data-accent='purple'] {
+  --app-accent: #c084fc;
+  --app-accent-text: #c084fc;
+}
+
+/* No data-theme yet → follow the OS preference (same values as the dark rules above). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) [data-accent='blue'] {
+    --app-accent: #60a5fa;
+    --app-accent-text: #60a5fa;
+  }
+
+  :root:not([data-theme]) [data-accent='sky'] {
+    --app-accent: #38bdf8;
+    --app-accent-text: #38bdf8;
+  }
+
+  :root:not([data-theme]) [data-accent='cyan'] {
+    --app-accent: #22d3ee;
+    --app-accent-text: #22d3ee;
+  }
+
+  :root:not([data-theme]) [data-accent='teal'] {
+    --app-accent: #2dd4bf;
+    --app-accent-text: #2dd4bf;
+  }
+
+  :root:not([data-theme]) [data-accent='green'] {
+    --app-accent: #4ade80;
+    --app-accent-text: #4ade80;
+  }
+
+  :root:not([data-theme]) [data-accent='lime'] {
+    --app-accent: #a3e635;
+    --app-accent-text: #a3e635;
+  }
+
+  :root:not([data-theme]) [data-accent='amber'] {
+    --app-accent: #fbbf24;
+    --app-accent-text: #fbbf24;
+  }
+
+  :root:not([data-theme]) [data-accent='orange'] {
+    --app-accent: #fb923c;
+    --app-accent-text: #fb923c;
+  }
+
+  :root:not([data-theme]) [data-accent='red'] {
+    --app-accent: #f87171;
+    --app-accent-text: #f87171;
+  }
+
+  :root:not([data-theme]) [data-accent='rose'] {
+    --app-accent: #fb7185;
+    --app-accent-text: #fb7185;
+  }
+
+  :root:not([data-theme]) [data-accent='pink'] {
+    --app-accent: #f472b6;
+    --app-accent-text: #f472b6;
+  }
+
+  :root:not([data-theme]) [data-accent='purple'] {
+    --app-accent: #c084fc;
+    --app-accent-text: #c084fc;
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Decorative accent motifs of the app detail page (design/app-detail.png): concentric rings and
+ * arcs drawn with radial gradients only (no images, no extra DOM). Every colour comes from the app
+ * accent. Under text the tint never exceeds --motif-wash (tested); the stronger glows sit in a
+ * pseudo-element that only exists where no text can reach them (hero: lg and up, with the phones;
+ * banner: sm and up). Static, so nothing to disable for prefers-reduced-motion.
+ * ------------------------------------------------------------------------------------------- */
+.accent-motif-hero {
+  background-image:
+    radial-gradient(
+      circle at 82% 38%,
+      color-mix(in srgb, var(--app-accent) var(--motif-wash), transparent) 0 21rem,
+      transparent 21.1rem
+    ),
+    radial-gradient(
+      circle at 82% 38%,
+      transparent 0 24rem,
+      color-mix(in srgb, var(--app-accent) var(--motif-wash), transparent) 24.1rem 27rem,
+      transparent 27.1rem
+    ),
+    radial-gradient(
+      circle at 82% 38%,
+      transparent 0 30rem,
+      color-mix(in srgb, var(--app-accent) 32%, transparent) 30rem 30.1rem,
+      transparent 30.1rem
+    ),
+    radial-gradient(
+      circle at 52% 118%,
+      transparent 0 13rem,
+      color-mix(in srgb, var(--app-accent) var(--motif-wash), transparent) 13.1rem 15.5rem,
+      transparent 15.6rem
+    );
+  mask-image: linear-gradient(to bottom, black 72%, transparent);
+}
+
+.accent-motif-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  display: none;
+  /* Stronger rings, only where the phones are (lg and up). They end left of the text column at every
+   * width from 1024px (checked by the e2e geometry test), so the --motif-wash limit does not apply. */
+  background-image:
+    radial-gradient(
+      circle at 82% 38%,
+      color-mix(in srgb, var(--app-accent) 16%, transparent) 0 21rem,
+      transparent 21.1rem
+    ),
+    radial-gradient(
+      circle at 82% 38%,
+      transparent 0 24rem,
+      color-mix(in srgb, var(--app-accent) 20%, transparent) 24.1rem 27rem,
+      transparent 27.1rem
+    ),
+    radial-gradient(
+      circle at 82% 38%,
+      transparent 0 30rem,
+      color-mix(in srgb, var(--app-accent) 55%, transparent) 30rem 30.15rem,
+      transparent 30.15rem
+    ),
+    radial-gradient(
+      48rem 30rem at 100% 0%,
+      color-mix(in srgb, var(--app-accent) 32%, transparent),
+      transparent 70%
+    );
+}
+
+@media (min-width: 64rem) {
+  .accent-motif-hero::after {
+    display: block;
+  }
+}
+
+.accent-motif-banner {
+  background-image:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--app-accent) var(--motif-wash), transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 78% 135%,
+      transparent 0 17rem,
+      color-mix(in srgb, var(--app-accent) var(--motif-wash), transparent) 17.1rem 19rem,
+      transparent 19.1rem
+    ),
+    radial-gradient(
+      circle at 86% 150%,
+      transparent 0 21rem,
+      color-mix(in srgb, var(--app-accent) 30%, transparent) 21rem 21.1rem,
+      transparent 21.1rem
+    );
+}
+
+.accent-motif-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  display: none;
+  background-image:
+    radial-gradient(
+      16rem 14rem at 0% 50%,
+      color-mix(in srgb, var(--app-accent) 38%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      20rem 18rem at 100% 55%,
+      color-mix(in srgb, var(--app-accent) 46%, transparent),
+      transparent 70%
+    );
+}
+
+@media (min-width: 40rem) {
+  .accent-motif-banner::after {
+    display: block;
+  }
 }
 
 @layer utilities {
@@ -588,7 +924,10 @@ html:has(.qv-dialog[open]) {
   --story-top: 79px;
   /* Featured visual (square): at most 620px and never taller than the room left while the section
    * is stuck (screen − header − its vertical padding − its 1px top/bottom borders), so it fits. */
-  --featured-visual-max: min(38.75rem, calc(100svh - var(--story-top) - 2 * var(--section-y) - 2px));
+  --featured-visual-max: min(
+    38.75rem,
+    calc(100svh - var(--story-top) - 2 * var(--section-y) - 2px)
+  );
 }
 
 .story-spacer,

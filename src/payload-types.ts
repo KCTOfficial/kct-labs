@@ -815,6 +815,10 @@ export interface App {
   status: 'live' | 'new' | 'beta' | 'archived';
   platforms: ('android' | 'ios' | 'web')[];
   /**
+   * Colour of this app's detail page. Empty uses the KCT Hub brand colours.
+   */
+  accentColor?: string | null;
+  /**
    * As shown on Google Play, e.g. "100+". Empty or "0+" shows "Just released".
    */
   downloadsLabel?: string | null;
@@ -841,14 +845,8 @@ export interface App {
     };
     [k: string]: unknown;
   } | null;
-  features?:
-    | {
-        label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
   /**
-   * Extra rows for the "App information" panel (version, size, languages…). Empty rows are hidden.
+   * Extra information rows (version, size, languages…). Not shown on the app page at the moment; kept for later use.
    */
   specs?:
     | {
@@ -857,6 +855,69 @@ export interface App {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Up to 3 short highlights next to the app name under the hero (icon + 2 lines).
+   */
+  highlights?:
+    | {
+        icon?: string | null;
+        title?: string | null;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Numbered steps with a screenshot each. Hidden until a step is added.
+   */
+  howItWorks?: {
+    title?: string | null;
+    description?: string | null;
+    steps?:
+      | {
+          title?: string | null;
+          description?: string | null;
+          /**
+           * Screenshot of this step (portrait).
+           */
+          image?: (number | null) | Media;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Heading and intro above the key features. Empty uses the default heading "Key features".
+   */
+  featuresIntro?: {
+    title?: string | null;
+    description?: string | null;
+  };
+  /**
+   * Cards under "Key features" on the app page: an icon, a name and an optional short line. Up to 12.
+   */
+  features?:
+    | {
+        /**
+         * Empty shows a check mark.
+         */
+        icon?: string | null;
+        /**
+         * The feature name, e.g. "Receipt scan".
+         */
+        label?: string | null;
+        /**
+         * Optional short line under the name (max 80 characters).
+         */
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Banner about data and privacy. Shown only when both fields are filled; it links to the legal documents when the app has any.
+   */
+  dataControl?: {
+    title?: string | null;
+    description?: string | null;
+  };
   /**
    * https://play.google.com/store/apps/details?id=…
    */
@@ -1601,22 +1662,59 @@ export interface AppsSelect<T extends boolean = true> {
   category?: T;
   status?: T;
   platforms?: T;
+  accentColor?: T;
   downloadsLabel?: T;
   ageRating?: T;
   screenshots?: T;
   description?: T;
-  features?:
-    | T
-    | {
-        label?: T;
-        id?: T;
-      };
   specs?:
     | T
     | {
         label?: T;
         value?: T;
         id?: T;
+      };
+  highlights?:
+    | T
+    | {
+        icon?: T;
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  howItWorks?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        steps?:
+          | T
+          | {
+              title?: T;
+              description?: T;
+              image?: T;
+              id?: T;
+            };
+      };
+  featuresIntro?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+      };
+  features?:
+    | T
+    | {
+        icon?: T;
+        label?: T;
+        description?: T;
+        id?: T;
+      };
+  dataControl?:
+    | T
+    | {
+        title?: T;
+        description?: T;
       };
   playStoreUrl?: T;
   packageId?: T;
@@ -2107,7 +2205,7 @@ export interface Home {
     secondaryCtaLabel?: string | null;
     secondaryCtaUrl?: string | null;
     /**
-     * Up to 3 apps shown in the phone stage (their first screenshot is used). Empty = featured apps.
+     * Up to 8 apps rotate in the phone stage (their first screenshot is used; the first app starts in the centre). Empty = featured apps.
      */
     showcaseApps?: (number | App)[] | null;
   };

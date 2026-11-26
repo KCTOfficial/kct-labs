@@ -175,7 +175,7 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     <div
       aria-label={labels.carousel}
       aria-roledescription="carousel"
-      className="relative mx-auto w-full max-w-[343px] lg:w-[max(var(--hero-phones-w),29rem)] lg:max-w-full lg:self-start"
+      className="relative mx-auto w-full max-w-[343px] lg:w-[var(--hero-phones-w)] lg:max-w-full lg:self-start"
       data-active-index={active}
       data-animating={slide ? 'true' : 'false'}
       data-count={count}
@@ -256,7 +256,7 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col items-center gap-2 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-30 lg:mx-auto lg:mt-0 lg:w-[min(100%,29rem)]">
+      <div className="mt-4 flex flex-col items-center gap-2 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-30 lg:mx-auto lg:mt-0 lg:w-[min(100%,var(--hero-card-w))]">
         {/* Stable live region around the keyed caption: quiet while autoplay runs, polite after. */}
         <div aria-atomic="true" aria-live={running ? 'off' : 'polite'} className="w-full">
           <HeroCaptionCard animate={changed} app={shown} />
