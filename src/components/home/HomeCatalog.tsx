@@ -38,7 +38,7 @@ export const HomeCatalog: React.FC<Props> = ({
 
   return (
     <section aria-labelledby="catalog-title" className="scroll-mt-20" id="apps">
-      <div className="site-container flex flex-col gap-5 py-14 lg:gap-10 lg:py-28">
+      <div className="site-container flex flex-col gap-5 py-[var(--section-y)] lg:gap-10">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div
             className="reveal flex max-w-[620px] flex-col gap-3 lg:gap-4"
@@ -46,7 +46,7 @@ export const HomeCatalog: React.FC<Props> = ({
           >
             {catalog?.eyebrow && <Eyebrow index={index}>{catalog.eyebrow}</Eyebrow>}
             <h2
-              className="font-display text-[30px] font-semibold leading-[1.12] tracking-[-0.02em] text-foreground lg:text-[44px] lg:leading-[1.1]"
+              className="font-display text-title font-semibold leading-[1.12] tracking-[-0.02em] text-foreground lg:leading-[1.1]"
               id="catalog-title"
             >
               {catalog?.title || dict.listing.title}

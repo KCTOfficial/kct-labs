@@ -192,7 +192,7 @@ export const HomeProcess: React.FC<{
   const steps = process?.steps ?? []
   return (
     <section aria-labelledby="process-title" className="scroll-mt-20" id="process">
-      <div className="site-container flex flex-col gap-5 py-14 lg:gap-14 lg:py-28">
+      <div className="site-container flex flex-col gap-5 py-[var(--section-y)] lg:gap-14">
         <div
           className="reveal flex max-w-[640px] flex-col gap-3 lg:gap-4"
           data-story-part="heading"
