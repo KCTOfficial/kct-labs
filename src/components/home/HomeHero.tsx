@@ -54,7 +54,7 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
       <div aria-hidden="true" className="bg-blueprint pointer-events-none absolute inset-0" />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-40 top-0 size-[720px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-sky)_25%,transparent),transparent_70%)]"
+        className="pointer-events-none absolute -right-40 top-0 size-[720px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent-orange)_18%,transparent),transparent_70%)]"
         data-story-part="hero-glow-a"
       />
       <div

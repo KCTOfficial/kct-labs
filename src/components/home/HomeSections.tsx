@@ -52,7 +52,7 @@ export const HomeFeatured: React.FC<{
       data-story="featured"
     >
       <div className="site-container flex flex-col gap-5 py-14 lg:flex-row lg:items-center lg:gap-20 lg:py-28">
-        <div className="reveal relative order-2 hidden aspect-square w-full max-w-[620px] shrink-0 overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle_at_50%_45%,color-mix(in_srgb,var(--brand-sky)_20%,transparent),transparent_70%)] lg:order-1 lg:block lg:w-[45%]">
+        <div className="reveal relative order-2 hidden aspect-square w-full max-w-[620px] shrink-0 overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle_at_50%_45%,color-mix(in_srgb,var(--accent-orange)_14%,transparent),transparent_70%)] lg:order-1 lg:block lg:w-[45%]">
           {/* Rings keep their Tailwind centring. Two wrappers = two owners: the outer one is driven
               by the entrance timeline, the inner ("drift") one by the pinned timeline, so both never
               animate the same property of the same node (the later trigger would always win). */}
@@ -322,7 +322,7 @@ export const HomeCta: React.FC<{ cta: Home['cta'] }> = ({ cta }) => {
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -right-1/4 -top-1/2 size-[900px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-sky)_60%,transparent),transparent_65%)]"
+            className="pointer-events-none absolute -right-1/4 -top-1/2 size-[900px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent-orange)_35%,transparent),transparent_65%)]"
             data-story-part="cta-glow"
           />
           <div className="relative flex max-w-[640px] flex-col gap-3.5">

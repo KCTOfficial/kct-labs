@@ -100,7 +100,7 @@ export const HomeCatalog: React.FC<Props> = ({
           ))}
           {hasService && service && (
             <li className="reveal max-md:hidden" data-story-part="card">
-              <div className="flex h-full flex-col justify-between gap-4 rounded-lg border border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-navy)_35%,transparent),color-mix(in_srgb,var(--brand-sky)_8%,transparent))] p-6">
+              <div className="flex h-full flex-col justify-between gap-4 rounded-lg border border-border-strong bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-navy)_35%,transparent),color-mix(in_srgb,var(--accent-orange)_10%,transparent))] p-6">
                 <div className="flex flex-col gap-3">
                   <span className="flex size-14 items-center justify-center rounded-[16px] border border-primary">
                     <Briefcase aria-hidden="true" className="size-[26px] text-primary" />

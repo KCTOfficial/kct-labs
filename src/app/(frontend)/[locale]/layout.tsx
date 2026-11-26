@@ -139,7 +139,7 @@ export async function generateMetadata({ params }: Pick<LayoutArgs, 'params'>): 
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f4f8fc' },
-    { media: '(prefers-color-scheme: dark)', color: '#070d1a' },
+    { media: '(prefers-color-scheme: light)', color: '#f2f1ee' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a1224' },
   ],
 }
