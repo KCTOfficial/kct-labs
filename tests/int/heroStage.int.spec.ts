@@ -239,6 +239,72 @@ describe('HeroStage controls', () => {
   })
 })
 
+describe('HeroStage touch interaction stops autoplay (WCAG 2.2.2)', () => {
+  /** A tap: the pointer type comes from `pointerdown`, then the click follows. */
+  const tap = (c: HTMLElement, target: HTMLElement, pointerType: string) => {
+    fireEvent.pointerDown(target, { pointerType, pointerId: 1 })
+    fireEvent.pointerUp(target, { pointerType, pointerId: 1 })
+    fireEvent.click(target)
+    advance(1000)
+  }
+
+  it('a touch tap on next stops autoplay for good: the fill stops and its end steps no more', () => {
+    const { container } = mount(makeApps(3))
+    tap(container, button(container, 'Next app')!, 'touch')
+    expect(active(container)).toBe(1)
+    expect(fill(container)!.dataset.running).toBe('false')
+    expect(container.querySelector('[aria-live]')?.getAttribute('aria-live')).toBe('polite')
+
+    endFill(container)
+    advance(HERO_AUTOPLAY_MS * 3)
+    expect(active(container)).toBe(1)
+    // Manual control keeps working.
+    step(container, 'Next app')
+    expect(active(container)).toBe(2)
+    expect(fill(container)!.dataset.running).toBe('false')
+  })
+
+  it('a pen tap on a segment stops autoplay too', () => {
+    const { container } = mount(makeApps(4))
+    tap(container, segments(container)[2]!, 'pen')
+    expect(active(container)).toBe(2)
+    expect(fill(container)!.dataset.running).toBe('false')
+  })
+
+  it('a touch swipe on the phones stops autoplay', () => {
+    const { container } = mount(makeApps(3))
+    const stage = group(container).querySelector<HTMLElement>(':scope > [aria-hidden="true"]')!
+    fireEvent.pointerDown(stage, { pointerType: 'touch', pointerId: 7, clientX: 200, clientY: 100 })
+    fireEvent.pointerUp(stage, { pointerType: 'touch', pointerId: 7, clientX: 100, clientY: 102 })
+    advance(1000)
+    expect(active(container)).toBe(1)
+    expect(fill(container)!.dataset.running).toBe('false')
+  })
+
+  it('a mouse tap on next keeps autoplay running', () => {
+    const { container } = mount(makeApps(3))
+    tap(container, button(container, 'Next app')!, 'mouse')
+    expect(active(container)).toBe(1)
+    expect(fill(container)!.dataset.running).toBe('true')
+    endFill(container)
+    expect(active(container)).toBe(2)
+  })
+
+  it('a keyboard activation after an earlier touch tap elsewhere does not count as touch', () => {
+    const { container } = mount(makeApps(3))
+    // A touch on the caption (not a control) is not a manual step and stops nothing.
+    fireEvent.pointerDown(container.querySelector('[data-hero-caption]')!, {
+      pointerType: 'touch',
+    })
+    expect(fill(container)!.dataset.running).toBe('true')
+    fireEvent.keyDown(button(container, 'Next app')!, { key: 'Enter' })
+    fireEvent.click(button(container, 'Next app')!)
+    advance(1000)
+    expect(active(container)).toBe(1)
+    expect(fill(container)!.dataset.running).toBe('true')
+  })
+})
+
 describe('HeroStage caption card', () => {
   it('shows icon, name link and description of the app in the centre', () => {
     const { container } = mount(makeApps(3))

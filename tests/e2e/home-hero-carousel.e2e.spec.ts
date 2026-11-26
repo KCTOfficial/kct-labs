@@ -493,6 +493,23 @@ test.describe('Home hero carousel — touch swipe', () => {
     await expect(page).toHaveURL(new RegExp(`${href}$`), { timeout: 30_000 })
   })
 
+  test('a swipe stops autoplay for good (touch users cannot hover to pause, WCAG 2.2.2)', async ({
+    page,
+  }) => {
+    // No paused-fill style here: the real autoplay clock must be the thing that stops.
+    await page.goto(`${BASE}/`)
+    await ready(page)
+    const start = await activeIndex(page)
+    const n = await total(page)
+    await drag(page, -90, 4)
+    await settled(page)
+    expect(await activeIndex(page)).toBe((start + 1) % n)
+    await expect(fill(page)).toHaveAttribute('data-running', 'false')
+    await page.waitForTimeout(QUIET_MS)
+    expect(await activeIndex(page)).toBe((start + 1) % n)
+    await expect(fill(page)).toHaveAttribute('data-running', 'false')
+  })
+
   test('the phone area pans vertically but still allows pinch-zoom (WCAG 1.4.4)', async ({
     page,
   }) => {

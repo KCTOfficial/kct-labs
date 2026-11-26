@@ -80,12 +80,17 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
   const [changed, setChanged] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [keyboardFocus, setKeyboardFocus] = useState(false)
+  // Touch/pen users cannot hover and have no pause button: their first manual step stops autoplay
+  // for the rest of this page view (WCAG 2.2.2). Mouse steps only restart the countdown.
+  const [touchStopped, setTouchStopped] = useState(false)
   const reducedMotion = useReducedMotion()
   const rootRef = useRef<HTMLDivElement>(null)
   const animating = useRef(false)
   const touchStart = useRef<{ id: number; x: number; y: number } | null>(null)
   const swipedAt = useRef(Number.NEGATIVE_INFINITY)
   const commitTimer = useRef<number | undefined>(undefined)
+  /** Pointer type of the latest press inside the carousel; cleared by a key press. */
+  const lastPointerType = useRef<string | null>(null)
 
   const warm = useCallback(() => setNeighborsReady(true), [])
 
@@ -145,11 +150,17 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     [active],
   )
 
+  /** Called for manual steps only (buttons, segments, swipe), never for the autoplay step. */
+  const stopIfTouch = useCallback(() => {
+    const pointerType = lastPointerType.current
+    if (pointerType && pointerType !== 'mouse') setTouchStopped(true)
+  }, [])
+
   const { running } = useHeroAutoplay({
     rootRef,
     count,
     reducedMotion,
-    interacting: hovered || keyboardFocus,
+    interacting: hovered || keyboardFocus || touchStopped,
   })
 
   // Phones belong to the active app; they change (mount/unmount) only when a step commits.
@@ -174,6 +185,12 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
           setKeyboardFocus(false)
         }
+      }}
+      onKeyDownCapture={() => {
+        lastPointerType.current = null
+      }}
+      onPointerDownCapture={(event) => {
+        lastPointerType.current = event.pointerType
       }}
       onFocusCapture={(event) => {
         warm()
@@ -216,6 +233,7 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
           const direction = swipeDirection(event.clientX - start.x, event.clientY - start.y)
           if (!direction) return
           swipedAt.current = performance.now()
+          stopIfTouch()
           go(direction)
         }}
       >
@@ -248,7 +266,10 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
             <button
               aria-label={labels.prev}
               className={CONTROL_CLASS}
-              onClick={() => go('prev')}
+              onClick={() => {
+                stopIfTouch()
+                go('prev')
+              }}
               type="button"
             >
               <ChevronLeft aria-hidden="true" className="size-5" />
@@ -257,15 +278,24 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
               active={shownIndex}
               count={count}
               labels={apps.map((app) => format(labels.goTo, { name: app.name }))}
-              onComplete={() => go('next')}
-              onSelect={select}
+              // Only a running fill may step: a stopped carousel never advances by itself.
+              onComplete={() => {
+                if (running) go('next')
+              }}
+              onSelect={(index) => {
+                stopIfTouch()
+                select(index)
+              }}
               // Paused until hydrated: a fill that ended before React listened would never step.
               running={ready && running}
             />
             <button
               aria-label={labels.next}
               className={CONTROL_CLASS}
-              onClick={() => go('next')}
+              onClick={() => {
+                stopIfTouch()
+                go('next')
+              }}
               type="button"
             >
               <ChevronRight aria-hidden="true" className="size-5" />
