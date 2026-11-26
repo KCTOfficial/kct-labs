@@ -1,0 +1,69 @@
+// Admin-only styles for the accent colour swatches (Payload theme variables).
+.accent-color {
+  margin-bottom: calc(var(--base) * 0.75);
+}
+
+.accent-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+
+  &__option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 4px;
+    font-size: 12px;
+    color: var(--theme-text);
+    cursor: pointer;
+    background: var(--theme-elevation-0);
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: var(--style-radius-s);
+
+    &:hover:not(:disabled) {
+      background: var(--theme-elevation-50);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--theme-success-500);
+      outline-offset: 1px;
+    }
+
+    &[aria-checked='true'] {
+      background: var(--theme-success-50);
+      border-color: var(--theme-success-500);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  // Light version on the left half, dark version on the right half of the chip.
+  &__chip {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--theme-elevation-250);
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--swatch-light) 50%, var(--swatch-dark) 50%);
+
+    &--brand {
+      background: repeating-linear-gradient(
+        45deg,
+        var(--theme-elevation-100),
+        var(--theme-elevation-100) 4px,
+        var(--theme-elevation-0) 4px,
+        var(--theme-elevation-0) 8px
+      );
+    }
+  }
+
+  &__label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

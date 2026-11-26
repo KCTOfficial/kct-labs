@@ -362,7 +362,7 @@ test.describe('Legal document page', () => {
     page,
   }) => {
     await page.goto(`${BASE}/en/apps/${APP_SLUG}`)
-    const group = page.locator('aside [data-legal-links]')
+    const group = page.locator('[data-legal-links]')
     await expect(group).toBeVisible()
     const links = group.locator('a')
     await expect(links).toHaveCount(3)
@@ -376,9 +376,7 @@ test.describe('Legal document page', () => {
     await expect(page.locator('h1')).toHaveCount(1)
 
     await page.goto(`${BASE}/apps/${APP_SLUG}`)
-    expect(await page.locator('aside [data-legal-links] a').first().getAttribute('href')).toBe(
-      DOC_PATH,
-    )
+    expect(await page.locator('[data-legal-links] a').first().getAttribute('href')).toBe(DOC_PATH)
   })
 
   test('an English-only app shows its English text on the Indonesian page (field fallback)', async ({
@@ -393,7 +391,7 @@ test.describe('Legal document page', () => {
 
   test('app without documents keeps the legacy external privacy link', async ({ page }) => {
     await page.goto(`${BASE}/apps/${LEGACY_SLUG}`)
-    const links = page.locator('aside [data-legal-links] a')
+    const links = page.locator('[data-legal-links] a')
     await expect(links).toHaveCount(1)
     expect(await links.getAttribute('href')).toBe(LEGACY_URL)
     expect(await links.getAttribute('target')).toBe('_blank')

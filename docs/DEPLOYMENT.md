@@ -202,6 +202,16 @@ Downtime: beberapa detik saat container diganti (satu instance). Untuk zero-down
 4. Migrasi harus **kompatibel mundur** (tambah kolom/tabel dulu, hapus belakangan) karena rollback image **tidak** membatalkan migrasi.
 5. **Selalu backup DB produksi** sebelum deploy yang membawa migrasi.
 
+### Migrasi `20261126_132400_app_page_sections` (section halaman detail app)
+
+Aditif murni: hanya `CREATE TABLE`/`CREATE INDEX`/`ADD COLUMN`/`ADD CONSTRAINT` pada tabel `apps*` dan
+`_apps_v*` (kolom `accent_color`, `features.icon`/`description`, tabel `highlights` dan `how_it_works_steps`,
+kolom grup `how_it_works_*`, `features_intro_*`, `data_control_*`). Tidak ada `DROP`/`ALTER` kolom lama dan
+tidak menyentuh Home, Pages, atau Posts. Semua field baru opsional: app yang ada tampil seperti sebelumnya
+sampai editor mengisinya di admin (tab **Page sections**, warna aksen di tab **Overview**).
+`deploy.sh` menjalankannya otomatis sebelum build; backup DB dulu (langkah 5). Setelah deploy panggil
+`POST /api/apps/revalidate` agar cache halaman app ter-refresh.
+
 ---
 
 ## G. Operasional & troubleshooting

@@ -21,6 +21,10 @@ const VIEWPORTS = [
   { width: 853, height: 480 },
   // Tall but narrow desktop layout (portrait tablet): the stage is height-led, the column is not.
   { width: 1024, height: 1366 },
+  // 1920×940 at 125% display scaling (owner's screen): short stage, card used to outgrow the phones.
+  { width: 1536, height: 752 },
+  { width: 3440, height: 1440 },
+  { width: 1280, height: 624 },
 ]
 
 /** Sub-pixel rounding and rotated phone corners may poke out by a hair; never more. */
@@ -37,6 +41,10 @@ const STAGE_MIN_PX = 416
 const PIN_MIN_HEIGHT = 760
 /** The caption card may graze the centre phone's bottom edge (as in the design), never cover it. */
 const CAPTION_OVERLAP_MAX_PX = 16
+/** Caption card height / stage height. Card is 6rem..8rem; stage is 416px..748px. */
+const CARD_HEIGHT_MAX_RATIO = 0.25
+const CARD_TEXT_MIN_PX = 12
+const CARD_TEXT_MAX_PX = 16
 
 let appSlug: string | null = null
 let legalIndex: string | null = null
@@ -138,6 +146,21 @@ test.describe('Fluid layout — no clipping, no horizontal scroll', () => {
             stageHeight: stage.height,
             centreBottom: centre ? centre.getBoundingClientRect().bottom : null,
             cardTop: card.getBoundingClientRect().top,
+            cardWidth: card.getBoundingClientRect().width,
+            cardHeight: card.getBoundingClientRect().height,
+            // Union of the (rotated) phone boxes: the visual width of the phone group.
+            phonesWidth: (() => {
+              const rects = [...el.querySelectorAll('[data-hero-phone-link]')].map((p) =>
+                p.getBoundingClientRect(),
+              )
+              return Math.max(...rects.map((r) => r.right)) - Math.min(...rects.map((r) => r.left))
+            })(),
+            captionTextPx: parseFloat(
+              getComputedStyle(
+                el.querySelector('[data-hero-caption-text]') ??
+                  el.querySelector('[data-hero-caption-link]')!,
+              ).fontSize,
+            ),
           }
         })
         expect(box.right).toBeLessThanOrEqual(viewport.width + TOLERANCE_PX)
@@ -147,6 +170,12 @@ test.describe('Fluid layout — no clipping, no horizontal scroll', () => {
           expect(box.centreBottom - box.cardTop).toBeLessThanOrEqual(CAPTION_OVERLAP_MAX_PX)
         }
         if (viewport.width >= LG_MIN_WIDTH) {
+          // The caption card scales with the stage: never wider than the phone group, never a big
+          // share of the stage height (3 description lines need the 6rem minimum: 23% of 416px).
+          expect(box.cardWidth).toBeLessThanOrEqual(box.phonesWidth + TOLERANCE_PX)
+          expect(box.cardHeight).toBeLessThanOrEqual(box.stageHeight * CARD_HEIGHT_MAX_RATIO)
+          expect(box.captionTextPx).toBeGreaterThanOrEqual(CARD_TEXT_MIN_PX)
+          expect(box.captionTextPx).toBeLessThanOrEqual(CARD_TEXT_MAX_PX)
           // Short screens: the stage shrinks to its minimum, then the hero scrolls (never clips).
           expect(box.stageHeight).toBeGreaterThanOrEqual(STAGE_MIN_PX - TOLERANCE_PX)
           if (viewport.height >= FITS_MIN_HEIGHT) {

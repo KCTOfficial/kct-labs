@@ -12,10 +12,19 @@ import {
   footerTagline,
   homeContent,
   navItems,
+  seedAppAccents,
   seedApps,
   seedCategories,
+  seedFeatureIcons,
   type Localized,
+  type SeedApp,
 } from './content'
+import {
+  featuresEditedByEditor,
+  highlightIndexes,
+  mergeFeatureRows,
+  mergeHighlights,
+} from './sections'
 
 /** Default locale first: documents are created there (required fields), then translated. */
 const LOCALES: Locale[] = [defaultLocale, ...locales.filter((l) => l !== defaultLocale)]
@@ -71,9 +80,104 @@ const ensureMedia = async (payload: Payload, filePath: string, alt: string): Pro
   return created.id
 }
 
+/** Media and category an app is seeded with (resolved by `seedKct`, injected so it is testable). */
+export type SeedAppAssets = { icon: number; screenshots: number[]; categoryId: number }
+
 /**
- * Idempotent, non-destructive seed for KCT Hub content (EN + ID).
- * - Upserts app categories and apps by slug; never deletes documents.
+ * Upserts one app in every locale. The page-section fields are filled only when an editor has not
+ * touched them: once the features were edited (rows, icons, descriptions) or highlights exist they
+ * are left alone, and the accent colour is set only while empty (see `./sections`). Returns the app id.
+ */
+export const upsertApp = async (
+  payload: Payload,
+  app: SeedApp,
+  assets: SeedAppAssets,
+): Promise<number> => {
+  const context = { disableRevalidate: true }
+  const found = await payload.find({
+    collection: 'apps',
+    depth: 0,
+    draft: true,
+    limit: 1,
+    where: { slug: { equals: app.slug } },
+  })
+  let id = found.docs[0]?.id
+  // What an editor may already own, decided once per run (before the first locale is written).
+  const highlightsAtStart = found.docs[0]?.highlights ?? null
+  const accent = found.docs[0]?.accentColor ? undefined : seedAppAccents[app.slug]
+  const featureIcons = seedFeatureIcons[app.slug] ?? []
+  const highlightAt = highlightIndexes(app.features.en, app.features.id)
+  let highlightRows: Array<{ id?: string | null }> | null = null
+
+  /** One locale's own feature rows (no fallback), as the editor left them. */
+  const readFeatureRows = async (locale: Locale) =>
+    id
+      ? (
+          await payload.findByID({
+            collection: 'apps',
+            id,
+            depth: 0,
+            draft: true,
+            fallbackLocale: false,
+            locale,
+          })
+        ).features
+      : null
+  // Decided once, before anything is written: an editor who changed the features owns them.
+  const featuresOwned = featuresEditedByEditor(
+    await Promise.all(LOCALES.map(async (locale) => (await readFeatureRows(locale)) ?? [])),
+    app.features.en.length,
+    featureIcons,
+  )
+
+  for (const locale of LOCALES) {
+    const ownFeatureRows = featuresOwned ? null : await readFeatureRows(locale)
+    const featureLabels = pick(app.features, locale)
+    const highlights = mergeHighlights(
+      highlightAt.map((i) => ({ icon: featureIcons[i], title: featureLabels[i]! })),
+      highlightsAtStart,
+      highlightRows,
+    )
+    const data = {
+      name: app.name,
+      slug: app.slug,
+      generateSlug: false,
+      tagline: pick(app.tagline, locale),
+      shortDescription: pick(app.shortDescription, locale),
+      description: paragraph(pick(app.description, locale)),
+      ...(featuresOwned
+        ? {}
+        : { features: mergeFeatureRows(featureLabels, featureIcons, ownFeatureRows) }),
+      ...(accent ? { accentColor: accent } : {}),
+      ...(highlights ? { highlights } : {}),
+      icon: assets.icon,
+      screenshots: assets.screenshots,
+      category: assets.categoryId,
+      status: 'live' as const,
+      platforms: ['android' as const],
+      downloadsLabel: app.downloadsLabel ?? '',
+      ageRating: app.ageRating ?? '',
+      playStoreUrl: `https://play.google.com/store/apps/details?id=${app.packageId}`,
+      packageId: app.packageId,
+      featured: Boolean(app.featured),
+      sortOrder: app.sortOrder,
+      publishedAt: new Date().toISOString(),
+      _status: 'published' as const,
+    }
+    const doc = id
+      ? await payload.update({ collection: 'apps', id, data, locale, context })
+      : await payload.create({ collection: 'apps', data, locale, context })
+    id = doc.id
+    highlightRows = doc.highlights ?? null
+  }
+  return id!
+}
+
+/**
+ * Idempotent seed for KCT Hub content (EN + ID); never deletes documents.
+ * - Upserts app categories and apps by slug. It re-applies the texts it manages (names, taglines,
+ *   descriptions, feature labels); the app page sections are filled only while an editor has not
+ *   touched them (see `upsertApp`).
  * - Fills Home every run; fills Header/Footer only when they are still empty (never overwrites edits).
  */
 export const seedKct = async (
@@ -117,49 +221,14 @@ export const seedKct = async (
         screenshots.push(await ensureMedia(payload, shot, `${app.name} screenshot ${i}`))
     }
 
-    const found = await payload.find({
-      collection: 'apps',
-      depth: 0,
-      draft: true,
-      limit: 1,
-      where: { slug: { equals: app.slug } },
-    })
-    let id = found.docs[0]?.id
-    let featureRows = found.docs[0]?.features ?? null
-
-    for (const locale of LOCALES) {
-      const data = {
-        name: app.name,
-        slug: app.slug,
-        generateSlug: false,
-        tagline: pick(app.tagline, locale),
-        shortDescription: pick(app.shortDescription, locale),
-        description: paragraph(pick(app.description, locale)),
-        features: withIds(
-          pick(app.features, locale).map((label) => ({ label })),
-          featureRows,
-        ),
+    appIds.set(
+      app.slug,
+      await upsertApp(payload, app, {
         icon,
         screenshots,
-        category: categoryIds.get(app.category)!,
-        status: 'live' as const,
-        platforms: ['android' as const],
-        downloadsLabel: app.downloadsLabel ?? '',
-        ageRating: app.ageRating ?? '',
-        playStoreUrl: `https://play.google.com/store/apps/details?id=${app.packageId}`,
-        packageId: app.packageId,
-        featured: Boolean(app.featured),
-        sortOrder: app.sortOrder,
-        publishedAt: new Date().toISOString(),
-        _status: 'published' as const,
-      }
-      const doc = id
-        ? await payload.update({ collection: 'apps', id, data, locale, context })
-        : await payload.create({ collection: 'apps', data, locale, context })
-      id = doc.id
-      featureRows = doc.features ?? null
-    }
-    appIds.set(app.slug, id!)
+        categoryId: categoryIds.get(app.category)!,
+      }),
+    )
   }
   log(`apps: ${appIds.size}`)
 

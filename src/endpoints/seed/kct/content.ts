@@ -2,6 +2,9 @@
  * Initial KCT Hub content (EN + ID). Facts (names, package IDs, categories, download labels) come from
  * the KCT developer page on Google Play; descriptions/features are draft copy to be reviewed by KCT.
  */
+import type { AppIconName } from '@/fields/appIcons'
+import type { AccentPreset } from '@/utilities/apps/accent'
+
 export type Localized<T = string> = { en: T; id: T }
 
 export type SeedCategory = { slug: string; title: Localized; sortOrder: number }
@@ -219,6 +222,34 @@ export const seedApps: SeedApp[] = [
     },
   },
 ]
+
+/**
+ * Accent colour per app (admin preset, `src/utilities/apps/accent.ts`): the dominant hue of the app
+ * icon. A design choice only, no product claim; editors can change it on the app.
+ */
+export const seedAppAccents: Record<string, AccentPreset> = {
+  'al-quran-imam': 'blue',
+  aksarago: 'cyan',
+  'ingetin-jadwal': 'sky',
+  'jejak-uang': 'green',
+  'koorva-work': 'teal',
+  'koorva-task': 'blue',
+  'e-absen': 'lime',
+}
+
+/**
+ * Icon per feature (same order as `features`), chosen from what the feature label already says. Only
+ * the icons are new: there is no new product text here, the page sections stay for editors to write.
+ */
+export const seedFeatureIcons: Record<string, AppIconName[]> = {
+  'al-quran-imam': ['sparkles', 'book-marked', 'brain', 'zap'],
+  aksarago: ['calculator', 'book-open', 'languages'],
+  'ingetin-jadwal': ['calendar', 'clipboard-list', 'bell-ring'],
+  'jejak-uang': ['banknote', 'wallet', 'pie-chart'],
+  'koorva-work': ['workflow', 'plug-zap'],
+  'koorva-task': ['list-checks', 'users'],
+  'e-absen': ['user-check', 'smartphone'],
+}
 
 type IconItem = { icon: string; title: Localized; description: Localized }
 

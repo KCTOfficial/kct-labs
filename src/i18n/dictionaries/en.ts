@@ -87,6 +87,11 @@ export const en = {
     privacyPolicy: 'Privacy Policy',
     contactSupport: 'Contact support',
     moreApps: 'More apps from KCT',
+    howItWorks: 'How it works',
+    exploreFeatures: 'Explore all features',
+    learnMore: 'Learn more',
+    stepNumber: 'Step {n}',
+    categoryApp: '{category} app',
     developerName: 'PT KCT',
   },
   quickView: {

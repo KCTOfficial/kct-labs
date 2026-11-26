@@ -3,56 +3,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-const css = readFileSync(path.resolve(process.cwd(), 'src/app/(frontend)/globals.css'), 'utf8')
-
-type Tokens = Record<string, string>
-
-/** Body of the first rule at/after `from` whose selector starts with `selector` (no nested braces). */
-const block = (selector: string, from = 0): string => {
-  const start = css.indexOf(selector, from)
-  if (start < 0) throw new Error(`selector not found: ${selector}`)
-  const open = css.indexOf('{', start)
-  const close = css.indexOf('}', open)
-  return css.slice(open + 1, close)
-}
-
-const parseTokens = (body: string): Tokens => {
-  const tokens: Tokens = {}
-  for (const m of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) tokens[m[1]] = m[2].trim()
-  return tokens
-}
-
-const light = parseTokens(block(':root {'))
-const dark = parseTokens(block("[data-theme='dark'] {"))
-const media = parseTokens(
-  block(':root:not([data-theme])', css.indexOf('@media (prefers-color-scheme: dark)')),
-)
-
-/** Resolves a token (following one `var()` hop) to a solid #rrggbb, falling back to the light base. */
-const tok = (theme: Tokens, name: string): string => {
-  const merged = { ...light, ...theme }
-  let value = merged[name]
-  const ref = /^var\((--[\w-]+)\)$/.exec(value ?? '')
-  if (ref) value = merged[ref[1]]
-  if (!value || !/^#[0-9a-f]{6}$/i.test(value))
-    throw new Error(`${name} is not a solid hex: ${value}`)
-  return value
-}
-
-const channel = (v: number) => {
-  const s = v / 255
-  return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
-}
-const luminance = (hex: string) => {
-  const n = parseInt(hex.slice(1), 16)
-  return (
-    0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255)
-  )
-}
-const contrast = (fgHex: string, bgHex: string): number => {
-  const [a, b] = [luminance(fgHex), luminance(bgHex)].sort((x, y) => y - x)
-  return (a + 0.05) / (b + 0.05)
-}
+import { contrast, css, dark, light, media, tok, type Tokens } from '../helpers/cssTokens'
 
 const themes: [string, Tokens][] = [
   ['light', light],

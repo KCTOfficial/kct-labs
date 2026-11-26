@@ -1,8 +1,9 @@
 import type { SelectField } from 'payload'
 
 /**
- * Allowlist of Lucide icons editors can pick. Keep in sync with `src/components/site/SiteIcon.tsx`
- * (TypeScript enforces it through the `SiteIconName` type).
+ * Allowlist of Lucide icons for the Home global (a Postgres enum: changing it needs a migration, so it
+ * stays at these 20). Every name must also exist in `appIconNames` (`appIcons.ts`), which `SiteIcon`
+ * renders; a test enforces it.
  */
 export const siteIconNames = [
   'workflow',
@@ -33,6 +34,11 @@ export const iconSelect = (overrides: Partial<SelectField> = {}): SelectField =>
   ({
     name: 'icon',
     type: 'select',
+    // Same popup picker as the app icons, limited to this enum's 20 names (no schema change).
+    admin: {
+      components: { Field: '@/fields/IconPicker/IconPickerField#IconPickerField' },
+      custom: { iconSet: 'site' },
+    },
     defaultValue: 'sparkles',
     options: siteIconNames.map((value) => ({ label: value, value })),
     required: true,
