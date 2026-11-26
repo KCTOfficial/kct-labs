@@ -2,15 +2,18 @@ import { ArrowRight, Store } from 'lucide-react'
 import React from 'react'
 
 import { ButtonLink } from '@/components/site/ButtonLink'
-import { appHref } from '@/components/site/AppCard'
-import { firstMedia, toImageSource } from '@/components/site/media'
 import { Chip } from '@/components/site/StatusChip'
-import { format, localizeHref, type Dictionary, type Locale } from '@/i18n'
+import { localizeHref, type Dictionary, type Locale } from '@/i18n'
 import type { App, Home } from '@/payload-types'
 
+import { hasScreens } from './heroCarouselModel'
+import { toHeroApp } from './heroApps'
 import { HeroStage, type HeroApp } from './HeroStage'
 
-export type ShowcaseApp = Pick<App, 'id' | 'name' | 'slug' | 'shortDescription' | 'screenshots'>
+export type ShowcaseApp = Pick<
+  App,
+  'id' | 'name' | 'slug' | 'shortDescription' | 'screenshots' | 'icon'
+>
 
 type Props = {
   hero: Home['hero']
@@ -24,16 +27,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict }) => {
   // The stage owns which app sits where (and rotates them); the first app starts in the centre.
-  const apps: HeroApp[] = showcase.map((app) => ({
-    id: app.id,
-    name: app.name,
-    href: appHref(app.slug, locale),
-    shortDescription: app.shortDescription?.trim() || null,
-    image: toImageSource(
-      firstMedia(app.screenshots),
-      format(dict.app.screenshotAlt, { name: app.name, index: 1 }),
-    ),
-  }))
+  const apps: HeroApp[] = showcase.map((app) => toHeroApp(app, locale, dict)).filter(hasScreens)
   const statItems = [
     { value: pad(stats.totalApps), label: dict.home.statApps },
     { value: pad(stats.totalCategories), label: dict.home.statCategories },

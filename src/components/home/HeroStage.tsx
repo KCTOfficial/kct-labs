@@ -5,6 +5,7 @@ import Link from 'next/link'
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 
 import type { ImageSource } from '@/components/site/media'
+import type { Media } from '@/payload-types'
 import { cn } from '@/utilities/ui'
 
 import {
@@ -25,7 +26,11 @@ export type HeroApp = {
   name: string
   href: string
   shortDescription: string | null
+  /** First screen (kept until the stage renders `screens`). */
   image: ImageSource | null
+  /** Up to `HERO_MAX_SCREENS` populated screenshots. */
+  screens: ImageSource[]
+  icon: Pick<Media, 'url' | 'updatedAt' | 'width' | 'height' | 'alt'> | null
 }
 
 export type HeroLabels = {

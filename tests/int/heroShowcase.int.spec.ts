@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { toHeroApp } from '@/components/home/heroApps'
+import type { ShowcaseApp } from '@/components/home/HomeHero'
 import { Home } from '@/globals/Home/config'
 import { HERO_SHOWCASE_MAX, normalizeShowcase } from '@/utilities/apps/heroShowcase'
 
@@ -35,5 +37,51 @@ describe('Home global showcase field', () => {
       { hasMany?: boolean; maxRows?: number } | undefined
     expect(field?.hasMany).toBe(true)
     expect(field?.maxRows).toBe(HERO_SHOWCASE_MAX)
+  })
+})
+
+describe('toHeroApp', () => {
+  const dict = { app: { screenshotAlt: '{name} screenshot {index}' } } as never
+  const media = (n: number, extra: object = {}) => ({
+    id: n,
+    url: `/media/s${n}.png`,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    width: 100,
+    height: 200,
+    alt: null,
+    ...extra,
+  })
+  const make = (screenshots: unknown[], icon: unknown = null) =>
+    ({
+      id: 1,
+      name: 'Foo',
+      slug: 'foo',
+      shortDescription: ' desc ',
+      screenshots,
+      icon,
+    }) as unknown as ShowcaseApp
+
+  it('maps at most 3 screens per app, skips non-populated uploads', () => {
+    const app = make([5, null, media(1), {}, media(2), media(3), media(4)])
+    const hero = toHeroApp(app, 'en', dict)
+    expect(hero.screens).toHaveLength(3)
+    expect(hero.screens.map((s) => s.alt)).toEqual([
+      'Foo screenshot 1',
+      'Foo screenshot 2',
+      'Foo screenshot 3',
+    ])
+    expect(hero.image).toEqual(hero.screens[0])
+    expect(hero.shortDescription).toBe('desc')
+  })
+
+  it('has no screens and a null icon when nothing is populated', () => {
+    const hero = toHeroApp(make([7], 9), 'en', dict)
+    expect(hero.screens).toEqual([])
+    expect(hero.image).toBeNull()
+    expect(hero.icon).toBeNull()
+  })
+
+  it('keeps a populated icon', () => {
+    expect(toHeroApp(make([], media(9)), 'en', dict).icon?.url).toBe('/media/s9.png')
   })
 })

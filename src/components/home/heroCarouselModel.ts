@@ -37,6 +37,22 @@ export const layerWindow = (appIndex: number, count: number): [number, number, n
   wrapIndex(appIndex + 1, count),
 ]
 
+/** Screenshots shown per app (left, centre, right phone). */
+export const HERO_MAX_SCREENS = 3
+
+/**
+ * Screenshot index for each stage position [left, centre, right]. The centre always shows
+ * screenshot 1 (index 0 is the left neighbour), so 1 → centre only, 2 → [1, 0], 3+ → [1, 0, 2].
+ */
+export const screenIndexes = (shotCount: number): number[] => {
+  if (shotCount <= 0) return []
+  if (shotCount === 1) return [0]
+  if (shotCount === 2) return [1, 0]
+  return [1, 0, 2]
+}
+
+export const hasScreens = (app: { screens: readonly unknown[] }): boolean => app.screens.length > 0
+
 /** Swipe left → next, right → prev; short or mostly vertical gestures are not swipes. */
 export const swipeDirection = (
   dx: number,

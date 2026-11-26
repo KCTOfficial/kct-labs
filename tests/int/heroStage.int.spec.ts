@@ -14,14 +14,24 @@ const LABELS: HeroLabels = {
 }
 
 const makeApps = (n: number, overrides: Partial<HeroApp> = {}): HeroApp[] =>
-  Array.from({ length: n }, (_, i) => ({
-    id: i + 1,
-    name: `App ${i + 1}`,
-    href: `/apps/app-${i + 1}`,
-    shortDescription: `Description ${i + 1}`,
-    image: { src: `/media/app-${i + 1}.png`, width: 540, height: 960, alt: `App ${i + 1} shot` },
-    ...overrides,
-  }))
+  Array.from({ length: n }, (_, i) => {
+    const image = {
+      src: `/media/app-${i + 1}.png`,
+      width: 540,
+      height: 960,
+      alt: `App ${i + 1} shot`,
+    }
+    return {
+      id: i + 1,
+      name: `App ${i + 1}`,
+      href: `/apps/app-${i + 1}`,
+      shortDescription: `Description ${i + 1}`,
+      image,
+      screens: [image],
+      icon: null,
+      ...overrides,
+    }
+  })
 
 const mount = (apps: HeroApp[]) => render(React.createElement(HeroStage, { apps, labels: LABELS }))
 

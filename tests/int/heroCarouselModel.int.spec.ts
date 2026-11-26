@@ -4,9 +4,12 @@ import {
   HERO_AUTOPLAY_MS,
   HERO_SLIDE_MS,
   HERO_STAGGER_MS,
+  HERO_MAX_SCREENS,
   HERO_SWIPE_PX,
+  hasScreens,
   isAutoplayRunning,
   layerWindow,
+  screenIndexes,
   stageAppIndexes,
   stepActive,
   swipeDirection,
@@ -108,5 +111,25 @@ describe('isAutoplayRunning', () => {
     ['out of view', { inView: false }],
   ])('stops when %s', (_label, patch) => {
     expect(isAutoplayRunning({ ...clean, ...patch })).toBe(false)
+  })
+})
+
+describe('screenIndexes', () => {
+  it('handles 0, 1, 2, 3 and 10 screenshots', () => {
+    expect(HERO_MAX_SCREENS).toBe(3)
+    expect(screenIndexes(0)).toEqual([])
+    expect(screenIndexes(1)).toEqual([0])
+    expect(screenIndexes(2)).toEqual([1, 0])
+    expect(screenIndexes(3)).toEqual([1, 0, 2])
+    expect(screenIndexes(10)).toEqual([1, 0, 2])
+  })
+})
+
+describe('hasScreens', () => {
+  it('is false for an empty list', () => {
+    expect(hasScreens({ screens: [] })).toBe(false)
+  })
+  it('is true when at least one screen exists', () => {
+    expect(hasScreens({ screens: [{}] })).toBe(true)
   })
 })
