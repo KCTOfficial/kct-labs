@@ -122,6 +122,10 @@
   --accent-orange: #dd5000;
   --accent-orange-text: #b83f00;
   --nav-bg: #f2f1eed9;
+  /* Navy wash behind text (service card, hero stats glow). Light stays at 10% so text-muted keeps
+   * >= 4.5:1 on top of it; dark uses the design's 35%/33% (text there is light, contrast is ample). */
+  --tint-navy-card: color-mix(in srgb, var(--brand-navy) 10%, transparent);
+  --tint-navy-glow: color-mix(in srgb, var(--brand-navy) 10%, transparent);
 
   --card: var(--surface);
   --card-foreground: var(--foreground);
@@ -176,6 +180,8 @@
   --accent-orange: #ff681a;
   --accent-orange-text: #ff681a;
   --nav-bg: #0a1224cc;
+  --tint-navy-card: color-mix(in srgb, var(--brand-navy) 35%, transparent);
+  --tint-navy-glow: color-mix(in srgb, var(--brand-navy) 33%, transparent);
 
   --primary: #cdf228;
   --primary-foreground: #0a1224;
@@ -213,6 +219,8 @@
     --accent-orange: #ff681a;
     --accent-orange-text: #ff681a;
     --nav-bg: #0a1224cc;
+    --tint-navy-card: color-mix(in srgb, var(--brand-navy) 35%, transparent);
+    --tint-navy-glow: color-mix(in srgb, var(--brand-navy) 33%, transparent);
 
     --primary: #cdf228;
     --primary-foreground: #0a1224;

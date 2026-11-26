@@ -44,7 +44,7 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="bg-blueprint absolute inset-0" />
         <div className="absolute -right-40 top-0 size-[720px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent-orange)_18%,transparent),transparent_70%)]" />
-        <div className="absolute -left-48 top-[420px] h-[600px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-navy)_33%,transparent),transparent_70%)]" />
+        <div className="absolute -left-48 top-[420px] h-[600px] w-[760px] rounded-full bg-[radial-gradient(circle,var(--tint-navy-glow),transparent_70%)]" />
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background to-transparent" />
       </div>
 

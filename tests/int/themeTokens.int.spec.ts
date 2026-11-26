@@ -122,6 +122,75 @@ describe('theme tokens (KCT Hub logo palette)', () => {
     })
   })
 
+  it.each([...themes, ['prefers-color-scheme dark', media] as [string, Tokens]])(
+    '%s: text-muted on surface-2 >= 4.5',
+    (_n, t) => {
+      expect(contrast(tok(t, '--text-muted'), tok(t, '--surface-2'))).toBeGreaterThanOrEqual(4.5)
+    },
+  )
+
+  describe('text on navy-tinted backgrounds (service card, hero stats glow)', () => {
+    type Rgb = [number, number, number]
+    const rgb = (hex: string): Rgb => {
+      const n = parseInt(hex.slice(1), 16)
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    }
+    const toHex = (c: number[]) =>
+      `#${c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`
+    /** `color-mix(in srgb, var(--x) N%, transparent)` → [token, alpha]. */
+    const tint = (theme: Tokens, name: string): [string, number] => {
+      const value = { ...light, ...theme }[name] ?? ''
+      const m = /^color-mix\(in srgb, var\((--[\w-]+)\) ([\d.]+)%, transparent\)$/.exec(value)
+      if (!m) throw new Error(`${name} is not a color-mix tint: ${value}`)
+      return [m[1], Number(m[2]) / 100]
+    }
+    /** Source-over composite of premultiplied colour + alpha onto a solid backdrop. */
+    const over = (premul: number[], alpha: number, backdrop: string) =>
+      toHex(rgb(backdrop).map((b, i) => premul[i] + b * (1 - alpha)))
+
+    const source = (file: string) =>
+      readFileSync(path.resolve(process.cwd(), `src/components/home/${file}`), 'utf8')
+    const allThemes: [string, Tokens][] = [...themes, ['prefers-color-scheme dark', media]]
+
+    it('the service card and the hero glow read their navy tint from the tokens', () => {
+      expect(source('HomeCatalog.tsx')).toContain('var(--tint-navy-card)')
+      expect(source('HomeHero.tsx')).toContain('var(--tint-navy-glow)')
+      expect(source('HomeCatalog.tsx')).not.toMatch(/--brand-navy\)_\d+%/)
+      expect(source('HomeHero.tsx')).not.toMatch(/--brand-navy\)_\d+%/)
+    })
+
+    it('dark keeps the original look (35% card, 33% glow)', () => {
+      for (const t of [dark, media]) {
+        expect(tint(t, '--tint-navy-card')).toEqual(['--brand-navy', 0.35])
+        expect(tint(t, '--tint-navy-glow')).toEqual(['--brand-navy', 0.33])
+      }
+    })
+
+    it.each(allThemes)('%s: service card text >= 4.5 along the whole gradient', (_n, t) => {
+      // linear-gradient(135deg, tint-navy-card, orange 10%) on the page background; gradients
+      // interpolate premultiplied colours, so sample the stops and points in between.
+      const [navyToken, navyAlpha] = tint(t, '--tint-navy-card')
+      const navy = rgb(tok(t, navyToken))
+      const orange = rgb(tok(t, '--accent-orange'))
+      for (let step = 0; step <= 10; step++) {
+        const p = step / 10
+        const alpha = navyAlpha * (1 - p) + 0.1 * p
+        const premul = navy.map((v, i) => v * navyAlpha * (1 - p) + orange[i]! * 0.1 * p)
+        const bg = over(premul, alpha, tok(t, '--background'))
+        for (const fg of ['--text-muted', '--text-secondary', '--foreground']) {
+          expect(contrast(tok(t, fg), bg), `${fg} on ${bg} at ${p}`).toBeGreaterThanOrEqual(4.5)
+        }
+      }
+    })
+
+    it.each(allThemes)('%s: hero stats label (text-muted) >= 4.5 at the glow centre', (_n, t) => {
+      const [navyToken, alpha] = tint(t, '--tint-navy-glow')
+      const premul = rgb(tok(t, navyToken)).map((v) => v * alpha)
+      const bg = over(premul, alpha, tok(t, '--background'))
+      expect(contrast(tok(t, '--text-muted'), bg)).toBeGreaterThanOrEqual(4.5)
+    })
+  })
+
   it('the prefers-color-scheme block repeats every [data-theme=dark] token with the same value', () => {
     expect(Object.keys(dark).length).toBeGreaterThan(10)
     expect(media).toEqual(dark)
