@@ -95,7 +95,8 @@ wait_healthy() {
 
 smoke_test() {
   local path code
-  for path in / /id /apps /apps-sitemap.xml /robots.txt; do
+  # `/id/...` is a 308 redirect since Indonesian became the default locale; `/en` serves English.
+  for path in / /en /apps /apps-sitemap.xml /robots.txt; do
     code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "http://127.0.0.1:${APP_PORT}${path}" || echo 000)"
     [[ "$code" == "200" ]] || { warn "smoke test ${path} → HTTP ${code}"; return 1; }
     log "smoke ${path} → 200"

@@ -165,7 +165,7 @@ Urutan yang dijalankan `deploy.sh`:
 2. `git pull --ff-only` (gagal jika ada perubahan lokal di VPS).
 3. Build image **migrator** → cek penanda dev-push (`scripts/migration-preflight.ts`) → `payload migrate` dengan timeout 15 menit (**sebelum** build app, karena `next build` membaca DB). Pada deploy pertama setelah restore hasilnya *tidak ada migrasi baru*.
 4. Build image **app** (env dipasang sebagai BuildKit secret, tidak tersimpan di image).
-5. Ganti container → tunggu healthcheck → smoke test `/`, `/id`, `/apps`, `/apps-sitemap.xml`, `/robots.txt`.
+5. Ganti container → tunggu healthcheck → smoke test `/`, `/en`, `/apps`, `/apps-sitemap.xml`, `/robots.txt` (semuanya harus 200; `/id` sekarang 308, jadi bukan bagian smoke test).
 6. Gagal → **rollback otomatis** ke image sebelumnya. Berhasil → simpan tag & bersihkan: image app sisa 2 (+current/previous), image migrator hanya yang terbaru, image *dangling* milik proyek ini saja (label `com.kct.project=kct-hub`). Build cache host **tidak** disentuh kecuali `PRUNE_BUILD_CACHE=1`.
 
 Variabel opsional: `BRANCH`, `ENV_FILE` (default: `.env.prod` di `<APP_DIR>`), `MEDIA_DIR`, `APP_PORT` (default: `PORT` di env), `KEEP_IMAGES`, `HEALTH_TIMEOUT`, `MIGRATE_TIMEOUT`, `MIN_FREE_GB`, `FORCE_BUILD=1`, `PRUNE_BUILD_CACHE=1`.
