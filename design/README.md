@@ -19,7 +19,7 @@ Halus dan profesional: 150–300 ms, hanya `transform`/`opacity`, mati total di 
 
 ## Scroll story Beranda (desktop)
 
-Terinspirasi everylastdrop.co.uk: gerak di-_scrub_ oleh posisi scroll dan berbalik saat scroll ke atas. Hanya di desktop ≥ 1024 px dengan mouse, tanpa reduced-motion (GSAP ScrollTrigger, dimuat lazy). Hero dan Sorotan menempel di bawah header selama 80vh/90vh (perlu tinggi layar ≥ 760 px): ponsel hero menyebar dan teks memudar halus; di Sorotan ponsel masuk dari samping lalu fitur menyala satu per satu. Section lain: kartu katalog naik bertahap, garis progres "Cara kerja" terisi, teks Tentang parallax, pita CTA membesar. Batas: rotasi ≤ 6°, geser ≤ 80 px, skala ≤ 1.03, hanya transform/opacity. Mobile/tablet memakai `.reveal` CSS.
+Terinspirasi everylastdrop.co.uk: gerak di-_scrub_ oleh posisi scroll dan berbalik saat scroll ke atas. Hanya di desktop ≥ 1024 px dengan mouse, tanpa reduced-motion (GSAP ScrollTrigger, dimuat lazy). Hero **statis** (tidak dianimasikan GSAP; hanya carousel layar HP-nya yang bergerak). Sorotan menempel di bawah header selama 90vh (perlu tinggi layar ≥ 760 px): ponsel masuk dari samping lalu fitur menyala satu per satu. Section lain: kartu katalog naik bertahap, garis progres "Cara kerja" terisi, teks Tentang parallax, pita CTA membesar. Batas: rotasi ≤ 6°, geser ≤ 80 px, skala ≤ 1.03, hanya transform/opacity. Mobile/tablet memakai `.reveal` CSS.
 
 ## Isi file .pen
 

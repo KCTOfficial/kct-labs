@@ -14,6 +14,12 @@ const headTags = async (page: Page) =>
     hreflang: [...document.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) =>
       l.getAttribute('hreflang'),
     ),
+    alternates: Object.fromEntries(
+      [...document.querySelectorAll('link[rel="alternate"][hreflang]')].map((l) => [
+        l.getAttribute('hreflang'),
+        l.getAttribute('href'),
+      ]),
+    ) as Record<string, string | null>,
     ogLocale: document.querySelector('meta[property="og:locale"]')?.getAttribute('content'),
     h1: document.querySelectorAll('h1').length,
     jsonLd: [...document.querySelectorAll('script[type="application/ld+json"]')].flatMap((s) =>
@@ -26,17 +32,39 @@ const headTags = async (page: Page) =>
   }))
 
 test.describe('KCT Hub — routing & i18n', () => {
-  test('English is served without a prefix and /en redirects to it', async ({ page }) => {
-    const res = await page.goto(`${BASE}/en/apps`)
+  test('Indonesian is served without a prefix and /id redirects (308) to it', async ({
+    page,
+    request,
+  }) => {
+    const redirect = await request.get(`${BASE}/id/apps?sort=name`, { maxRedirects: 0 })
+    expect(redirect.status()).toBe(308)
+    expect(new URL(redirect.headers().location, BASE).pathname).toBe('/apps')
+    expect(new URL(redirect.headers().location, BASE).search).toBe('?sort=name')
+    const res = await page.goto(`${BASE}/id/apps`)
     expect(res?.status()).toBe(200)
     expect(new URL(page.url()).pathname).toBe('/apps')
+    await expect(page.locator('h1')).toContainText('Semua Aplikasi')
+  })
+
+  test('/en is served as English (no redirect); look-alike paths are not locales', async ({
+    page,
+    request,
+  }) => {
+    const res = await page.goto(`${BASE}/en/apps`)
+    expect(res?.status()).toBe(200)
+    expect(new URL(page.url()).pathname).toBe('/en/apps')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await expect(page.locator('h1')).toContainText('All Apps')
+    for (const path of ['/identity', '/enter']) {
+      expect((await request.get(`${BASE}${path}`, { maxRedirects: 0 })).status()).toBe(404)
+    }
   })
 
   test('language switch keeps the current page and query', async ({ page }) => {
     await page.goto(`${BASE}/apps?category=finance`)
-    await page.locator('header nav[aria-label="Change language"] a[hreflang="id"]').first().click()
-    await expect(page).toHaveURL(/\/id\/apps\?category=finance$/)
-    await expect(page.locator('h1')).toContainText('Semua Aplikasi')
+    await page.locator('header nav[aria-label="Ganti bahasa"] a[hreflang="en"]').first().click()
+    await expect(page).toHaveURL(/\/en\/apps\?category=finance$/)
+    await expect(page.locator('h1')).toContainText('All Apps')
   })
 
   test('unknown app slug returns a real 404', async ({ page }) => {
@@ -47,11 +75,12 @@ test.describe('KCT Hub — routing & i18n', () => {
 
 test.describe('KCT Hub — SEO', () => {
   for (const [path, locale, schema] of [
-    ['/', 'en', 'Organization'],
-    ['/id', 'id', 'WebSite'],
-    ['/apps', 'en', 'ItemList'],
-    ['/apps/al-quran-imam', 'en', 'MobileApplication'],
-    ['/id/apps/al-quran-imam', 'id', 'BreadcrumbList'],
+    ['/', 'id', 'Organization'],
+    ['/en', 'en', 'WebSite'],
+    ['/apps', 'id', 'ItemList'],
+    ['/en/apps', 'en', 'ItemList'],
+    ['/en/apps/al-quran-imam', 'en', 'MobileApplication'],
+    ['/apps/al-quran-imam', 'id', 'BreadcrumbList'],
   ] as const) {
     test(`${path} has complete, indexable metadata`, async ({ page }) => {
       const res = await page.goto(`${BASE}${path}`)
@@ -59,6 +88,14 @@ test.describe('KCT Hub — SEO', () => {
       const tags = await headTags(page)
       expect(tags.lang).toBe(locale)
       expect(tags.canonical).toBeTruthy()
+      // Canonical is absolute and points at this very URL; x-default is the unprefixed (ID) one.
+      expect(new URL(tags.canonical!).pathname).toBe(path)
+      const unprefixed = path.replace(/^\/en(?=\/|$)/, '') || '/'
+      expect(new URL(tags.alternates['x-default']!).pathname).toBe(unprefixed)
+      expect(new URL(tags.alternates.id!).pathname).toBe(unprefixed)
+      expect(new URL(tags.alternates.en!).pathname).toBe(
+        unprefixed === '/' ? '/en' : `/en${unprefixed}`,
+      )
       expect(tags.description.length).toBeGreaterThan(50)
       expect(tags.description.length).toBeLessThanOrEqual(160)
       expect(tags.robots.join(' ')).not.toContain('noindex')
@@ -129,7 +166,8 @@ test.describe('KCT Hub — SEO', () => {
     expect(res.status()).toBe(200)
     const xml = await res.text()
     expect(xml).toContain('/apps/al-quran-imam</loc>')
-    expect(xml).toContain('/id/apps/al-quran-imam</loc>')
+    expect(xml).toContain('/en/apps/al-quran-imam</loc>')
+    expect(xml).not.toContain('/id/apps/al-quran-imam</loc>')
     expect(xml).toContain('hreflang="x-default"')
   })
 })
@@ -141,13 +179,15 @@ test.describe('KCT Hub — listing behaviour', () => {
     await page.goto(`${BASE}/apps?category=finance`)
     await expect(page.locator('main article')).toHaveCount(1)
     await page.goto(`${BASE}/apps?q=zzzz-no-match`)
+    await expect(page.getByRole('heading', { name: 'Aplikasi tidak ditemukan' })).toBeVisible()
+    await page.goto(`${BASE}/en/apps?q=zzzz-no-match`)
     await expect(page.getByRole('heading', { name: 'No apps found' })).toBeVisible()
   })
 
   test('mobile menu opens, traps scroll and closes with Escape', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 375, height: 812 } })
     const page = await context.newPage()
-    await page.goto(BASE)
+    await page.goto(`${BASE}/en`)
     const toggle = page.getByRole('button', { name: 'Open menu' })
     await toggle.click()
     await expect(page.getByRole('button', { name: 'Close menu' })).toHaveAttribute(

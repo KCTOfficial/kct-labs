@@ -9,10 +9,19 @@ import { Breadcrumbs } from '@/components/apps/Breadcrumbs'
 import { LEGAL_ICON_COMPONENTS } from '@/components/legal/LegalDocNav'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { AppIcon } from '@/components/site/AppIcon'
-import { format, getDictionary, isLocale, localeTags, localizeHref, type Locale } from '@/i18n'
+import {
+  format,
+  getDictionary,
+  isLocale,
+  localeTags,
+  localizeHref,
+  locales,
+  type Locale,
+} from '@/i18n'
 import type { App } from '@/payload-types'
 import { getAppBySlug } from '@/utilities/apps/queries'
 import { generateMeta } from '@/utilities/generateMeta'
+import { isFullyTranslated, primaryContentLocale } from '@/utilities/legal/contentLocales'
 import { legalFallbackDescription } from '@/utilities/legal/lexical'
 import { legalDocPath, legalIndexPath } from '@/utilities/legal/paths'
 import { getAppLegalDocs, type LegalDocLink } from '@/utilities/legal/queries'
@@ -103,7 +112,7 @@ export default async function LegalIndexPage({ params }: Args) {
             <AppIcon icon={app.icon} name={app.name} size={40} />
             {app.name}
           </Link>
-          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-foreground lg:text-[44px]">
+          <h1 className="font-display text-title font-semibold tracking-[-0.02em] text-foreground">
             {format(dict.legal.indexTitle, { name: app.name })}
           </h1>
           <p className="max-w-2xl text-text-secondary">
@@ -163,6 +172,8 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   const { isEnabled: draft } = await draftMode()
   const { app, docs } = loaded
   const dict = getDictionary(locale)
+  // The index is available in every language any of its documents is written in.
+  const contentLocales = locales.filter((l) => docs.some((d) => d.contentLocales.includes(l)))
 
   return generateMeta({
     doc: null,
@@ -176,7 +187,8 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     locale,
     noIndex: app.status === 'archived' || draft,
     path: legalIndexPath(app.slug),
-    translated: docs.some((d) => d.hasIndonesian),
+    translated: isFullyTranslated(contentLocales),
+    contentLocale: primaryContentLocale(contentLocales),
   }).then((meta) => ({
     ...meta,
     description: meta.description ?? dict.meta.defaultDescription,

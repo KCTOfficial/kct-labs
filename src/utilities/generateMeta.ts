@@ -48,6 +48,8 @@ export type GenerateMetaArgs = {
   locale?: Locale
   /** `true` when the document is translated in every locale (adds hreflang alternates). */
   translated?: boolean
+  /** Language of an untranslated page (canonical + og:locale). Defaults to the default locale. */
+  contentLocale?: Locale
   fallbackTitle?: string
   fallbackDescription?: string
   fallbackImage?: Media | number | null
@@ -72,6 +74,7 @@ export const generateMeta = async (args: GenerateMetaArgs): Promise<Metadata> =>
     path,
     locale = defaultLocale,
     translated = false,
+    contentLocale = defaultLocale,
     fallbackTitle,
     fallbackDescription,
     fallbackImage,
@@ -90,9 +93,11 @@ export const generateMeta = async (args: GenerateMetaArgs): Promise<Metadata> =>
 
   let alternates: Alternates | undefined
   if (path)
-    alternates = translated ? buildAlternates(path, locale) : buildSingleLanguageAlternates(path)
+    alternates = translated
+      ? buildAlternates(path, locale)
+      : buildSingleLanguageAlternates(path, contentLocale)
 
-  const ogLocale = translated ? ogLocales[locale] : ogLocales[defaultLocale]
+  const ogLocale = translated ? ogLocales[locale] : ogLocales[contentLocale]
 
   return {
     title: { absolute: title },

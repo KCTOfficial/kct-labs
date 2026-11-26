@@ -16,7 +16,7 @@ export type AppDetailPath = { slug: string; locale: Locale }
 
 /**
  * Parses a public pathname into an app detail route:
- * `/apps/x` → en, `/id/apps/x` → id, `/en/apps/x` → en. Anything else (listing, extra segments,
+ * `/apps/x` → id (default), `/en/apps/x` → en, `/id/apps/x` → id. Anything else (listing, extra segments,
  * invalid or percent-encoded slugs, unknown locales) → `null`. Trailing slashes are ignored.
  */
 export const parseAppDetailPath = (pathname: string): AppDetailPath | null => {

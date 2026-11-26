@@ -22,7 +22,7 @@ interface HeaderClientProps {
   contactLine?: string
 }
 
-// Compares locale-free paths: during SSR usePathname() is the internal `/en/...` path,
+// Compares locale-free paths: during SSR usePathname() is the internal `/id/...` path,
 // in the browser it is the public one.
 const isActive = (href: string, pathname: string) => {
   const path = stripLocale(href.split(/[?#]/)[0] || '/')

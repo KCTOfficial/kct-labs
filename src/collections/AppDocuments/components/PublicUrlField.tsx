@@ -14,7 +14,7 @@ const relationId = (value: unknown): number | string | null => {
   return typeof value === 'number' || typeof value === 'string' ? value : null
 }
 
-/** Read-only public URL (EN, locale-less) of a published document, with a copy button. */
+/** Read-only public URL (Indonesian = default locale, no prefix) of a published document + copy. */
 export const PublicUrlField = () => {
   const { hasPublishedDoc } = useDocumentInfo()
   const appId = useFormFields(([fields]) => relationId(fields.app?.value))

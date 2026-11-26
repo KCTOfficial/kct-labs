@@ -4,7 +4,7 @@ import { RefreshCw, TriangleAlert } from 'lucide-react'
 import { useParams } from 'next/navigation'
 import React from 'react'
 
-import { getDictionary, isLocale } from '@/i18n'
+import { defaultLocale, getDictionary, isLocale } from '@/i18n'
 
 /** Error boundary for /apps and /apps/[slug]. Never renders error details to visitors. */
 export default function AppsError({
@@ -14,7 +14,7 @@ export default function AppsError({
   reset: () => void
 }) {
   const params = useParams<{ locale: string }>()
-  const dict = getDictionary(isLocale(params?.locale) ? params.locale : 'en')
+  const dict = getDictionary(isLocale(params?.locale) ? params.locale : defaultLocale)
 
   return (
     <div className="site-container py-16 lg:py-24">

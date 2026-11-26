@@ -12,6 +12,9 @@ const ARCHIVED_SLUG = `legal-archived-${suffix}`
 const EMPTY_SLUG = `legal-empty-${suffix}`
 const LEGACY_SLUG = `legal-legacy-${suffix}`
 const LEGACY_URL = 'https://example.com/privacy'
+const ID_ONLY_SLUG = `legal-id-only-${suffix}`
+const ID_ONLY_DOC_PATH = `/apps/${ID_ONLY_SLUG}/legal/privacy-policy`
+const TAGLINE = 'A tagline long enough to top up the generated description of the legal index page.'
 const INDEX_PATH = `/apps/${APP_SLUG}/legal`
 const DOC_SLUG = 'privacy-policy'
 const DOC_PATH = `/apps/${APP_SLUG}/legal/${DOC_SLUG}`
@@ -51,12 +54,17 @@ const restLogin = async (request: APIRequestContext) => {
 }
 const created: Array<{ collection: string; id: number }> = []
 
+/**
+ * Writes in English by default: these fixtures are legacy English-only content (English was the
+ * default locale before Indonesian), which the Indonesian pages show with a fallback notice.
+ */
 const api = async (
   request: APIRequestContext,
   collection: string,
   data: Record<string, unknown>,
+  locale: 'en' | 'id' = 'en',
 ) => {
-  const res = await request.post(`${BASE}/api/${collection}?locale=en`, {
+  const res = await request.post(`${BASE}/api/${collection}?locale=${locale}`, {
     data,
     headers: { Authorization: `JWT ${token}` },
   })
@@ -123,7 +131,7 @@ test.describe('Legal document page', () => {
       sortOrder: 10,
     })
     const appData = {
-      tagline: 'A tagline long enough to top up the generated description of the legal index page.',
+      tagline: TAGLINE,
       shortDescription: 'Short description',
       icon: mediaId,
       category: category.id,
@@ -155,6 +163,32 @@ test.describe('Legal document page', () => {
       status: 'live',
       privacyPolicyUrl: LEGACY_URL,
     })
+    // Indonesian-only content (the default locale): /en shows it with a fallback notice.
+    const idOnly = await api(
+      request,
+      'apps',
+      {
+        ...appData,
+        tagline: 'Tagline dalam bahasa Indonesia yang cukup panjang untuk deskripsi halaman.',
+        name: `Legal ID Only ${suffix}`,
+        slug: ID_ONLY_SLUG,
+        status: 'live',
+      },
+      'id',
+    )
+    await api(
+      request,
+      'app-documents',
+      {
+        app: idOnly.id,
+        documentType: type.id,
+        slug: DOC_SLUG,
+        title: 'Kebijakan Privasi',
+        markdown: `# Kebijakan Privasi\n\n${INTRO}\n\n## Data yang dikumpulkan\n\nTidak ada.\n`,
+        _status: 'published',
+      },
+      'id',
+    )
     await api(request, 'app-documents', {
       app: app.id,
       documentType: termsType.id,
@@ -190,7 +224,7 @@ test.describe('Legal document page', () => {
   })
 
   test('EN page has complete SEO metadata, one h1 and a TOC of h2s', async ({ page }) => {
-    const res = await page.goto(`${BASE}${DOC_PATH}`)
+    const res = await page.goto(`${BASE}/en${DOC_PATH}`)
     expect(res?.status()).toBe(200)
     const title = await page.title()
     expect(title).toBe(`Privacy Policy – ${APP_NAME} | KCT Hub`)
@@ -198,10 +232,11 @@ test.describe('Legal document page', () => {
     const tags = await headTags(page)
     expect(tags.description.length).toBeGreaterThanOrEqual(120)
     expect(tags.description.length).toBeLessThanOrEqual(160)
-    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${DOC_PATH}$`))
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+/en${DOC_PATH}$`))
     expect(tags.robots).not.toContain('noindex')
     // No Indonesian content → no hreflang alternates for this document.
     expect(tags.hreflang).not.toContain('id')
+    await expect(page.locator('[data-legal-fallback]')).toHaveCount(0)
     expect(tags.h1).toBe(1)
     expect(tags.jsonLd).toEqual(expect.arrayContaining(['BreadcrumbList', 'WebPage']))
 
@@ -221,16 +256,41 @@ test.describe('Legal document page', () => {
     expect(await page.evaluate(() => (window as { __pwned?: boolean }).__pwned)).toBeUndefined()
   })
 
-  test('/id without Indonesian content shows the fallback banner and EN canonical', async ({
+  test('ID page without Indonesian content shows the fallback notice and EN canonical', async ({
     page,
   }) => {
-    const res = await page.goto(`${BASE}/id${DOC_PATH}`)
+    const res = await page.goto(`${BASE}${DOC_PATH}`)
     expect(res?.status()).toBe(200)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'id')
     await expect(page.locator('[data-legal-fallback]')).toBeVisible()
     await expect(page.locator('article[lang="en"]')).toHaveCount(1)
+    await expect(page.locator('article')).toContainText(INTRO)
     const tags = await headTags(page)
-    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${DOC_PATH}$`))
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+/en${DOC_PATH}$`))
     expect(tags.hreflang).not.toContain('id')
+  })
+
+  test('/en without English content shows the Indonesian text, a notice and ID canonical', async ({
+    page,
+  }) => {
+    const res = await page.goto(`${BASE}/en${ID_ONLY_DOC_PATH}`)
+    expect(res?.status()).toBe(200)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    await expect(page.locator('[data-legal-fallback]')).toBeVisible()
+    await expect(page.locator('article[lang="id"]')).toHaveCount(1)
+    await expect(page.locator('article h2')).toHaveText('Data yang dikumpulkan')
+    await expect(page.locator('h1')).toHaveText('Kebijakan Privasi')
+    const tags = await headTags(page)
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${ID_ONLY_DOC_PATH}$`))
+    expect(tags.hreflang).not.toContain('en')
+    expect(tags.h1).toBe(1)
+
+    // The Indonesian (default) URL is the real page: no notice, own canonical.
+    await page.goto(`${BASE}${ID_ONLY_DOC_PATH}`)
+    await expect(page.locator('[data-legal-fallback]')).toHaveCount(0)
+    expect((await headTags(page)).canonical).toMatch(
+      new RegExp(`^https?://[^/]+${ID_ONLY_DOC_PATH}$`),
+    )
   })
 
   test('unknown document returns 404', async ({ page }) => {
@@ -245,21 +305,21 @@ test.describe('Legal document page', () => {
   })
 
   test('index lists published documents in order, linking to each', async ({ page }) => {
-    const res = await page.goto(`${BASE}${INDEX_PATH}`)
+    const res = await page.goto(`${BASE}/en${INDEX_PATH}`)
     expect(res?.status()).toBe(200)
     const items = page.locator('main ul[data-legal-index] a')
     await expect(items).toHaveCount(2)
     await expect(items.nth(0)).toContainText('Privacy Policy')
     await expect(items.nth(1)).toContainText('Terms of Service')
-    expect(await items.nth(0).getAttribute('href')).toBe(`${INDEX_PATH}/${DOC_SLUG}`)
-    expect(await items.nth(1).getAttribute('href')).toBe(`${INDEX_PATH}/terms-of-service`)
+    expect(await items.nth(0).getAttribute('href')).toBe(`/en${INDEX_PATH}/${DOC_SLUG}`)
+    expect(await items.nth(1).getAttribute('href')).toBe(`/en${INDEX_PATH}/terms-of-service`)
 
     const title = await page.title()
     expect(title.length).toBeLessThanOrEqual(60)
     const tags = await headTags(page)
     expect(tags.h1).toBe(1)
     expect(tags.jsonLd).toEqual(expect.arrayContaining(['BreadcrumbList', 'ItemList']))
-    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${INDEX_PATH}$`))
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+/en${INDEX_PATH}$`))
     // No Indonesian content on any document → no hreflang alternates, as on the doc page.
     expect(tags.hreflang).not.toContain('id')
     expect(title).toBe(`Legal documents – ${APP_NAME} | KCT Hub`)
@@ -268,18 +328,18 @@ test.describe('Legal document page', () => {
     expect(tags.robots).not.toContain('noindex')
   })
 
-  test('/id index links to prefixed document paths', async ({ page }) => {
-    const res = await page.goto(`${BASE}/id${INDEX_PATH}`)
+  test('Indonesian (unprefixed) index links to unprefixed document paths', async ({ page }) => {
+    const res = await page.goto(`${BASE}${INDEX_PATH}`)
     expect(res?.status()).toBe(200)
     expect(await page.locator('main ul[data-legal-index] a').first().getAttribute('href')).toBe(
-      `/id${INDEX_PATH}/${DOC_SLUG}`,
+      `${INDEX_PATH}/${DOC_SLUG}`,
     )
     const tags = await headTags(page)
     expect(tags.description.length).toBeGreaterThanOrEqual(120)
     expect(tags.description.length).toBeLessThanOrEqual(160)
     expect(await page.title()).toMatch(/ \| KCT Hub$/)
     // No Indonesian content → single EN canonical, as on the doc page.
-    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+${INDEX_PATH}$`))
+    expect(tags.canonical).toMatch(new RegExp(`^https?://[^/]+/en${INDEX_PATH}$`))
   })
 
   test('app without documents returns 404', async ({ page }) => {
@@ -301,24 +361,34 @@ test.describe('Legal document page', () => {
   test('detail page lists legal documents as internal links plus the index link', async ({
     page,
   }) => {
-    await page.goto(`${BASE}/apps/${APP_SLUG}`)
+    await page.goto(`${BASE}/en/apps/${APP_SLUG}`)
     const group = page.locator('aside [data-legal-links]')
     await expect(group).toBeVisible()
     const links = group.locator('a')
     await expect(links).toHaveCount(3)
     expect(await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))).toEqual([
-      DOC_PATH,
-      `${INDEX_PATH}/terms-of-service`,
-      INDEX_PATH,
+      `/en${DOC_PATH}`,
+      `/en${INDEX_PATH}/terms-of-service`,
+      `/en${INDEX_PATH}`,
     ])
     await expect(links.last()).toHaveText('All legal documents')
     expect(await links.first().getAttribute('target')).toBeNull()
     await expect(page.locator('h1')).toHaveCount(1)
 
-    await page.goto(`${BASE}/id/apps/${APP_SLUG}`)
+    await page.goto(`${BASE}/apps/${APP_SLUG}`)
     expect(await page.locator('aside [data-legal-links] a').first().getAttribute('href')).toBe(
-      `/id${DOC_PATH}`,
+      DOC_PATH,
     )
+  })
+
+  test('an English-only app shows its English text on the Indonesian page (field fallback)', async ({
+    page,
+  }) => {
+    const res = await page.goto(`${BASE}/apps/${APP_SLUG}`)
+    expect(res?.status()).toBe(200)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'id')
+    await expect(page.locator('h1')).toHaveText(APP_NAME)
+    await expect(page.locator('main')).toContainText(TAGLINE)
   })
 
   test('app without documents keeps the legacy external privacy link', async ({ page }) => {

@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation'
 import React from 'react'
 
 import { ButtonLink } from '@/components/site/ButtonLink'
-import { getDictionary, isLocale, localizeHref } from '@/i18n'
+import { defaultLocale, getDictionary, isLocale, localizeHref } from '@/i18n'
 
 // `not-found` receives no params; the locale is read from the matched route on the client.
 export default function NotFound() {
   const params = useParams<{ locale?: string }>()
-  const locale = isLocale(params?.locale) ? params.locale : 'en'
+  const locale = isLocale(params?.locale) ? params.locale : defaultLocale
   const dict = getDictionary(locale)
 
   return (

@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import type { Locale } from '@/i18n/config'
+
 import {
   breadcrumbSchema,
   webPageSchema,
@@ -15,6 +17,11 @@ import {
   localizedUrl,
 } from '@/utilities/seo/urls'
 import { localizedSitemapEntries, singleLocaleSitemapEntry } from '@/utilities/seo/sitemap'
+import {
+  isFullyTranslated,
+  legalFallbackLocales,
+  primaryContentLocale,
+} from '@/utilities/legal/contentLocales'
 import { legalSitemapEntries } from '@/utilities/legal/sitemap'
 import { stripLocalizedFlags } from '@/utilities/withoutLocalization'
 
@@ -39,35 +46,50 @@ describe('titles and descriptions', () => {
 })
 
 describe('canonical + hreflang', () => {
-  it('builds absolute, locale-aware URLs', () => {
+  it('builds absolute, locale-aware URLs (Indonesian unprefixed, English under /en)', () => {
     expect(absoluteUrl('/')).toBe('https://hub.kct.co.id/')
-    expect(localizedUrl('/apps', 'id')).toBe('https://hub.kct.co.id/id/apps')
-    expect(localizedUrl('/apps', 'en')).toBe('https://hub.kct.co.id/apps')
+    expect(localizedUrl('/apps', 'id')).toBe('https://hub.kct.co.id/apps')
+    expect(localizedUrl('/apps', 'en')).toBe('https://hub.kct.co.id/en/apps')
   })
 
-  it('lists every locale plus x-default', () => {
-    const alt = buildAlternates('/apps/al-quran-imam', 'id')
-    expect(alt.canonical).toBe('https://hub.kct.co.id/id/apps/al-quran-imam')
-    expect(alt.languages).toEqual({
-      en: 'https://hub.kct.co.id/apps/al-quran-imam',
-      id: 'https://hub.kct.co.id/id/apps/al-quran-imam',
+  it('lists every locale plus x-default = the unprefixed (Indonesian) URL', () => {
+    const languages = {
+      en: 'https://hub.kct.co.id/en/apps/al-quran-imam',
+      id: 'https://hub.kct.co.id/apps/al-quran-imam',
       'x-default': 'https://hub.kct.co.id/apps/al-quran-imam',
-    })
+    }
+    const idAlt = buildAlternates('/apps/al-quran-imam', 'id')
+    expect(idAlt.canonical).toBe('https://hub.kct.co.id/apps/al-quran-imam')
+    expect(idAlt.languages).toEqual(languages)
+    const enAlt = buildAlternates('/apps/al-quran-imam', 'en')
+    expect(enAlt.canonical).toBe('https://hub.kct.co.id/en/apps/al-quran-imam')
+    expect(enAlt.languages).toEqual(languages)
+  })
+
+  it('/apps (id) and /en/apps (en) have their own canonical', () => {
+    expect(buildAlternates('/apps', 'id').canonical).toBe('https://hub.kct.co.id/apps')
+    expect(buildAlternates('/apps', 'en').canonical).toBe('https://hub.kct.co.id/en/apps')
   })
 
   it('gives untranslated template pages a single default-locale canonical', () => {
     expect(buildSingleLanguageAlternates('/posts')).toEqual({
       canonical: 'https://hub.kct.co.id/posts',
     })
+    expect(buildSingleLanguageAlternates('/apps/a/legal/x', 'en')).toEqual({
+      canonical: 'https://hub.kct.co.id/en/apps/a/legal/x',
+    })
   })
 
-  it('emits one sitemap entry per locale with hreflang alternates', () => {
+  it('emits one sitemap entry per locale with hreflang alternates (both locales)', () => {
     const entries = localizedSitemapEntries('/apps', '2026-01-01T00:00:00.000Z')
-    expect(entries.map((e) => e.loc)).toEqual([
+    expect(entries.map((e) => e.loc).sort()).toEqual([
       'https://hub.kct.co.id/apps',
-      'https://hub.kct.co.id/id/apps',
+      'https://hub.kct.co.id/en/apps',
     ])
     expect(entries[0].alternateRefs?.map((r) => r.hreflang)).toEqual(['en', 'id', 'x-default'])
+    expect(entries[0].alternateRefs?.find((r) => r.hreflang === 'x-default')?.href).toBe(
+      'https://hub.kct.co.id/apps',
+    )
   })
 })
 
@@ -141,52 +163,82 @@ describe('legal documents in the sitemap', () => {
     appSlug: string,
     docSlug: string,
     updatedAt: string,
-    hasIndonesian = false,
+    contentLocales: Locale[] = ['id'],
     archived = false,
-  ) => ({ appSlug, docSlug, updatedAt, hasIndonesian, archived })
+  ) => ({ appSlug, docSlug, updatedAt, contentLocales, archived })
 
-  it('singleLocaleSitemapEntry emits one EN entry without an id alternate', () => {
+  it('singleLocaleSitemapEntry emits one default-locale entry without an en alternate', () => {
     const entry = singleLocaleSitemapEntry('/apps/a/legal', '2026-01-01T00:00:00.000Z')
     expect(entry.loc).toBe('https://hub.kct.co.id/apps/a/legal')
-    expect(JSON.stringify(entry)).not.toContain('/id/')
+    expect(JSON.stringify(entry)).not.toContain('/en/')
   })
 
-  it('a document with Indonesian content gets both locales with alternates', () => {
-    const entries = legalSitemapEntries([doc('a', 'privacy', '2026-02-01T00:00:00.000Z', true)])
+  it('a document with content in both locales gets both locales with alternates', () => {
+    const entries = legalSitemapEntries([
+      doc('a', 'privacy', '2026-02-01T00:00:00.000Z', ['en', 'id']),
+    ])
     const locs = entries.map((e) => e.loc)
     expect(locs).toContain('https://hub.kct.co.id/apps/a/legal/privacy')
-    expect(locs).toContain('https://hub.kct.co.id/id/apps/a/legal/privacy')
+    expect(locs).toContain('https://hub.kct.co.id/en/apps/a/legal/privacy')
     const docEntry = entries.find((e) => e.loc === 'https://hub.kct.co.id/apps/a/legal/privacy')
     expect(docEntry?.alternateRefs?.map((r) => r.hreflang)).toEqual(['en', 'id', 'x-default'])
     expect(docEntry?.lastmod).toBe('2026-02-01T00:00:00.000Z')
   })
 
-  it('a document without Indonesian content gets a single EN entry', () => {
+  it('a document with Indonesian content only gets a single unprefixed entry', () => {
     const locs = legalSitemapEntries([doc('a', 'terms', '2026-02-01T00:00:00.000Z')]).map(
       (e) => e.loc,
     )
     expect(locs).toContain('https://hub.kct.co.id/apps/a/legal/terms')
-    expect(locs).not.toContain('https://hub.kct.co.id/id/apps/a/legal/terms')
+    expect(locs).not.toContain('https://hub.kct.co.id/en/apps/a/legal/terms')
+  })
+
+  it('a legacy English-only document gets a single /en entry', () => {
+    const locs = legalSitemapEntries([doc('a', 'terms', '2026-02-01T00:00:00.000Z', ['en'])]).map(
+      (e) => e.loc,
+    )
+    expect(locs).toContain('https://hub.kct.co.id/en/apps/a/legal/terms')
+    expect(locs).not.toContain('https://hub.kct.co.id/apps/a/legal/terms')
   })
 
   it('excludes archived apps entirely', () => {
-    expect(legalSitemapEntries([doc('a', 'privacy', '2026-02-01', true, true)])).toEqual([])
+    expect(legalSitemapEntries([doc('a', 'privacy', '2026-02-01', ['en', 'id'], true)])).toEqual([])
   })
 
   it('adds the app index once, localized if any doc is translated, with the latest lastmod', () => {
     const entries = legalSitemapEntries([
       doc('a', 'privacy', '2026-02-01T00:00:00.000Z'),
-      doc('a', 'terms', '2026-03-01T00:00:00.000Z', true),
+      doc('a', 'terms', '2026-03-01T00:00:00.000Z', ['en', 'id']),
       doc('b', 'privacy', '2026-01-01T00:00:00.000Z'),
     ])
     const index = entries.filter((e) => e.loc?.endsWith('/apps/a/legal'))
     expect(index).toHaveLength(2)
     expect(index.every((e) => e.lastmod === '2026-03-01T00:00:00.000Z')).toBe(true)
     expect(entries.filter((e) => e.loc?.endsWith('/apps/b/legal'))).toHaveLength(1)
-    expect(entries.some((e) => e.loc === 'https://hub.kct.co.id/id/apps/b/legal')).toBe(false)
+    expect(entries.some((e) => e.loc === 'https://hub.kct.co.id/en/apps/b/legal')).toBe(false)
   })
 
   it('returns nothing for an empty list', () => {
     expect(legalSitemapEntries([])).toEqual([])
+  })
+})
+
+describe('legal content locales', () => {
+  it('prefers the default locale (id) as the shown language, else the one with content', () => {
+    expect(primaryContentLocale(['en', 'id'])).toBe('id')
+    expect(primaryContentLocale(['id'])).toBe('id')
+    expect(primaryContentLocale(['en'])).toBe('en')
+    expect(primaryContentLocale([])).toBe('id')
+  })
+
+  it('is translated only with content in every locale', () => {
+    expect(isFullyTranslated(['en', 'id'])).toBe(true)
+    expect(isFullyTranslated(['id'])).toBe(false)
+    expect(isFullyTranslated([])).toBe(false)
+  })
+
+  it('falls back to the other locale in both directions', () => {
+    expect(legalFallbackLocales('en')).toEqual(['id'])
+    expect(legalFallbackLocales('id')).toEqual(['en'])
   })
 })

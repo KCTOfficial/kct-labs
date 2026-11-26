@@ -46,6 +46,9 @@
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, sans-serif;
+  /* Fluid type scale (`text-display`, `text-title`): 38→64px hero headline, 28→44px page/section titles. */
+  --text-display: clamp(2.375rem, 1.2rem + 3.2vw, 4rem);
+  --text-title: clamp(1.75rem, 1rem + 2vw, 2.75rem);
 }
 
 @layer utilities {
@@ -89,40 +92,46 @@
 
 /*
  * KCT Hub design tokens — source of truth: design/kct-hub.pen (variables) and design/README.md.
- * Brand base: navy #25508F + sky #3CBAF9 (KCT logo). Light = :root, dark = [data-theme='dark'].
- * The KCT Hub wordmark (public/brand/) keeps its own colours; the site palette is unchanged.
+ * Brand base from the KCT Hub logo (public/brand/*.png): lime #CDF228, orange #FF681A, navy #14213D,
+ * off-white #F2F1EE. Light = :root, dark = [data-theme='dark'].
  * shadcn/ui variable names are mapped onto the design tokens so template components (posts, forms)
  * inherit the same palette.
  */
 :root {
-  --brand-navy: #25508f;
-  --brand-sky: #3cbaf9;
+  --brand-navy: #14213d;
   /* Theme-independent colours: device bezel and text on the always-navy CTA band. */
   --device: #04070d;
-  --on-brand-accent: #b6f36a;
-  --on-brand-muted: #d6e6f7;
+  --on-brand-accent: #cdf228;
+  --on-brand-muted: #d9deea;
 
-  --background: #f4f8fc;
-  --foreground: #0b1a2e;
+  --background: #f2f1ee;
+  --foreground: #14213d;
   --bg-raised: #ffffff;
   --surface: #ffffff;
-  --surface-2: #eaf2fa;
-  --border-strong: #b4cbe2;
-  --grid-line: #25508f12;
-  --text-secondary: #40566f;
-  /* Darker than the .pen value (#6A7F96) to reach WCAG AA 4.5:1 on --background. */
-  --text-muted: #566a81;
-  --primary-soft: #1b6fb514;
+  --surface-2: #e8e6e0;
+  --border-strong: #bdbab0;
+  --grid-line: #14213d12;
+  --text-secondary: #43506a;
+  /* Darker than the .pen value to reach WCAG AA 4.5:1 on --background and --surface-2. */
+  --text-muted: #566175;
+  --primary-soft: #14213d14;
   --accent-lime: #3e8a12;
   --accent-lime-soft: #3e8a1214;
   --accent-violet: #5b4fd6;
-  --nav-bg: #f4f8fcd9;
+  /* Logo orange: --accent-orange for fills/UI (>= 3:1), --accent-orange-text for small text (>= 4.5:1). */
+  --accent-orange: #dd5000;
+  --accent-orange-text: #b83f00;
+  --nav-bg: #f2f1eed9;
+  /* Navy wash behind text (service card, hero stats glow). Light stays at 10% so text-muted keeps
+   * >= 4.5:1 on top of it; dark uses the design's 35%/33% (text there is light, contrast is ample). */
+  --tint-navy-card: color-mix(in srgb, var(--brand-navy) 10%, transparent);
+  --tint-navy-glow: color-mix(in srgb, var(--brand-navy) 10%, transparent);
 
   --card: var(--surface);
   --card-foreground: var(--foreground);
   --popover: var(--surface);
   --popover-foreground: var(--foreground);
-  --primary: #1b6fb5;
+  --primary: #14213d;
   --primary-foreground: #ffffff;
   --secondary: var(--surface-2);
   --secondary-foreground: var(--foreground);
@@ -132,10 +141,10 @@
   --accent-foreground: var(--foreground);
   --destructive: #c53030;
   --destructive-foreground: #ffffff;
-  --border: #d3e1ef;
-  --input: #d3e1ef;
-  --ring: #1b6fb5;
-  --chart-1: #1b6fb5;
+  --border: #dcdad3;
+  --input: #dcdad3;
+  --ring: #14213d;
+  --chart-1: #14213d;
   --chart-2: #3e8a12;
   --chart-3: #5b4fd6;
   --chart-4: #b45309;
@@ -155,30 +164,34 @@
 }
 
 [data-theme='dark'] {
-  --background: #070d1a;
-  --foreground: #eaf2fb;
-  --bg-raised: #0c1628;
-  --surface: #101d33;
-  --surface-2: #16263f;
-  --border-strong: #2b4a73;
-  --grid-line: #3cbaf914;
-  --text-secondary: #9db2cc;
-  --text-muted: #7f95b3;
-  --primary-soft: #3cbaf91f;
-  --accent-lime: #b6f36a;
-  --accent-lime-soft: #b6f36a1f;
+  --background: #0a1224;
+  --foreground: #f2f1ee;
+  --bg-raised: #0f1a31;
+  --surface: #14213d;
+  --surface-2: #1c2c4d;
+  --border-strong: #3a4d73;
+  --grid-line: #cdf22814;
+  --text-secondary: #aab4c8;
+  --text-muted: #8f9bb5;
+  --primary-soft: #cdf2281f;
+  --accent-lime: #cdf228;
+  --accent-lime-soft: #cdf2281f;
   --accent-violet: #8c8cff;
-  --nav-bg: #070d1acc;
+  --accent-orange: #ff681a;
+  --accent-orange-text: #ff681a;
+  --nav-bg: #0a1224cc;
+  --tint-navy-card: color-mix(in srgb, var(--brand-navy) 35%, transparent);
+  --tint-navy-glow: color-mix(in srgb, var(--brand-navy) 33%, transparent);
 
-  --primary: #3cbaf9;
-  --primary-foreground: #04121f;
+  --primary: #cdf228;
+  --primary-foreground: #0a1224;
   --destructive: #ff6b6b;
   --destructive-foreground: #04121f;
-  --border: #1e3352;
-  --input: #1e3352;
-  --ring: #3cbaf9;
-  --chart-1: #3cbaf9;
-  --chart-2: #b6f36a;
+  --border: #243556;
+  --input: #243556;
+  --ring: #cdf228;
+  --chart-1: #cdf228;
+  --chart-2: #ff681a;
   --chart-3: #8c8cff;
   --chart-4: #f5c451;
   --chart-5: #ff6b6b;
@@ -190,30 +203,34 @@
 /* No data-theme yet (no JS / before the inline theme script) → follow the OS preference. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --background: #070d1a;
-    --foreground: #eaf2fb;
-    --bg-raised: #0c1628;
-    --surface: #101d33;
-    --surface-2: #16263f;
-    --border-strong: #2b4a73;
-    --grid-line: #3cbaf914;
-    --text-secondary: #9db2cc;
-    --text-muted: #7f95b3;
-    --primary-soft: #3cbaf91f;
-    --accent-lime: #b6f36a;
-    --accent-lime-soft: #b6f36a1f;
+    --background: #0a1224;
+    --foreground: #f2f1ee;
+    --bg-raised: #0f1a31;
+    --surface: #14213d;
+    --surface-2: #1c2c4d;
+    --border-strong: #3a4d73;
+    --grid-line: #cdf22814;
+    --text-secondary: #aab4c8;
+    --text-muted: #8f9bb5;
+    --primary-soft: #cdf2281f;
+    --accent-lime: #cdf228;
+    --accent-lime-soft: #cdf2281f;
     --accent-violet: #8c8cff;
-    --nav-bg: #070d1acc;
+    --accent-orange: #ff681a;
+    --accent-orange-text: #ff681a;
+    --nav-bg: #0a1224cc;
+    --tint-navy-card: color-mix(in srgb, var(--brand-navy) 35%, transparent);
+    --tint-navy-glow: color-mix(in srgb, var(--brand-navy) 33%, transparent);
 
-    --primary: #3cbaf9;
-    --primary-foreground: #04121f;
+    --primary: #cdf228;
+    --primary-foreground: #0a1224;
     --destructive: #ff6b6b;
     --destructive-foreground: #04121f;
-    --border: #1e3352;
-    --input: #1e3352;
-    --ring: #3cbaf9;
-    --chart-1: #3cbaf9;
-    --chart-2: #b6f36a;
+    --border: #243556;
+    --input: #243556;
+    --ring: #cdf228;
+    --chart-1: #cdf228;
+    --chart-2: #ff681a;
     --chart-3: #8c8cff;
     --chart-4: #f5c451;
     --chart-5: #ff6b6b;
@@ -265,7 +282,6 @@
   --color-error: var(--error);
 
   --color-brand-navy: var(--brand-navy);
-  --color-brand-sky: var(--brand-sky);
   --color-bg-raised: var(--bg-raised);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -276,6 +292,8 @@
   --color-accent-lime: var(--accent-lime);
   --color-accent-lime-soft: var(--accent-lime-soft);
   --color-accent-violet: var(--accent-violet);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-orange-text: var(--accent-orange-text);
   --color-nav-bg: var(--nav-bg);
   --color-grid-line: var(--grid-line);
   --color-device: var(--device);
@@ -299,24 +317,30 @@
   }
 }
 
+/* Fluid layout tokens: content scales with the viewport instead of fixed px, so nothing is clipped
+ * on short/zoomed screens and wide screens are not left mostly empty (CLAUDE.md: no fixed px). */
+:root {
+  /* 1360px up to a ~1630px viewport, then grows with it to 1600px (reached at 1920px). */
+  --container-max: clamp(85rem, 83.333vw, 100rem);
+  /* 16px on phones, 32px at 768px (as before), 40px from 960px wide. */
+  --space-gutter: clamp(1rem, 4.1667vw, 2.5rem);
+  /* 56px → 112px; follows the height too so tall sections still fit short desktop screens. */
+  --section-y: clamp(3.5rem, min(10svh, 8vw), 7rem);
+  /* Hero stage (phones + overlaid caption, desktop): fills the first screen below the header and
+   * the hero's top padding, never below 416px (then the hero scrolls) nor above the design's 748px. */
+  --hero-stage-h: clamp(26rem, calc(100svh - var(--story-top) - 9rem), 46.75rem);
+  /* Phone group width follows the stage height. At 748px the design's phone group is 700px wide and
+   * the centre phone ends 578px down; the caption block (8rem card + 0.5rem gap + 2.75rem controls)
+   * may graze it by 10px, so the group gets `stage - 10.625rem` of height → width × 700/578. */
+  --hero-phones-w: calc((var(--hero-stage-h) - 10.625rem) * 1.2111);
+}
+
 @layer utilities {
   .site-container {
     width: 100%;
-    max-width: 85rem; /* 1360px → 1280px content at the xl gutter */
+    max-width: var(--container-max);
     margin-inline: auto;
-    padding-inline: 1rem;
-  }
-
-  @variant md {
-    .site-container {
-      padding-inline: 2rem;
-    }
-  }
-
-  @variant xl {
-    .site-container {
-      padding-inline: 2.5rem;
-    }
+    padding-inline: var(--space-gutter);
   }
 
   .bg-blueprint {
@@ -562,6 +586,9 @@ html:has(.qv-dialog[open]) {
 :root {
   /* Sticky header height on desktop: 78px + 1px border (src/Header/Component.client.tsx). */
   --story-top: 79px;
+  /* Featured visual (square): at most 620px and never taller than the room left while the section
+   * is stuck (screen − header − its vertical padding − its 1px top/bottom borders), so it fits. */
+  --featured-visual-max: min(38.75rem, calc(100svh - var(--story-top) - 2 * var(--section-y) - 2px));
 }
 
 .story-spacer,
@@ -597,11 +624,8 @@ html[data-scroll-story='on'] .story-line {
   display: block;
 }
 
-html[data-scroll-story='on'] [data-story-part^='phone-'],
 html[data-scroll-story='on'] [data-story-part^='featured-phone-'],
-html[data-scroll-story='on'] [data-story-part$='-glow'],
-html[data-scroll-story='on'] [data-story-part$='-glow-a'],
-html[data-scroll-story='on'] [data-story-part$='-glow-b'] {
+html[data-scroll-story='on'] [data-story-part$='-glow'] {
   will-change: transform;
 }
 
@@ -671,6 +695,31 @@ html[data-scroll-story='on'] [data-story-part]:focus-within {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Autoplay countdown: the fill of the active progress segment IS the clock (its animationend steps
+ * the carousel). transform only. KEEP IN SYNC duration with HERO_AUTOPLAY_MS in
+ * heroCarouselModel.ts (5000ms). `data-running='false'` freezes it in place (hover, keyboard focus,
+ * hidden tab, out of view) and it resumes where it stopped. Reduced motion: no animation (so no
+ * animationend, no autoplay) and the active segment is drawn full. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-progress-fill {
+    animation: hero-progress 5000ms linear forwards;
+    transform-origin: left;
+  }
+
+  .hero-progress-fill[data-running='false'] {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes hero-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 

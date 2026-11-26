@@ -9,10 +9,11 @@ import config from '@payload-config'
 import { getPayload, type Payload } from 'payload'
 
 import { seedKct } from '../src/endpoints/seed/kct'
+import { defaultLocale, locales, type Locale } from '../src/i18n/config'
 import type { DocumentType } from '../src/payload-types'
 
 type DocumentTypeSeed = Pick<DocumentType, 'icon' | 'requiredForPlay' | 'slug' | 'sortOrder'> & {
-  title: { en: string; id: string }
+  title: Record<Locale, string>
 }
 
 const DOCUMENT_TYPES: DocumentTypeSeed[] = [
@@ -57,24 +58,27 @@ async function seedDocumentTypes(payload: Payload): Promise<void> {
       pagination: false,
     })
     const current = existing.docs[0]
+    // Default locale first: the title is required there; the other locales are translations.
     const doc = current
       ? await payload.update({
           collection: 'document-types',
           id: current.id,
-          data: { ...rest, title: title.en },
-          locale: 'en',
+          data: { ...rest, title: title[defaultLocale] },
+          locale: defaultLocale,
         })
       : await payload.create({
           collection: 'document-types',
-          data: { ...rest, slug, title: title.en },
-          locale: 'en',
+          data: { ...rest, slug, title: title[defaultLocale] },
+          locale: defaultLocale,
         })
-    await payload.update({
-      collection: 'document-types',
-      id: doc.id,
-      data: { title: title.id },
-      locale: 'id',
-    })
+    for (const locale of locales.filter((l) => l !== defaultLocale)) {
+      await payload.update({
+        collection: 'document-types',
+        id: doc.id,
+        data: { title: title[locale] },
+        locale,
+      })
+    }
     payload.logger.info(`[seed:kct] document type ${slug} ${current ? 'updated' : 'created'}`)
   }
 }

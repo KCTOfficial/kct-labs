@@ -107,8 +107,7 @@ export const en = {
     heroCarousel: 'Featured apps',
     heroPrev: 'Previous app',
     heroNext: 'Next app',
-    heroPause: 'Pause slideshow',
-    heroPlay: 'Start slideshow',
+    heroGoTo: 'Show {name}',
   },
   footer: {
     rights: 'All rights reserved.',
@@ -122,7 +121,7 @@ export const en = {
     backToApp: 'Back to {name}',
     allDocuments: 'All legal documents',
     fallbackNotice:
-      'This document is not yet available in Indonesian. Showing the English version.',
+      'This document is not yet available in English. Showing the Indonesian version.',
     alsoIn: 'Also available in {language}',
     print: 'Print',
     indexTitle: 'Legal documents – {name}',

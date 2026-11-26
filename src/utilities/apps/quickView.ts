@@ -1,7 +1,7 @@
 import type { ImageSource } from '@/components/site/media'
 import { isMedia, toImageSource } from '@/components/site/media'
 import { format, type Dictionary } from '@/i18n'
-import { localizeHref, type Locale } from '@/i18n/config'
+import { defaultLocale, localizeHref, type Locale } from '@/i18n/config'
 import type { App } from '@/payload-types'
 import type { LegalIcon } from '@/utilities/legal/constants'
 import { legalDocPath } from '@/utilities/legal/paths'
@@ -51,7 +51,7 @@ export const toQuickView = (
   app: App,
   dict: Pick<Dictionary, 'app'>,
   legal: LegalDocLink[] = [],
-  locale: Locale = 'en',
+  locale: Locale = defaultLocale,
 ): QuickViewApp | null => {
   if (app.status === 'archived') return null
 

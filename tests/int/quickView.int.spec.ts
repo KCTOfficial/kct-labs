@@ -173,7 +173,7 @@ describe('toQuickView', () => {
       icon: n === 1 ? 'shield-check' : 'file-text',
       typeSlug: `type-${n}`,
       effectiveDate: null,
-      hasIndonesian: false,
+      contentLocales: ['id'],
     })
     const docs = Array.from({ length: 6 }, (_, i) => doc(i + 1))
     const view = toQuickView(makeApp(), en, docs)
@@ -183,8 +183,11 @@ describe('toQuickView', () => {
       href: '/apps/al-quran-imam/legal/doc-1',
       icon: 'shield-check',
     })
+    expect(toQuickView(makeApp(), en, [doc(2)], 'en')?.legal[0]?.href).toBe(
+      '/en/apps/al-quran-imam/legal/doc-2',
+    )
     expect(toQuickView(makeApp(), id, [doc(2)], 'id')?.legal[0]?.href).toBe(
-      '/id/apps/al-quran-imam/legal/doc-2',
+      '/apps/al-quran-imam/legal/doc-2',
     )
     expect(toQuickView(makeApp(), en)?.legal).toEqual([])
   })

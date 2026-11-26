@@ -108,7 +108,7 @@ export default async function AppsPage({ params, searchParams }: Args) {
               label={dict.a11y.breadcrumb}
             />
           </div>
-          <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-foreground lg:text-[52px]">
+          <h1 className="font-display text-title font-semibold tracking-[-0.02em] text-foreground">
             {activeCategory
               ? `${dict.listing.title} · ${activeCategory.title}`
               : dict.listing.title}

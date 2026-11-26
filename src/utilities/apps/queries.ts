@@ -271,13 +271,14 @@ export const getShowcaseApps = unstable_cache(
         slug: true,
         shortDescription: true,
         screenshots: true,
+        icon: true,
         status: true,
       },
       sort: SORTS.featured,
       where: { and: [publicWhere, { screenshots: { exists: true } }] },
     })
     return result.docs as Array<
-      Pick<App, 'id' | 'name' | 'slug' | 'shortDescription' | 'screenshots' | 'status'>
+      Pick<App, 'id' | 'name' | 'slug' | 'shortDescription' | 'screenshots' | 'icon' | 'status'>
     >
   },
   ['showcase-apps'],

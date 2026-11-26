@@ -13,7 +13,8 @@ export default function Loading() {
     <div aria-busy="true" className="site-container py-10 lg:py-16">
       <LoadingLabel />
       <div aria-hidden="true" className="mb-8 flex flex-col gap-4 lg:mb-10">
-        <div className="skeleton h-9 w-56 rounded-md lg:h-[52px] lg:w-80" />
+        {/* Same height as the h1 at its `text-title` maximum (2.75rem). */}
+        <div className="skeleton h-9 w-56 rounded-md lg:h-11 lg:w-80" />
         <div className="skeleton h-4 w-full max-w-[520px] rounded-md" />
         <div className="mt-2 flex gap-2 overflow-hidden">
           {Array.from({ length: 4 }, (_, i) => (

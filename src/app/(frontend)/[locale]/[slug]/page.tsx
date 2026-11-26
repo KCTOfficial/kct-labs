@@ -88,7 +88,7 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
     slug: decodedSlug,
   })
 
-  // Template pages are not translated: one canonical (default locale) for /x and /id/x.
+  // Template pages are not translated: one canonical (default locale) for /x and /en/x.
   return generateMeta({ doc: page, path: decodedSlug === 'home' ? '/' : `/${decodedSlug}` })
 }
 

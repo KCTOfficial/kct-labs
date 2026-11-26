@@ -170,7 +170,7 @@ test.describe('legal documents', () => {
     await page.getByRole('button', { name: 'Unlock slug' }).click()
     const modal = page.locator('.slug-lock-modal')
     await expect(modal).toContainText(`/apps/${APP_SLUG}/legal/`)
-    await expect(modal).toContainText(`/id/apps/${APP_SLUG}/legal/`)
+    await expect(modal).toContainText(`/en/apps/${APP_SLUG}/legal/`)
     const confirm = modal.getByRole('button', { name: 'Unlock' })
     await expect(confirm).toBeDisabled()
     await modal.getByRole('checkbox').check()

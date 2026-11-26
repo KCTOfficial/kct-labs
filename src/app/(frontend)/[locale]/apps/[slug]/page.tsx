@@ -164,7 +164,7 @@ export default async function AppDetailPage({ params }: Args) {
                   label={`${dict.app.status[status]} · ${platforms.join(' · ').toUpperCase()}`}
                   status={status}
                 />
-                <h1 className="font-display text-[26px] font-semibold tracking-[-0.02em] text-foreground lg:text-[52px]">
+                <h1 className="font-display text-title font-semibold tracking-[-0.02em] text-foreground">
                   {app.name}
                 </h1>
                 <p className="hidden text-lg text-text-secondary lg:block">{app.tagline}</p>

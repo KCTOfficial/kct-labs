@@ -1,5 +1,6 @@
 import type { CollectionBeforeDeleteHook } from 'payload'
 
+import { stripLocale } from '@/i18n/config'
 import { legalIndexPath } from '@/utilities/legal/paths'
 
 /**
@@ -28,7 +29,8 @@ export const cascadeDeleteDocuments: CollectionBeforeDeleteHook = async ({ id, r
   if (!app?.slug) return
 
   const prefix = `${legalIndexPath(app.slug)}/`
-  // `like` narrows the scan; the exact prefix check (EN and `/id`) avoids matching other apps.
+  // `like` narrows the scan; the exact prefix check on the locale-free path (unprefixed, `/en` and
+  // legacy `/id` rows) avoids matching other apps.
   const { docs } = await req.payload.find({
     collection: 'redirects',
     where: { 'to.url': { like: prefix } },
@@ -41,7 +43,7 @@ export const cascadeDeleteDocuments: CollectionBeforeDeleteHook = async ({ id, r
   const ids = docs
     .filter((r) => {
       const url = r.to?.url ?? ''
-      return url.startsWith(prefix) || url.startsWith(`/id${prefix}`)
+      return stripLocale(url).startsWith(prefix)
     })
     .map((r) => r.id)
   if (ids.length === 0) return

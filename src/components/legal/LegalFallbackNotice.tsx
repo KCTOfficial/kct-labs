@@ -1,7 +1,7 @@
 import { Languages } from 'lucide-react'
 import React from 'react'
 
-/** Shown on `/id/...` when the document has no Indonesian content and English is rendered. */
+/** Shown when the document has no content in the page locale and another language is rendered. */
 export const LegalFallbackNotice: React.FC<{ message: string }> = ({ message }) => (
   <p
     className="flex items-start gap-2.5 rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-text-secondary"

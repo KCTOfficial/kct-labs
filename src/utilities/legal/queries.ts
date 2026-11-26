@@ -2,11 +2,12 @@ import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload, type Where } from 'payload'
 
-import { localizeHref, type Locale } from '@/i18n/config'
+import { localizeHref, locales, type Locale } from '@/i18n/config'
 import type { App, AppDocument, DocumentType } from '@/payload-types'
 import { APPS_CACHE_TAG } from '@/utilities/apps/cacheTags'
 
 import { APP_DOCUMENTS_CACHE_TAG, PRIVACY_POLICY_TYPE_SLUG, type LegalIcon } from './constants'
+import { legalFallbackLocales } from './contentLocales'
 import { legalDocPath } from './paths'
 
 export type LegalDocLink = {
@@ -15,14 +16,15 @@ export type LegalDocLink = {
   icon: LegalIcon
   typeSlug: string
   effectiveDate: string | null
-  hasIndonesian: boolean
+  /** Locales with the document's own markdown (no fallback), in config order. */
+  contentLocales: Locale[]
 }
 
 export type PublicLegalDocPath = {
   appSlug: string
   docSlug: string
   updatedAt: string
-  hasIndonesian: boolean
+  contentLocales: Locale[]
   archived: boolean
 }
 
@@ -37,25 +39,33 @@ const populate = {
   apps: { slug: true, status: true },
 } as const
 
-const hasIndonesianWhere: Where = {
+const hasOwnContentWhere: Where = {
   and: [{ markdown: { exists: true } }, { markdown: { not_equals: '' } }],
 }
 
-/** One query: ids of the (published) documents that have Indonesian markdown of their own. */
-const findIndonesianIds = async (where: Where): Promise<Set<number>> => {
+/** One query: ids of the (published) documents that have markdown of their own in `locale`. */
+const findIdsWithOwnContent = async (where: Where, locale: Locale): Promise<Set<number>> => {
   const payload = await getPayloadClient()
   const result = await payload.find({
     collection: 'app-documents',
     depth: 0,
     draft: false,
     fallbackLocale: false,
-    locale: 'id',
+    locale,
     overrideAccess: false,
     pagination: false,
     select: { slug: true },
-    where: { and: [where, hasIndonesianWhere] },
+    where: { and: [where, hasOwnContentWhere] },
   })
   return new Set(result.docs.map((d) => d.id))
+}
+
+/** One probe per locale (not per document): `contentLocales` for every matching document. */
+const findContentLocales = async (where: Where): Promise<(id: number) => Locale[]> => {
+  const idsByLocale = await Promise.all(
+    locales.map(async (locale) => [locale, await findIdsWithOwnContent(where, locale)] as const),
+  )
+  return (id) => idsByLocale.filter(([, ids]) => ids.has(id)).map(([locale]) => locale)
 }
 
 const populatedType = (doc: Pick<AppDocument, 'documentType'>): DocumentType | null =>
@@ -67,11 +77,13 @@ const bySortOrder = (a: DocumentType | null, b: DocumentType | null) =>
 export const queryAppLegalDocs = async (appId: number, locale: Locale): Promise<LegalDocLink[]> => {
   const payload = await getPayloadClient()
   const where: Where = { app: { equals: appId } }
-  const [result, indonesianIds] = await Promise.all([
+  const [result, contentLocalesOf] = await Promise.all([
     payload.find({
       collection: 'app-documents',
       depth: 1,
       draft: false,
+      // Legal text is shown in another language (flagged) rather than left empty.
+      fallbackLocale: legalFallbackLocales(locale),
       locale,
       overrideAccess: false,
       pagination: false,
@@ -79,7 +91,7 @@ export const queryAppLegalDocs = async (appId: number, locale: Locale): Promise<
       select: { slug: true, title: true, documentType: true, effectiveDate: true },
       where,
     }),
-    findIndonesianIds(where),
+    findContentLocales(where),
   ])
 
   return result.docs
@@ -95,7 +107,7 @@ export const queryAppLegalDocs = async (appId: number, locale: Locale): Promise<
       icon: type.icon ?? DEFAULT_ICON,
       typeSlug: type.slug,
       effectiveDate: doc.effectiveDate ?? null,
-      hasIndonesian: indonesianIds.has(doc.id),
+      contentLocales: contentLocalesOf(doc.id),
     }))
 }
 
@@ -103,7 +115,7 @@ export const getAppLegalDocs = unstable_cache(queryAppLegalDocs, ['app-legal-doc
   tags: CACHE_TAGS,
 })
 
-export type AppLegalDoc = AppDocument & { hasIndonesian: boolean }
+export type AppLegalDoc = AppDocument & { contentLocales: Locale[] }
 
 export const queryAppLegalDoc = async (
   appId: number,
@@ -117,6 +129,7 @@ export const queryAppLegalDoc = async (
     collection: 'app-documents',
     depth: 1,
     draft,
+    fallbackLocale: legalFallbackLocales(locale),
     limit: 1,
     locale,
     overrideAccess: draft,
@@ -125,8 +138,8 @@ export const queryAppLegalDoc = async (
   })
   const doc = result.docs[0]
   if (!doc) return null
-  const indonesianIds = await findIndonesianIds({ id: { equals: doc.id } })
-  return { ...doc, hasIndonesian: indonesianIds.has(doc.id) }
+  const contentLocalesOf = await findContentLocales({ id: { equals: doc.id } })
+  return { ...doc, contentLocales: contentLocalesOf(doc.id) }
 }
 
 const cachedAppLegalDoc = unstable_cache(
@@ -145,7 +158,7 @@ export const getAppLegalDoc = (appId: number, slug: string, locale: Locale, draf
  */
 export const queryPublicLegalDocPaths = async (): Promise<PublicLegalDocPath[]> => {
   const payload = await getPayloadClient()
-  const [result, indonesianIds] = await Promise.all([
+  const [result, contentLocalesOf] = await Promise.all([
     payload.find({
       collection: 'app-documents',
       depth: 1,
@@ -155,7 +168,7 @@ export const queryPublicLegalDocPaths = async (): Promise<PublicLegalDocPath[]> 
       populate,
       select: { slug: true, app: true, updatedAt: true },
     }),
-    findIndonesianIds({ id: { exists: true } }),
+    findContentLocales({ id: { exists: true } }),
   ])
 
   return result.docs.flatMap((doc) => {
@@ -166,7 +179,7 @@ export const queryPublicLegalDocPaths = async (): Promise<PublicLegalDocPath[]> 
         appSlug: app.slug,
         docSlug: doc.slug,
         updatedAt: doc.updatedAt,
-        hasIndonesian: indonesianIds.has(doc.id),
+        contentLocales: contentLocalesOf(doc.id),
         archived: app.status === 'archived',
       },
     ]

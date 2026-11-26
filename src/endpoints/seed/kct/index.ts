@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { Payload } from 'payload'
 
-import type { Locale } from '@/i18n/config'
+import { defaultLocale, locales, type Locale } from '@/i18n/config'
 import type { Footer, Header } from '@/payload-types'
 import { PLAY_STORE_DEVELOPER_URL } from '@/utilities/seo/constants'
 
@@ -17,7 +17,8 @@ import {
   type Localized,
 } from './content'
 
-const LOCALES: Locale[] = ['en', 'id']
+/** Default locale first: documents are created there (required fields), then translated. */
+const LOCALES: Locale[] = [defaultLocale, ...locales.filter((l) => l !== defaultLocale)]
 const SCREENSHOTS_PER_APP = 3
 
 /** Minimal Lexical document with one paragraph (rich text `description`). */
@@ -163,7 +164,7 @@ export const seedKct = async (
   log(`apps: ${appIds.size}`)
 
   // 3. Home global
-  const current = await payload.findGlobal({ slug: 'home', depth: 0, locale: 'en' })
+  const current = await payload.findGlobal({ slug: 'home', depth: 0, locale: defaultLocale })
   let featureRows = current.featured?.features ?? null
   let stepRows = current.process?.steps ?? null
   let serviceRows = current.about?.services ?? null
@@ -258,7 +259,7 @@ export const seedKct = async (
     stepRows = updated.process?.steps ?? null
     serviceRows = updated.about?.services ?? null
   }
-  log('home: updated (en, id)')
+  log(`home: updated (${LOCALES.join(', ')})`)
 
   // 4. Header (only when empty, or when explicitly requested with `replaceHeader`)
   const header = await payload.findGlobal({ slug: 'header', depth: 0 })
@@ -272,7 +273,12 @@ export const seedKct = async (
         data: {
           navItems: withIds(
             navItems.map((item) => ({
-              link: { type: 'custom' as const, url: item.url, label: item.label.en, newTab: false },
+              link: {
+                type: 'custom' as const,
+                url: item.url,
+                label: item.label[defaultLocale],
+                newTab: false,
+              },
               localizedLabel: pick(item.label, locale),
             })),
             rows,
@@ -304,7 +310,7 @@ export const seedKct = async (
                 link: {
                   type: 'custom' as const,
                   url: l.url,
-                  label: l.label.en,
+                  label: l.label[defaultLocale],
                   newTab: /^https?:/.test(l.url),
                 },
                 localizedLabel: pick(l.label, locale),

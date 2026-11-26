@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
-import { HERO_AUTOPLAY_MS, isAutoplayRunning } from './heroCarouselModel'
+import { isAutoplayRunning } from './heroCarouselModel'
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 /** Share of the carousel that must be on screen for autoplay to keep running. */
@@ -33,27 +33,20 @@ type Options = {
   rootRef: React.RefObject<HTMLElement | null>
   count: number
   reducedMotion: boolean
-  userPaused: boolean
-  /** Mouse hover or keyboard focus inside the carousel. */
+  /** Mouse hover or keyboard focus inside the carousel, or autoplay stopped by a touch step. */
   interacting: boolean
-  /** Changing it restarts the countdown (the active app changed). */
-  resetKey: number
-  onTick: () => void
 }
 
 /**
- * Autoplay countdown. One chained timeout (not an interval) that is re-armed whenever the app
- * changes or a stop condition flips, so a manual step always restarts a full countdown and a tab
- * that was hidden never replays missed ticks.
+ * Whether autoplay may run right now. There is no JS timer: the countdown is the CSS animation of
+ * the active progress segment (`.hero-progress-fill`), which `running` pauses and resumes in place,
+ * so a hidden tab or a hover never loses or replays time.
  */
 export const useHeroAutoplay = ({
   rootRef,
   count,
   reducedMotion,
-  userPaused,
   interacting,
-  resetKey,
-  onTick,
 }: Options): { running: boolean } => {
   const pageHidden = useSyncExternalStore(
     subscribeVisibility,
@@ -76,22 +69,10 @@ export const useHeroAutoplay = ({
   const running = isAutoplayRunning({
     count,
     reducedMotion,
-    userPaused,
     interacting,
     pageHidden,
     inView,
   })
-
-  const onTickRef = useRef(onTick)
-  useEffect(() => {
-    onTickRef.current = onTick
-  })
-
-  useEffect(() => {
-    if (!running) return
-    const id = window.setTimeout(() => onTickRef.current(), HERO_AUTOPLAY_MS)
-    return () => window.clearTimeout(id)
-  }, [running, resetKey])
 
   return { running }
 }

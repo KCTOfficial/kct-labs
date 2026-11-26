@@ -278,3 +278,75 @@ Nama teknis berubah dari `kct-labs` ke `kct-hub`: image/container (`kct-hub`, `k
    ```
    Lalu ubah nama database di `DATABASE_URL` pada `.env.prod` dan jalankan `./deploy/deploy.sh start`. Di DB terkelola, sesuaikan juga allowlist/pool yang merujuk nama database lama.
 9. **Lainnya:** perbarui bookmark/monitoring yang memakai nama container lama (`kct-labs-app`) dan `/srv/kct-labs`. Domain/URL publik tidak berubah sehingga SEO (canonical, sitemap) tetap; Google memperbarui nama situs dari JSON-LD `WebSite` saat crawl berikutnya.
+
+---
+
+## J. Perubahan default locale: Indonesia (sekali, rilis "locale default ID")
+
+Mulai rilis ini **Bahasa Indonesia adalah locale default**: URL tanpa prefix (`/`, `/apps`, `/apps/<slug>`) berbahasa Indonesia, English pindah ke `/en/...`. Sebelumnya kebalikannya (EN tanpa prefix, ID di `/id/...`).
+
+**Perilaku baru**
+
+- `/id/...` → **308** ke URL tanpa prefix (query string ikut, mis. `/id/apps?sort=name` → `/apps?sort=name`). `/en/...` kini melayani English (tidak lagi redirect).
+- `hreflang`: `id` = URL tanpa prefix, `en` = `/en/...`, `x-default` = URL tanpa prefix (ID). `<html lang>` dan `og:locale` mengikuti (`id_ID`/`en_US`).
+- Fallback konten **per field**: field ID yang kosong menampilkan nilai EN. English **tidak** jatuh ke Indonesia (field EN kosong tetap kosong).
+- Dokumen legal: halaman yang tidak punya teks di locale-nya menampilkan teks locale lain **dengan pemberitahuan** dan `lang` yang benar; canonical & sitemap menunjuk ke locale yang benar-benar punya teks. Dokumen lama yang hanya berisi EN: URL tanpa prefix (yang ditautkan Google Play) tetap 200, menampilkan EN dengan pemberitahuan, canonical ke `/en/...`.
+- `robots.txt`: pencarian internal diblokir di `/search` dan `/en/search` (`/id/search` lama tetap tercantum).
+- **Skema database tidak berubah** (sengaja): urutan `locales` di `src/i18n/config.ts` tetap `['en', 'id']` karena enum Postgres `_locales` dibuat dari urutan itu — mengubah urutan = `DROP TYPE`/`CREATE TYPE` (migrasi). Tes `tests/int/i18n-routing.int.spec.ts` mengunci urutan ini.
+
+**Konsekuensi untuk admin**
+
+- Field wajib (`requiredInDefaultLocale`) kini wajib di **tab Indonesia**; tab English opsional. Dokumen lama yang hanya berisi English **tidak bisa disimpan di tab Indonesia** sampai semua field wajib ID diisi (tab English tetap bisa disimpan). Ini disengaja: konten ID menjadi sumber utama.
+- Dokumen legal: banner "No … content yet" muncul di tab yang belum punya markdown dan menawarkan *Copy from* bahasa lain.
+- `pnpm rebrand:content` (bila masih dipakai) menyimpan per locale; pada dokumen lama EN-only, penyimpanan di locale ID bisa gagal validasi (dicatat sebagai failure di log) sampai field ID diisi.
+- **Aturan editorial baru:** karena English **tidak punya fallback**, app/kategori yang hanya diisi dalam Bahasa Indonesia tetap mendapat halaman `/en/...` dengan teks kosong (nama ada, tagline/deskripsi/fitur kosong). Sebelum app seperti itu diterbitkan, isi tab English: tagline, short description, description, dan features (serta judul kategorinya).
+- **Keputusan pemilik (TERBUKA, belum diimplementasikan):** apakah halaman EN dari app yang hanya berisi Indonesia harus diberi `noindex` dan/atau dikeluarkan dari sitemap & `hreflang`. Saat ini halaman tersebut tetap terindeks dan diiklankan lewat sitemap/`hreflang`.
+- REST API Payload **tanpa** `?locale=` tidak menerapkan fallback per locale untuk locale default (perilaku Payload `sanitizeLocales`). Konsumen REST/GraphQL yang butuh cadangan EN harus mengirim `?locale=id` (fallback ke EN berlaku) atau `?locale=en`. Frontend memakai Local API sehingga tidak terdampak.
+
+**Pemeriksaan sebelum deploy (pemilik)**
+
+1. Bukti tanpa migrasi, di DB dev: `pnpm payload migrate:create locale_default_id` → hasilnya harus **kosong** (tanpa perubahan skema); hapus berkas kosong yang dibuat. Bila ada diff, **jangan deploy** — laporkan.
+2. Data publik yang masih EN-only (akan tampil EN dengan pemberitahuan / fallback di URL ID) — read-only di DB produksi; hanya dokumen yang terbit (`_status = 'published'`) dan app yang tidak diarsipkan (`status <> 'archived'`), karena draft/arsip tidak tampil di situs:
+
+   ```sql
+   -- Dokumen legal terbit (milik app terbit & tidak diarsipkan) tanpa markdown Indonesia
+   SELECT d.id, d.slug, a.slug AS app_slug
+   FROM app_documents d
+   JOIN apps a ON a.id = d.app_id
+   WHERE d._status = 'published'
+     AND a._status = 'published'
+     AND a.status <> 'archived'
+     AND NOT EXISTS (
+       SELECT 1 FROM app_documents_locales l
+       WHERE l._parent_id = d.id AND l._locale = 'id' AND coalesce(l.markdown, '') <> ''
+     );
+
+   -- App terbit & tidak diarsipkan tanpa tagline Indonesia
+   SELECT a.id, a.slug
+   FROM apps a
+   WHERE a._status = 'published'
+     AND a.status <> 'archived'
+     AND NOT EXISTS (
+       SELECT 1 FROM apps_locales l
+       WHERE l._parent_id = a.id AND l._locale = 'id' AND coalesce(l.tagline, '') <> ''
+     );
+   ```
+
+**Urutan rilis**
+
+1. Backup DB produksi (prosedur biasa).
+2. `./deploy/deploy.sh` (tidak ada migrasi baru).
+3. Segarkan cache: login `/admin`, lalu di console browser `fetch('/api/apps/revalidate', { method: 'POST' })` (atau `FORCE_BUILD=1 ./deploy/deploy.sh`).
+4. Cek view-source `/`, `/en`, `/apps/<slug>`, `/en/apps/<slug>`: `<html lang>`, canonical, `hreflang` (`id`, `en`, `x-default`), `og:locale`; `curl -I "<SITE>/id/apps?sort=name"` → `308` ke `/apps?sort=name`.
+5. Kirim ulang sitemap (`/sitemap.xml`, `/apps-sitemap.xml`) di Google Search Console. Sinyal SEO URL lama (`/apps` dulu EN) butuh waktu untuk menyesuaikan — disetujui pemilik.
+6. Isi konten ID yang masih kosong (lihat query di atas), mulai dari dokumen legal yang ditautkan Google Play.
+
+**Rollback**
+
+Kembalikan `defaultLocale` ke `'en'` di `src/i18n/config.ts` (`fallbackLocales = { id: 'en' }` tetap benar untuk default EN), atau revert commit rilis ini, deploy, lalu jalankan langkah 3 & 5 di atas. Tidak ada migrasi yang perlu dibatalkan; data per locale tidak berubah.
+
+Perhatian untuk konten yang dibuat **selama** rilis ini (hanya diisi Bahasa Indonesia):
+
+- Setelah rollback, halaman default (English, tanpa prefix) menampilkan field tersebut **kosong**: fallback hanya berlaku `id → en`, tidak sebaliknya.
+- Dokumen tersebut **tidak bisa disimpan dari tab English** (`requiredInDefaultLocale` kembali mewajibkan English) sampai field wajib English diisi.
+- Sebelum rollback, jalankan query pada langkah pemeriksaan di atas dengan `'en'` menggantikan `'id'` untuk menemukan konten yang belum punya English, lalu isi terjemahannya (atau terima teks kosong sementara).
