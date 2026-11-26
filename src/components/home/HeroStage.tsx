@@ -41,13 +41,15 @@ export type HeroLabels = {
   goTo: string
 }
 
-// Desktop stage positions follow the design (Hero / Device Stage): left, centre (front), right.
+// Desktop stage positions follow the design (Hero / Device Stage, 700×748px): left, centre (front),
+// right. Desktop offsets are % of the phone group so the whole pose scales with `--hero-stage-h`
+// (top 140/40/150px of 748px).
 const STAGE: Record<PhoneSlot, string> = {
-  left: 'left-0 top-[60px] z-10 w-[44%] -rotate-3 lg:left-[4%] lg:top-[140px] lg:w-[37%] lg:-rotate-6',
+  left: 'left-0 top-[60px] z-10 w-[44%] -rotate-3 lg:left-[4%] lg:top-[18.72%] lg:w-[37%] lg:-rotate-6',
   center:
-    'left-1/2 top-0 z-20 w-[50%] -translate-x-1/2 lg:left-[31%] lg:top-[40px] lg:w-[37%] lg:translate-x-0',
+    'left-1/2 top-0 z-20 w-[50%] -translate-x-1/2 lg:left-[31%] lg:top-[5.35%] lg:w-[37%] lg:translate-x-0',
   right:
-    'right-0 top-[60px] z-10 w-[44%] rotate-3 lg:left-[59%] lg:right-auto lg:top-[150px] lg:w-[37%] lg:rotate-6',
+    'right-0 top-[60px] z-10 w-[44%] rotate-3 lg:left-[59%] lg:right-auto lg:top-[20.05%] lg:w-[37%] lg:rotate-6',
 }
 /** Used only when no app has more than one phone, so the centre pose never jumps between apps. */
 const SINGLE = 'left-1/2 top-0 w-[46%] -translate-x-1/2 lg:w-[37%]'
@@ -162,7 +164,7 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     <div
       aria-label={labels.carousel}
       aria-roledescription="carousel"
-      className="relative mx-auto w-full max-w-[343px] lg:max-w-[700px]"
+      className="relative mx-auto w-full max-w-[343px] lg:w-[max(var(--hero-phones-w),29rem)] lg:max-w-full lg:self-start"
       data-active-index={active}
       data-animating={slide ? 'true' : 'false'}
       data-count={count}
@@ -191,7 +193,7 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
     >
       <div
         aria-hidden="true"
-        className="relative h-[380px] touch-pan-y touch-pinch-zoom lg:h-[748px]"
+        className="relative h-[380px] touch-pan-y touch-pinch-zoom lg:h-[var(--hero-stage-h)]"
         onClickCapture={(event) => {
           // Swallow the click that can follow a swipe so it never opens an app page.
           if (performance.now() - swipedAt.current < SWIPE_CLICK_GUARD_MS) {
@@ -217,21 +219,26 @@ export const HeroStage: React.FC<{ apps: HeroApp[]; labels: HeroLabels }> = ({ a
           go(direction)
         }}
       >
-        {slots.map((slot) => (
-          // Keyed by slot: the centre phone (and its loaded screens) survives a change of phone count.
-          <div className={cn('absolute', singleLayout ? SINGLE : STAGE[slot])} key={slot}>
-            <HeroPhone
-              appIndex={active}
-              apps={apps}
-              neighborsReady={neighborsReady}
-              slide={slide}
-              slot={slot}
-            />
-          </div>
-        ))}
+        {/* Phone group: the full stage on mobile; on desktop a box with the design's 700:748 ratio
+            whose width follows the stage height (`--hero-phones-w`), centred above the caption and
+            never wider than its column (tall but narrow desktops, e.g. a portrait tablet). */}
+        <div className="absolute inset-0 lg:inset-auto lg:left-1/2 lg:top-0 lg:aspect-[700/748] lg:w-[min(var(--hero-phones-w),100%)] lg:-translate-x-1/2">
+          {slots.map((slot) => (
+            // Keyed by slot: the centre phone (and its loaded screens) survives a change of phone count.
+            <div className={cn('absolute', singleLayout ? SINGLE : STAGE[slot])} key={slot}>
+              <HeroPhone
+                appIndex={active}
+                apps={apps}
+                neighborsReady={neighborsReady}
+                slide={slide}
+                slot={slot}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 flex flex-col items-center gap-2 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-30 lg:mx-auto lg:mt-0 lg:w-[66%]">
+      <div className="mt-4 flex flex-col items-center gap-2 lg:absolute lg:inset-x-0 lg:bottom-0 lg:z-30 lg:mx-auto lg:mt-0 lg:w-[min(100%,29rem)]">
         {/* Stable live region around the keyed caption: quiet while autoplay runs, polite after. */}
         <div aria-atomic="true" aria-live={running ? 'off' : 'polite'} className="w-full">
           <HeroCaptionCard animate={changed} app={shown} />

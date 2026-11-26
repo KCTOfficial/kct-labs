@@ -153,7 +153,7 @@ export default async function LegalDocPage({ params }: Args) {
             <AppIcon icon={app.icon} name={app.name} size={40} />
             {app.name}
           </Link>
-          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-foreground lg:text-[44px]">
+          <h1 className="font-display text-title font-semibold tracking-[-0.02em] text-foreground">
             {title}
           </h1>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-muted">

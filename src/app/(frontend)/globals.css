@@ -46,6 +46,9 @@
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, sans-serif;
+  /* Fluid type scale (`text-display`, `text-title`): 38→64px hero headline, 28→44px page/section titles. */
+  --text-display: clamp(2.375rem, 1.2rem + 3.2vw, 4rem);
+  --text-title: clamp(1.75rem, 1rem + 2vw, 2.75rem);
 }
 
 @layer utilities {
@@ -306,24 +309,30 @@
   }
 }
 
+/* Fluid layout tokens: content scales with the viewport instead of fixed px, so nothing is clipped
+ * on short/zoomed screens and wide screens are not left mostly empty (CLAUDE.md: no fixed px). */
+:root {
+  /* 1360px up to a ~1630px viewport, then grows with it to 1600px (reached at 1920px). */
+  --container-max: clamp(85rem, 83.333vw, 100rem);
+  /* 16px on phones, 32px at 768px (as before), 40px from 960px wide. */
+  --space-gutter: clamp(1rem, 4.1667vw, 2.5rem);
+  /* 56px → 112px; follows the height too so tall sections still fit short desktop screens. */
+  --section-y: clamp(3.5rem, min(10svh, 8vw), 7rem);
+  /* Hero stage (phones + overlaid caption, desktop): fills the first screen below the header and
+   * the hero's top padding, never below 416px (then the hero scrolls) nor above the design's 748px. */
+  --hero-stage-h: clamp(26rem, calc(100svh - var(--story-top) - 9rem), 46.75rem);
+  /* Phone group width follows the stage height. At 748px the design's phone group is 700px wide and
+   * the centre phone ends 578px down; the caption block (8rem card + 0.5rem gap + 2.75rem controls)
+   * may graze it by 10px, so the group gets `stage - 10.625rem` of height → width × 700/578. */
+  --hero-phones-w: calc((var(--hero-stage-h) - 10.625rem) * 1.2111);
+}
+
 @layer utilities {
   .site-container {
     width: 100%;
-    max-width: 85rem; /* 1360px → 1280px content at the xl gutter */
+    max-width: var(--container-max);
     margin-inline: auto;
-    padding-inline: 1rem;
-  }
-
-  @variant md {
-    .site-container {
-      padding-inline: 2rem;
-    }
-  }
-
-  @variant xl {
-    .site-container {
-      padding-inline: 2.5rem;
-    }
+    padding-inline: var(--space-gutter);
   }
 
   .bg-blueprint {
@@ -569,6 +578,9 @@ html:has(.qv-dialog[open]) {
 :root {
   /* Sticky header height on desktop: 78px + 1px border (src/Header/Component.client.tsx). */
   --story-top: 79px;
+  /* Featured visual (square): at most 620px and never taller than the room left while the section
+   * is stuck (screen − header − its vertical padding − its 1px top/bottom borders), so it fits. */
+  --featured-visual-max: min(38.75rem, calc(100svh - var(--story-top) - 2 * var(--section-y) - 2px));
 }
 
 .story-spacer,

@@ -94,7 +94,7 @@ export async function Footer({ locale }: { locale: Locale }) {
                   {contactItems.map((item) => (
                     <li key={item.href}>
                       <a
-                        className="text-sm text-text-secondary transition-colors hover:text-foreground"
+                        className="break-words text-sm text-text-secondary transition-colors hover:text-foreground"
                         href={item.href}
                         {...(item.href.startsWith('http')
                           ? { rel: 'noopener noreferrer', target: '_blank' }

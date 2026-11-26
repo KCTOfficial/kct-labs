@@ -103,7 +103,7 @@ export default async function LegalIndexPage({ params }: Args) {
             <AppIcon icon={app.icon} name={app.name} size={40} />
             {app.name}
           </Link>
-          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-foreground lg:text-[44px]">
+          <h1 className="font-display text-title font-semibold tracking-[-0.02em] text-foreground">
             {format(dict.legal.indexTitle, { name: app.name })}
           </h1>
           <p className="max-w-2xl text-text-secondary">

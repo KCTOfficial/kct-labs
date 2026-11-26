@@ -39,26 +39,20 @@ export const HomeHero: React.FC<Props> = ({ hero, showcase, stats, locale, dict 
   const hasPhones = apps.length > 0
 
   const section = (
-    <section aria-labelledby="hero-title" className="relative overflow-hidden">
-      <div aria-hidden="true" className="bg-blueprint pointer-events-none absolute inset-0" />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-40 top-0 size-[720px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent-orange)_18%,transparent),transparent_70%)]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-48 top-[420px] h-[600px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-navy)_33%,transparent),transparent_70%)]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background to-transparent"
-      />
+    // Only the decorative layer is clipped (both axes); content may make the hero taller, never cut.
+    <section aria-labelledby="hero-title" className="relative overflow-x-clip">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="bg-blueprint absolute inset-0" />
+        <div className="absolute -right-40 top-0 size-[720px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--accent-orange)_18%,transparent),transparent_70%)]" />
+        <div className="absolute -left-48 top-[420px] h-[600px] w-[760px] rounded-full bg-[radial-gradient(circle,color-mix(in_srgb,var(--brand-navy)_33%,transparent),transparent_70%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-background to-transparent" />
+      </div>
 
-      <div className="site-container relative grid gap-10 pb-0 pt-9 lg:grid-cols-[600px_1fr] lg:gap-10 lg:pt-[72px]">
+      <div className="site-container relative grid gap-10 pb-0 pt-9 lg:grid-cols-[minmax(0,min(38rem,50%))_minmax(0,1fr)] lg:gap-10 lg:pt-[clamp(2.25rem,6svh,4.5rem)]">
         <div className="flex flex-col gap-5 lg:gap-7 lg:pt-14">
           {hero?.badge && <Chip className="self-start text-[11px] lg:text-xs">{hero.badge}</Chip>}
           <h1
-            className="font-display text-[38px] font-semibold leading-[1.08] tracking-[-0.02em] text-foreground lg:text-[64px] lg:leading-[1.05] lg:tracking-[-0.023em]"
+            className="font-display text-display font-semibold leading-[1.08] tracking-[-0.02em] text-foreground lg:leading-[1.05] lg:tracking-[-0.023em]"
             id="hero-title"
           >
             {hero?.headline}

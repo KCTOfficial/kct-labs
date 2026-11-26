@@ -13,7 +13,7 @@ import { toWhatsAppNumber } from '@/utilities/apps/validation'
 import { cn } from '@/utilities/ui'
 
 const h2Class =
-  'font-display text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] text-foreground lg:text-[44px] lg:leading-[1.1]'
+  'font-display text-title font-semibold leading-[1.15] tracking-[-0.02em] text-foreground lg:leading-[1.1]'
 
 const ORBITS = ['size-[19%]', 'size-[38%]', 'size-[58%]', 'size-[77%]', 'size-[96%]']
 
@@ -51,8 +51,8 @@ export const HomeFeatured: React.FC<{
       )}
       data-story="featured"
     >
-      <div className="site-container flex flex-col gap-5 py-14 lg:flex-row lg:items-center lg:gap-20 lg:py-28">
-        <div className="reveal relative order-2 hidden aspect-square w-full max-w-[620px] shrink-0 overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle_at_50%_45%,color-mix(in_srgb,var(--accent-orange)_14%,transparent),transparent_70%)] lg:order-1 lg:block lg:w-[45%]">
+      <div className="site-container flex flex-col gap-5 py-[var(--section-y)] lg:flex-row lg:items-center lg:gap-20">
+        <div className="reveal relative order-2 hidden aspect-square w-full max-w-[var(--featured-visual-max)] shrink-0 overflow-hidden rounded-lg border border-border bg-[radial-gradient(circle_at_50%_45%,color-mix(in_srgb,var(--accent-orange)_14%,transparent),transparent_70%)] lg:order-1 lg:block lg:w-[45%]">
           {/* Rings keep their Tailwind centring. Two wrappers = two owners: the outer one is driven
               by the entrance timeline, the inner ("drift") one by the pinned timeline, so both never
               animate the same property of the same node (the later trigger would always win). */}
@@ -266,7 +266,7 @@ export const HomeAbout: React.FC<{ about: Home['about']; index: number; locale: 
     data-story="about"
     id="about"
   >
-    <div className="site-container grid gap-10 py-14 lg:grid-cols-[480px_1fr] lg:gap-20 lg:py-28">
+    <div className="site-container grid gap-10 py-[var(--section-y)] lg:grid-cols-[480px_1fr] lg:gap-20">
       <div className="reveal flex flex-col gap-5 lg:gap-6" data-story-part="about-copy">
         {about?.eyebrow && <Eyebrow index={index}>{about.eyebrow}</Eyebrow>}
         <h2 className={h2Class} id="about-title">
