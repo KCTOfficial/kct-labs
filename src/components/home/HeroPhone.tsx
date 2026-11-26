@@ -26,9 +26,7 @@ type Props = {
 }
 
 /**
- * One phone of the hero stage. The pose wrapper (position/rotation) lives in HeroStage; the
- * `data-story-part` node below is what the GSAP scroll story animates, so the sliding screens sit
- * *inside* it and never touch its transform. The anchor is a decorative mouse/touch shortcut
+ * One phone of the hero stage. The pose wrapper (position/rotation) lives in HeroStage. The anchor is a decorative mouse/touch shortcut
  * (aria-hidden, not tabbable): keyboard users reach the centre app through the caption link.
  */
 export const HeroPhone: React.FC<Props> = ({ apps, appIndex, slot, slide, neighborsReady }) => {
@@ -85,7 +83,7 @@ export const HeroPhone: React.FC<Props> = ({ apps, appIndex, slot, slide, neighb
   )
 
   return (
-    <div data-story-part={`phone-${slot}`}>
+    <div>
       <Link
         aria-hidden="true"
         className="block cursor-pointer"

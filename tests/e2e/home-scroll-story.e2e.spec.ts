@@ -7,6 +7,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test'
 const BASE = 'http://localhost:3000'
 const DESKTOP = { width: 1440, height: 900 }
 const IDENTITY = ['none', 'matrix(1, 0, 0, 1, 0, 0)']
+const HERO = 'section[aria-labelledby="hero-title"]'
 
 const storyOn = (page: Page) =>
   page.locator('html[data-scroll-story="on"]').waitFor({ state: 'attached', timeout: 15_000 })
@@ -60,39 +61,28 @@ const withPage = async (
 test.describe('Home scroll story — desktop', () => {
   test.use({ viewport: DESKTOP })
 
-  test('hero sticks below the header and scrubs both ways', async ({ page }) => {
+  test('hero is static: not sticky, no story parts, scrolls away normally', async ({ page }) => {
     const hasGsap = collectScripts(page)
     await page.goto(`${BASE}/`)
     await storyOn(page)
+    // GSAP still ships for the other sections; the hero just no longer uses it.
     expect(await hasGsap()).toBe(true)
     await expect(page.locator('h1')).toHaveCount(1)
 
-    const { spacer, header } = await trackGeometry(page, 'hero')
-    expect(spacer).toBeGreaterThan(0)
-    const left = '[data-story-part="phone-left"]'
-    expect(IDENTITY).toContain(await transformOf(page, left))
+    const hero = page.locator(HERO)
+    expect(await hero.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky')
+    expect(await hero.evaluate((el) => el.querySelectorAll('[data-story-part]').length)).toBe(0)
+    expect(await page.locator('[data-story-track="hero"], [data-story="hero"]').count()).toBe(0)
 
-    await scrollTo(page, Math.round(spacer / 2))
+    const top0 = await hero.evaluate((el) => el.getBoundingClientRect().top)
+    await scrollTo(page, 600)
     await expect
-      .poll(() =>
-        page.locator('[data-story="hero"]').evaluate((el) => el.getBoundingClientRect().top),
-      )
-      .toBeCloseTo(header, 0)
-    await expect
-      .poll(() => transformOf(page, left))
-      .not.toMatch(/^none$|^matrix\(1, 0, 0, 1, 0, 0\)$/)
-
-    await scrollTo(page, 0)
-    await expect
-      .poll(() => transformOf(page, left), { timeout: 10_000 })
-      .toMatch(/^none$|^matrix\(1, 0, 0, 1, 0, 0\)$/)
-
-    await scrollTo(page, spacer + 400)
-    await expect
-      .poll(() =>
-        page.locator('[data-story="hero"]').evaluate((el) => el.getBoundingClientRect().top),
-      )
-      .toBeLessThan(header)
+      .poll(async () => top0 - (await hero.evaluate((el) => el.getBoundingClientRect().top)), {
+        timeout: 5_000,
+      })
+      .toBeGreaterThanOrEqual(599)
+    const moved = top0 - (await hero.evaluate((el) => el.getBoundingClientRect().top))
+    expect(moved).toBeLessThanOrEqual(601)
   })
 
   test('featured pins and lights its features up one by one, reversibly', async ({ page }) => {
@@ -205,7 +195,7 @@ test.describe('Home scroll story — desktop', () => {
         .first()
         .evaluate((el) => getComputedStyle(el).display),
     ).toBe('none')
-    expect(IDENTITY).toContain(await transformOf(page, '[data-story-part="phone-left"]'))
+    expect(IDENTITY).toContain(await transformOf(page, '[data-story-part="card"]'))
   })
 
   for (const viewport of [DESKTOP, { width: 1920, height: 1080 }]) {
@@ -247,7 +237,8 @@ test.describe('Home scroll story — light / disabled versions', () => {
         .first()
         .evaluate((el) => el.getBoundingClientRect().height),
     ).toBe(0)
-    expect(IDENTITY).toContain(await transformOf(page, '[data-story-part="phone-center"]'))
+    // The hero is never story-driven: no animated parts, whatever the mode.
+    await expect(page.locator(`${HERO} [data-story-part]`)).toHaveCount(0)
     await expect(page.locator('h1')).toHaveCount(1)
     await expect(page.locator('h1')).toBeVisible()
   }
@@ -276,10 +267,10 @@ test.describe('Home scroll story — light / disabled versions', () => {
     await withPage(browser, { viewport: { width: 1440, height: 700 } }, async (page) => {
       await page.goto(`${BASE}/`)
       await storyOn(page)
-      expect((await trackGeometry(page, 'hero')).spacer).toBe(0)
-      expect(
-        await page.locator('[data-story="hero"]').evaluate((el) => getComputedStyle(el).position),
-      ).not.toBe('sticky')
+      expect((await trackGeometry(page, 'featured')).spacer).toBe(0)
+      expect(await page.locator(HERO).evaluate((el) => getComputedStyle(el).position)).not.toBe(
+        'sticky',
+      )
     })
   })
 
@@ -304,9 +295,9 @@ test.describe('Home scroll story — light / disabled versions', () => {
           .first()
           .evaluate((el) => el.getBoundingClientRect().height),
       ).toBe(0)
-      expect(
-        await page.locator('[data-story="hero"]').evaluate((el) => getComputedStyle(el).position),
-      ).not.toBe('sticky')
+      expect(await page.locator(HERO).evaluate((el) => getComputedStyle(el).position)).not.toBe(
+        'sticky',
+      )
       await expect(page.locator('h1')).toBeVisible()
       await expect(page.locator('[data-story-part="card"]').first()).toBeVisible()
     })

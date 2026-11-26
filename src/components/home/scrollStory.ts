@@ -36,36 +36,6 @@ const trackOf = (section: HTMLElement, pinned: boolean) => {
   return pinned && track && spacer && spacer.offsetHeight > 0 ? { track, spacer } : null
 }
 
-/** Hero: phones fan out, copy drifts up, glows parallax. Starts AT the server state (no flash). */
-export const buildHero = (gsap: Gsap, root: Root, { pinned, headerOffset }: BuildOptions) => {
-  const section = root.querySelector<HTMLElement>('[data-story="hero"]')
-  if (!section) return
-  const pin = trackOf(section, pinned)
-  const k = pin ? 1 : 0.6
-
-  const tl = gsap.timeline({
-    defaults: { ease: 'none', duration: 1 },
-    scrollTrigger: {
-      trigger: pin ? pin.track : section,
-      start: () => `clamp(top top+=${headerOffset()})`,
-      end: pin ? () => `+=${pin.spacer.offsetHeight}` : 'bottom top',
-      scrub: 0.6,
-      invalidateOnRefresh: true,
-    },
-  })
-  const add = (name: string, vars: gsap.TweenVars, position = 0) => {
-    const el = part(section, name)
-    if (el) tl.to(el, vars, position)
-  }
-  add('phone-left', { x: -40 * k, y: 24 * k, rotation: -4 * k, scale: 1 - 0.03 * k })
-  add('phone-right', { x: 40 * k, y: 32 * k, rotation: 4 * k, scale: 1 - 0.03 * k })
-  add('phone-center', { y: -24 * k, scale: 1 + 0.03 * k })
-  // Copy stays ≥ 0.85 opacity so its text keeps sufficient contrast at every scroll position.
-  add('hero-copy', { y: -32 * k, opacity: 1 - 0.15 * k, duration: 0.7 }, 0.3)
-  add('hero-glow-a', { y: 80 * k })
-  add('hero-glow-b', { y: -60 * k })
-}
-
 /** Featured: phones/orbits enter from the sides, then (pinned) features light up one by one. */
 export const buildFeatured = (gsap: Gsap, root: Root, { pinned, headerOffset }: BuildOptions) => {
   const section = root.querySelector<HTMLElement>('[data-story="featured"]')
@@ -243,7 +213,6 @@ export const buildCta = (gsap: Gsap, root: Root) => {
 
 /** Builds every section present on the page (each builder no-ops when its section is absent). */
 export const buildHomeStory = (gsap: Gsap, root: Root, options: BuildOptions) => {
-  buildHero(gsap, root, options)
   buildHeadings(gsap, root)
   buildCatalog(gsap, root)
   buildFeatured(gsap, root, options)

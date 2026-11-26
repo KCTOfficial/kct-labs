@@ -154,11 +154,12 @@ test.describe('Home hero carousel — desktop', () => {
     expect(cursor).toBe('pointer')
   })
 
-  test('GSAP part nodes for the three phones are still present', async ({ page }) => {
+  test('the hero phones carry no scroll-story part nodes', async ({ page }) => {
     await page.goto(`${BASE}/`)
-    for (const slot of ['left', 'center', 'right']) {
-      await expect(page.locator(`[data-story-part="phone-${slot}"]`)).toHaveCount(1)
-    }
+    await expect(page.locator('[data-hero-phone-link]')).toHaveCount(3)
+    await expect(
+      page.locator('section[aria-labelledby="hero-title"] [data-story-part]'),
+    ).toHaveCount(0)
   })
 })
 

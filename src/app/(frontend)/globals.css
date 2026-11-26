@@ -604,11 +604,8 @@ html[data-scroll-story='on'] .story-line {
   display: block;
 }
 
-html[data-scroll-story='on'] [data-story-part^='phone-'],
 html[data-scroll-story='on'] [data-story-part^='featured-phone-'],
-html[data-scroll-story='on'] [data-story-part$='-glow'],
-html[data-scroll-story='on'] [data-story-part$='-glow-a'],
-html[data-scroll-story='on'] [data-story-part$='-glow-b'] {
+html[data-scroll-story='on'] [data-story-part$='-glow'] {
   will-change: transform;
 }
 
