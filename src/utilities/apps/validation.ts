@@ -75,7 +75,8 @@ export const optionalText =
 
 /**
  * `required` on a localized field means "required in every locale". Translations here are optional
- * (missing ones fall back to English), so localized fields are only required in the default locale.
+ * (missing ones fall back per `fallbackLocales`), so localized fields are only required in the default
+ * locale (Indonesian).
  */
 export const requiredInDefaultLocale =
   (defaultLocale: string, message = 'This field is required in the default language.') =>

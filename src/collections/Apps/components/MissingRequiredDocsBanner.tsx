@@ -1,6 +1,6 @@
 'use client'
 
-import { Banner, useDocumentInfo, useFormFields } from '@payloadcms/ui'
+import { Banner, useDocumentInfo, useFormFields, useLocale } from '@payloadcms/ui'
 import { useEffect, useState } from 'react'
 
 import { useAdminApi } from '@/collections/AppDocuments/components/useAdminApi'
@@ -20,6 +20,7 @@ const typeId = (value: AppDoc['documentType']) =>
 /** Names the Google Play–required document types this app has not published yet. */
 export const MissingRequiredDocsBanner = () => {
   const { id } = useDocumentInfo()
+  const { code: locale } = useLocale()
   const api = useAdminApi()
   // Refetch when the join table changes (document added, published or deleted from the drawer).
   const joinSignature = useFormFields(([fields]) =>
@@ -35,6 +36,9 @@ export const MissingRequiredDocsBanner = () => {
       depth: '0',
       limit: String(TYPE_LIMIT),
       'select[title]': 'true',
+      // Explicit: without `locale` Payload REST resolves no per-locale fallback for the default
+      // locale, so an English-only title would come back empty.
+      locale,
     })
     const publishedQuery = new URLSearchParams({
       'where[app][equals]': String(id),
@@ -53,7 +57,7 @@ export const MissingRequiredDocsBanner = () => {
       setMissing(required.docs.filter((type) => !have.has(String(type.id))))
     })
     return () => controller.abort()
-  }, [api, id, joinSignature])
+  }, [api, id, joinSignature, locale])
 
   if (!missing.length) return null
 

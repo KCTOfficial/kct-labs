@@ -13,7 +13,7 @@ import type { LegalTocItem } from './LegalToc'
 type Props = {
   content: DefaultTypedEditorState
   toc: LegalTocItem[]
-  /** Set when the content language differs from the page locale (EN fallback on `/id`). */
+  /** Set when the content language differs from the page locale (fallback to another language). */
   lang?: string
   children?: React.ReactNode
 }

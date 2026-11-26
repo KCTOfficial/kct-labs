@@ -97,11 +97,22 @@ describe('Apps collection', () => {
     const idBefore = await payload.findByID({ collection: 'apps', id: app.id, locale: 'id' })
     expect(idBefore.tagline).toBe('Tagline EN') // fallback
 
+    // Indonesian is the default locale: an EN-only document needs every required ID field.
+    await expect(
+      payload.update({
+        collection: 'apps',
+        id: app.id,
+        locale: 'id',
+        data: { tagline: 'Tagline ID' },
+        context: { disableRevalidate: true },
+      }),
+    ).rejects.toThrow()
+
     await payload.update({
       collection: 'apps',
       id: app.id,
       locale: 'id',
-      data: { tagline: 'Tagline ID' },
+      data: { tagline: 'Tagline ID', shortDescription: 'Short ID' },
       context: { disableRevalidate: true },
     })
     const [enDoc, idDoc] = await Promise.all([
@@ -111,5 +122,55 @@ describe('Apps collection', () => {
     expect(enDoc.tagline).toBe('Tagline EN')
     expect(idDoc.tagline).toBe('Tagline ID')
     expect(idDoc.name).toBe(enDoc.name) // product name is not localized
+  })
+
+  it('id empty field falls back to en per field', async () => {
+    const app = await payload.create({
+      collection: 'apps',
+      data: baseApp({
+        _status: 'published',
+        slug: `mixed-${suffix}`,
+        tagline: 'Tagline ID',
+        shortDescription: 'Short ID',
+      }),
+      // No locale: the default (Indonesian) is used.
+      context: { disableRevalidate: true },
+    })
+    created.apps.push(app.id)
+    await payload.update({
+      collection: 'apps',
+      id: app.id,
+      locale: 'en',
+      data: {
+        tagline: 'Tagline EN',
+        shortDescription: 'Short EN',
+        features: [{ label: 'Feature EN' }],
+      },
+      context: { disableRevalidate: true },
+    })
+
+    const idDoc = await payload.findByID({ collection: 'apps', id: app.id, locale: 'id' })
+    expect(idDoc.tagline).toBe('Tagline ID') // own value wins
+    expect(idDoc.shortDescription).toBe('Short ID')
+    expect(idDoc.features?.map((f) => f.label)).toEqual(['Feature EN']) // empty in ID → EN
+  })
+
+  it('en does not fall back to id', async () => {
+    const app = await payload.create({
+      collection: 'apps',
+      data: baseApp({
+        _status: 'published',
+        slug: `id-only-${suffix}`,
+        tagline: 'Tagline ID',
+        shortDescription: 'Short ID',
+      }),
+      locale: 'id',
+      context: { disableRevalidate: true },
+    })
+    created.apps.push(app.id)
+
+    const enDoc = await payload.findByID({ collection: 'apps', id: app.id, locale: 'en' })
+    expect(enDoc.tagline ?? null).toBeNull()
+    expect(enDoc.shortDescription ?? null).toBeNull()
   })
 })

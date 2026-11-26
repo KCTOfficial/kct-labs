@@ -182,9 +182,9 @@ describe('AppDocuments collection', () => {
       type: 'custom',
       url: `/apps/${appSlug}/legal/new-${suffix}`,
     })
-    expect(byFrom[`/id/apps/${appSlug}/legal/old-${suffix}`]).toMatchObject({
+    expect(byFrom[`/en/apps/${appSlug}/legal/old-${suffix}`]).toMatchObject({
       type: 'custom',
-      url: `/id/apps/${appSlug}/legal/new-${suffix}`,
+      url: `/en/apps/${appSlug}/legal/new-${suffix}`,
     })
   })
 
@@ -201,7 +201,7 @@ describe('AppDocuments collection', () => {
     const ok = await payload.update({
       collection: 'app-documents',
       id: target.id,
-      data: { markdown: { en: MARKDOWN, id: '' } } as never,
+      data: { markdown: { id: MARKDOWN, en: '' } } as never,
       locale: 'all' as never, // supported at runtime; the generated type omits 'all'
       context: ctx,
     })
@@ -210,7 +210,7 @@ describe('AppDocuments collection', () => {
       payload.update({
         collection: 'app-documents',
         id: target.id,
-        data: { markdown: { en: MARKDOWN, id: 'a'.repeat(MARKDOWN_MAX_BYTES + 1) } } as never,
+        data: { markdown: { id: MARKDOWN, en: 'a'.repeat(MARKDOWN_MAX_BYTES + 1) } } as never,
         locale: 'all' as never, // supported at runtime; the generated type omits 'all'
         context: ctx,
       }),
@@ -292,7 +292,7 @@ Draft change.
       expect(res.docs.every((r) => r.to?.type === 'custom')).toBe(true)
       expect(res.docs.map((r) => r.to?.url).sort()).toEqual([
         `/apps/doc-app-${suffix}/legal/draft-new-${suffix}`,
-        `/id/apps/doc-app-${suffix}/legal/draft-new-${suffix}`,
+        `/en/apps/doc-app-${suffix}/legal/draft-new-${suffix}`,
       ])
     })
 

@@ -9,9 +9,9 @@ const hasPrefix = (pathname: string, locale: string) =>
 /**
  * Pure routing decision used by `src/proxy.ts` (kept separate so it can be unit tested).
  *
- * - `/en/...`  → 308 redirect to the unprefixed URL (default locale has exactly one canonical URL).
- * - `/id/...`  → served as-is by the `[locale]` segment.
- * - anything else → internally rewritten to `/en/...` (URL in the browser stays unprefixed).
+ * - `/id/...`  → 308 redirect to the unprefixed URL (default locale has exactly one canonical URL).
+ * - `/en/...`  → served as-is by the `[locale]` segment.
+ * - anything else → internally rewritten to `/id/...` (URL in the browser stays unprefixed).
  */
 export const resolveLocaleRoute = (pathname: string): LocaleRouteDecision => {
   if (hasPrefix(pathname, defaultLocale)) {

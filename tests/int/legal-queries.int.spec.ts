@@ -53,7 +53,13 @@ const createApp = async (
   return app
 }
 
-const createDoc = async (app: number, typeIdx: number, extra: Record<string, unknown> = {}) => {
+/** Legacy-style document written in English (the locale that was the default before). */
+const createDoc = async (
+  app: number,
+  typeIdx: number,
+  extra: Record<string, unknown> = {},
+  locale: 'en' | 'id' = 'en',
+) => {
   const doc = await payload.create({
     collection: 'app-documents',
     data: {
@@ -65,7 +71,7 @@ const createDoc = async (app: number, typeIdx: number, extra: Record<string, unk
       _status: 'published',
       ...extra,
     },
-    locale: 'en',
+    locale,
     context: ctx,
   })
   created.docs.push(doc.id)
@@ -86,7 +92,7 @@ describe('legal queries', () => {
     await createApp('live', 'live', cat.id, media.docs[0].id)
     await createApp('arch', 'archived', cat.id, media.docs[0].id)
     // sortOrder is deliberately the reverse of creation order.
-    const orders = [30, 20, 10, 40]
+    const orders = [30, 20, 10, 40, 50]
     for (const [i, sortOrder] of orders.entries()) {
       const t = await payload.create({
         collection: 'document-types',
@@ -118,7 +124,7 @@ describe('legal queries', () => {
     CLEANUP_TIMEOUT,
   )
 
-  it('lists only published docs sorted by documentType.sortOrder, with hasIndonesian', async () => {
+  it('lists only published docs sorted by documentType.sortOrder, with contentLocales', async () => {
     const [liveId] = appIds
     const d0 = await createDoc(liveId, 0) // sortOrder 30
     await createDoc(liveId, 1) // 20
@@ -131,18 +137,20 @@ describe('legal queries', () => {
       locale: 'id',
       context: ctx,
     })
-    // Only the Indonesian title, no Indonesian markdown.
-    await payload.update({
-      collection: 'app-documents',
-      id: d3.id,
-      data: { title: 'Judul saja' },
-      locale: 'id',
-      context: ctx,
-    })
+    // Indonesian is the default locale: a title without Indonesian markdown cannot be saved.
+    await expect(
+      payload.update({
+        collection: 'app-documents',
+        id: d3.id,
+        data: { title: 'Judul saja' },
+        locale: 'id',
+        context: ctx,
+      }),
+    ).rejects.toThrow(/Markdown/)
 
     const docs = await queryAppLegalDocs(liveId, 'en')
     expect(docs.map((d) => d.slug)).toEqual([`d1-${suffix}`, `d0-${suffix}`, `d3-${suffix}`])
-    expect(docs.map((d) => d.hasIndonesian)).toEqual([false, true, false])
+    expect(docs.map((d) => d.contentLocales)).toEqual([['en'], ['en', 'id'], ['en']])
     expect(docs[0]).toMatchObject({ typeSlug: `type-1-${suffix}`, icon: 'lock', title: 'Title 1' })
   })
 
@@ -153,21 +161,51 @@ describe('legal queries', () => {
     const draft = await queryAppLegalDoc(liveId, slug, 'en', true)
     expect(draft?.slug).toBe(slug)
     const pub = await queryAppLegalDoc(liveId, `d0-${suffix}`, 'id', false)
-    expect(pub).toMatchObject({ title: 'Judul', hasIndonesian: true })
+    expect(pub).toMatchObject({ title: 'Judul', contentLocales: ['en', 'id'] })
     const noId = await queryAppLegalDoc(liveId, `d1-${suffix}`, 'en', false)
-    expect(noId?.hasIndonesian).toBe(false)
+    expect(noId?.contentLocales).toEqual(['en'])
+    // Legacy English-only doc on the (default) Indonesian page: English text, flagged as such.
+    const legacy = await queryAppLegalDoc(liveId, `d1-${suffix}`, 'id', false)
+    expect(legacy).toMatchObject({ title: 'Title 1', markdown: MD, contentLocales: ['en'] })
+  })
+
+  it('shows the Indonesian text on /en for an Indonesian-only doc (explicit fallback)', async () => {
+    const [liveId] = appIds
+    await createDoc(liveId, 4, { title: 'Judul ID', markdown: '# Dok\n\nIsi.\n' }, 'id')
+    const slug = `d4-${suffix}`
+    const en = await queryAppLegalDoc(liveId, slug, 'en', false)
+    expect(en).toMatchObject({ title: 'Judul ID', contentLocales: ['id'] })
+    expect(en?.markdown).toContain('Isi.')
+    const list = await queryAppLegalDocs(liveId, 'en')
+    expect(list.find((d) => d.slug === slug)).toMatchObject({
+      title: 'Judul ID',
+      contentLocales: ['id'],
+    })
+    // An English title alone (no English markdown) does not count as English content.
+    await payload.update({
+      collection: 'app-documents',
+      id: en!.id,
+      data: { title: 'Title only' },
+      locale: 'en',
+      context: ctx,
+    })
+    expect((await queryAppLegalDoc(liveId, slug, 'en', false))?.contentLocales).toEqual(['id'])
   })
 
   it('lists public paths including archived apps flagged archived', async () => {
     const [liveId, archId] = appIds
     await createDoc(archId, 0)
     const paths = (await queryPublicLegalDocPaths()).filter((p) => p.appSlug.endsWith(suffix))
-    expect(paths).toHaveLength(4) // 3 published on live + 1 on archived; draft excluded
+    expect(paths).toHaveLength(5) // 4 published on live + 1 on archived; draft excluded
     expect(paths.filter((p) => p.archived)).toEqual([
       expect.objectContaining({ appSlug: `arch-${suffix}`, docSlug: `d0-${suffix}` }),
     ])
     expect(paths.some((p) => p.docSlug === `d2-${suffix}`)).toBe(false)
-    expect(paths.find((p) => p.docSlug === `d0-${suffix}` && !p.archived)?.hasIndonesian).toBe(true)
+    expect(paths.find((p) => p.docSlug === `d0-${suffix}` && !p.archived)?.contentLocales).toEqual([
+      'en',
+      'id',
+    ])
+    expect(paths.find((p) => p.docSlug === `d4-${suffix}`)?.contentLocales).toEqual(['id'])
     expect(liveId).toBeDefined()
   })
 })
@@ -179,7 +217,7 @@ describe('resolvePrivacyLink', () => {
     icon: 'lock',
     typeSlug,
     effectiveDate: null,
-    hasIndonesian: false,
+    contentLocales: ['id'],
   })
 
   it('prefers the privacy-policy document (internal, localized)', () => {
@@ -188,10 +226,10 @@ describe('resolvePrivacyLink', () => {
         [doc('terms'), doc('privacy-policy', 'privacy')],
         'https://x.test/p',
         'app',
-        'id',
+        'en',
       ),
-    ).toEqual({ href: '/id/apps/app/legal/privacy', external: false })
-    expect(resolvePrivacyLink([doc('privacy-policy')], null, 'app', 'en')).toEqual({
+    ).toEqual({ href: '/en/apps/app/legal/privacy', external: false })
+    expect(resolvePrivacyLink([doc('privacy-policy')], null, 'app', 'id')).toEqual({
       href: '/apps/app/legal/privacy-policy',
       external: false,
     })

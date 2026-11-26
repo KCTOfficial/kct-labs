@@ -17,7 +17,6 @@ import { PayloadRedirects } from '@/components/PayloadRedirects'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { AppIcon } from '@/components/site/AppIcon'
 import {
-  defaultLocale,
   format,
   getDictionary,
   isLocale,
@@ -31,6 +30,7 @@ import type { App } from '@/payload-types'
 import { getAppBySlug } from '@/utilities/apps/queries'
 import { generateMeta } from '@/utilities/generateMeta'
 import { getCachedRedirects } from '@/utilities/getRedirects'
+import { isFullyTranslated, primaryContentLocale } from '@/utilities/legal/contentLocales'
 import { extractToc, firstParagraphText, legalFallbackDescription } from '@/utilities/legal/lexical'
 import { legalDocPath, legalIndexPath } from '@/utilities/legal/paths'
 import {
@@ -68,9 +68,8 @@ const load = async (slug: string, docSlug: string, locale: Locale): Promise<Load
   return doc ? { app, doc } : null
 }
 
-/** On `/id` without Indonesian content the English version is shown (Payload locale fallback). */
-const isFallback = (doc: AppLegalDoc, locale: Locale) =>
-  locale !== defaultLocale && !doc.hasIndonesian
+/** Without content of its own in the page locale, another language is shown (flagged). */
+const isFallback = (doc: AppLegalDoc, locale: Locale) => !doc.contentLocales.includes(locale)
 
 const docTitle = (doc: AppLegalDoc) => doc.title || doc.slug
 
@@ -89,15 +88,18 @@ export default async function LegalDocPage({ params }: Args) {
   const { app, doc } = loaded
   const dict = getDictionary(locale)
   const fallback = isFallback(doc, locale)
+  const shownLocale = fallback ? primaryContentLocale(doc.contentLocales) : locale
   const title = docTitle(doc)
   const content = doc.content as unknown as DefaultTypedEditorState | null
   const toc = content ? extractToc(content as unknown as SerializedEditorState) : []
   const docs = await getAppLegalDocs(app.id, locale)
   const updated = doc.effectiveDate ?? doc.updatedAt
-  // A doc without Indonesian content has one canonical (EN), as in its metadata.
-  const url = localizedUrl(path, fallback ? defaultLocale : locale)
+  // A doc missing the page locale has one canonical (its content's locale), as in its metadata.
+  const url = localizedUrl(path, shownLocale)
   const appHref = localizeHref(`/apps/${app.slug}`, locale)
-  const otherLocales = doc.hasIndonesian ? locales.filter((l) => l !== locale) : []
+  const otherLocales = fallback
+    ? []
+    : locales.filter((l) => l !== locale && doc.contentLocales.includes(l))
 
   const crumbs = [
     { name: dict.nav.home, url: localizedUrl('/', locale), href: localizeHref('/', locale) },
@@ -125,7 +127,7 @@ export default async function LegalDocPage({ params }: Args) {
             name: title,
             url,
             dateModified: doc.updatedAt,
-            inLanguage: fallback ? defaultLocale : locale,
+            inLanguage: shownLocale,
           }),
           breadcrumbSchema(crumbs.map(({ name, url: itemUrl }) => ({ name, url: itemUrl }))),
         ]}
@@ -199,7 +201,7 @@ export default async function LegalDocPage({ params }: Args) {
           {content && (
             <LegalArticle
               content={content}
-              lang={fallback ? localeTags[defaultLocale] : undefined}
+              lang={fallback ? localeTags[shownLocale] : undefined}
               toc={toc}
             >
               {app.supportEmail && (
@@ -256,7 +258,8 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
     noIndex: app.status === 'archived' || draft,
     ogType: 'article',
     path: legalDocPath(app.slug, doc.slug),
-    translated: doc.hasIndonesian,
+    translated: isFullyTranslated(doc.contentLocales),
+    contentLocale: primaryContentLocale(doc.contentLocales),
   }).then((meta) => ({
     ...meta,
     description: meta.description ?? dict.meta.defaultDescription,

@@ -44,12 +44,8 @@ describe('isValidSlug', () => {
 })
 
 describe('parseAppDetailPath', () => {
-  it('parses English (unprefixed), Indonesian and legacy /en detail URLs', () => {
+  it('parses Indonesian (unprefixed), English and legacy /id detail URLs', () => {
     expect(parseAppDetailPath('/apps/al-quran-imam')).toEqual({
-      slug: 'al-quran-imam',
-      locale: 'en',
-    })
-    expect(parseAppDetailPath('/id/apps/al-quran-imam')).toEqual({
       slug: 'al-quran-imam',
       locale: 'id',
     })
@@ -57,11 +53,15 @@ describe('parseAppDetailPath', () => {
       slug: 'al-quran-imam',
       locale: 'en',
     })
+    expect(parseAppDetailPath('/id/apps/al-quran-imam')).toEqual({
+      slug: 'al-quran-imam',
+      locale: 'id',
+    })
   })
 
   it('ignores trailing slashes', () => {
-    expect(parseAppDetailPath('/apps/koorva/')).toEqual({ slug: 'koorva', locale: 'en' })
-    expect(parseAppDetailPath('/id/apps/koorva/')).toEqual({ slug: 'koorva', locale: 'id' })
+    expect(parseAppDetailPath('/apps/koorva/')).toEqual({ slug: 'koorva', locale: 'id' })
+    expect(parseAppDetailPath('/en/apps/koorva/')).toEqual({ slug: 'koorva', locale: 'en' })
   })
 
   it('returns null for everything that is not an app detail route', () => {
@@ -71,6 +71,8 @@ describe('parseAppDetailPath', () => {
       '/id',
       '/apps',
       '/id/apps',
+      '/en',
+      '/en/apps',
       '/apps/x/y',
       '/id/apps/x/y',
       '/fr/apps/x',

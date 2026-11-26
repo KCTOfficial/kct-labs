@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation'
 import React from 'react'
 
-import { getDictionary, isLocale } from '@/i18n'
+import { defaultLocale, getDictionary, isLocale } from '@/i18n'
 
 /**
  * Screen-reader loading announcement. `loading.tsx` receives no props, so the locale is read from
@@ -11,7 +11,7 @@ import { getDictionary, isLocale } from '@/i18n'
  */
 export const LoadingLabel: React.FC = () => {
   const params = useParams<{ locale?: string }>()
-  const dict = getDictionary(isLocale(params?.locale) ? params.locale : 'en')
+  const dict = getDictionary(isLocale(params?.locale) ? params.locale : defaultLocale)
 
   return (
     <span className="sr-only" role="status">

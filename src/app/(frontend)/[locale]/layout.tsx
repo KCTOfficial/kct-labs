@@ -13,7 +13,7 @@ import { isQuickViewEnabled } from '@/components/quick-view/config'
 import type { QuickViewLabels } from '@/components/quick-view/types'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
-import { getDictionary, isLocale, localeTags, locales } from '@/i18n'
+import { defaultLocale, getDictionary, isLocale, localeTags, locales } from '@/i18n'
 import { Providers } from '@/providers'
 import { InitTheme } from '@/providers/Theme/InitTheme'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -106,7 +106,7 @@ export default async function RootLayout({ children, params }: LayoutArgs) {
 
 export async function generateMetadata({ params }: Pick<LayoutArgs, 'params'>): Promise<Metadata> {
   const { locale: param } = await params
-  const locale = isLocale(param) ? param : 'en'
+  const locale = isLocale(param) ? param : defaultLocale
   const dict = getDictionary(locale)
   // Staging/preview deployments set DISALLOW_INDEXING=true so they never compete with production.
   const disallowIndexing = process.env.DISALLOW_INDEXING === 'true'

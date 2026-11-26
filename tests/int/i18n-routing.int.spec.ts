@@ -1,71 +1,108 @@
 import { describe, expect, it } from 'vitest'
 
-import { isLocale, localizeHref, stripLocale } from '@/i18n/config'
+import {
+  defaultLocale,
+  fallbackLocales,
+  isLocale,
+  localizeHref,
+  locales,
+  stripLocale,
+} from '@/i18n/config'
 import { en } from '@/i18n/dictionaries/en'
 import { id } from '@/i18n/dictionaries/id'
 import { format } from '@/i18n'
 import { resolveLocaleRoute } from '@/i18n/routing'
 
 describe('resolveLocaleRoute (proxy)', () => {
-  it('rewrites unprefixed paths to the default locale (English)', () => {
-    expect(resolveLocaleRoute('/')).toEqual({ type: 'rewrite', pathname: '/en' })
+  it('/ rewrites to /id', () => {
+    expect(resolveLocaleRoute('/')).toEqual({ type: 'rewrite', pathname: '/id' })
+  })
+
+  it('/apps rewrites to /id/apps', () => {
+    expect(resolveLocaleRoute('/apps')).toEqual({ type: 'rewrite', pathname: '/id/apps' })
     expect(resolveLocaleRoute('/apps/al-quran-imam')).toEqual({
       type: 'rewrite',
-      pathname: '/en/apps/al-quran-imam',
+      pathname: '/id/apps/al-quran-imam',
     })
   })
 
-  it('redirects explicit /en URLs to the canonical unprefixed URL', () => {
-    expect(resolveLocaleRoute('/en')).toEqual({ type: 'redirect', pathname: '/' })
-    expect(resolveLocaleRoute('/en/apps')).toEqual({ type: 'redirect', pathname: '/apps' })
+  it('/id/apps redirects 308 to /apps and keeps ?sort=name', () => {
+    expect(resolveLocaleRoute('/id')).toEqual({ type: 'redirect', pathname: '/' })
+    expect(resolveLocaleRoute('/id/apps')).toEqual({ type: 'redirect', pathname: '/apps' })
+    // The proxy only replaces `pathname` on a clone of `nextUrl`, so the query string survives.
+    const url = new URL('https://hub.kct.co.id/id/apps?sort=name')
+    const decision = resolveLocaleRoute(url.pathname)
+    expect(decision.type).toBe('redirect')
+    if (decision.type === 'redirect') url.pathname = decision.pathname
+    expect(url.pathname + url.search).toBe('/apps?sort=name')
   })
 
-  it('passes /id URLs through untouched', () => {
-    expect(resolveLocaleRoute('/id')).toEqual({ type: 'next' })
-    expect(resolveLocaleRoute('/id/apps')).toEqual({ type: 'next' })
+  it('/en/apps is served as-is', () => {
+    expect(resolveLocaleRoute('/en')).toEqual({ type: 'next' })
+    expect(resolveLocaleRoute('/en/apps')).toEqual({ type: 'next' })
   })
 
-  it('does not treat look-alike segments as locales', () => {
-    expect(resolveLocaleRoute('/idea')).toEqual({ type: 'rewrite', pathname: '/en/idea' })
-    expect(resolveLocaleRoute('/english')).toEqual({ type: 'rewrite', pathname: '/en/english' })
+  it('/identity and /enter are not treated as locales', () => {
+    expect(resolveLocaleRoute('/identity')).toEqual({ type: 'rewrite', pathname: '/id/identity' })
+    expect(resolveLocaleRoute('/enter')).toEqual({ type: 'rewrite', pathname: '/id/enter' })
+    expect(resolveLocaleRoute('/idea')).toEqual({ type: 'rewrite', pathname: '/id/idea' })
+    expect(resolveLocaleRoute('/english')).toEqual({ type: 'rewrite', pathname: '/id/english' })
+  })
+})
+
+describe('locale config', () => {
+  it('defaults to Indonesian; only Indonesian falls back (to English)', () => {
+    expect(defaultLocale).toBe('id')
+    expect(fallbackLocales).toEqual({ id: 'en' })
+  })
+
+  it('keeps the locales order en, id (it is the order of the Postgres `_locales` enum)', () => {
+    // Reordering recreates the enum (DROP TYPE/CREATE TYPE) = a schema migration. Put the default
+    // locale first explicitly where needed instead of reordering this array.
+    expect(locales).toEqual(['en', 'id'])
   })
 })
 
 describe('localizeHref / stripLocale', () => {
   it('prefixes non-default locales only', () => {
-    expect(localizeHref('/apps', 'id')).toBe('/id/apps')
-    expect(localizeHref('/apps', 'en')).toBe('/apps')
-    expect(localizeHref('/', 'id')).toBe('/id')
+    expect(localizeHref('/apps', 'id')).toBe('/apps')
+    expect(localizeHref('/apps', 'en')).toBe('/en/apps')
+    expect(localizeHref('/', 'en')).toBe('/en')
+    expect(localizeHref('/', 'id')).toBe('/')
   })
 
   it('keeps query strings and hashes', () => {
-    expect(localizeHref('/apps?category=finance', 'id')).toBe('/id/apps?category=finance')
-    expect(localizeHref('/#contact', 'id')).toBe('/id#contact')
+    expect(localizeHref('/apps?category=finance', 'en')).toBe('/en/apps?category=finance')
+    expect(localizeHref('/#contact', 'en')).toBe('/en#contact')
+    expect(localizeHref('/apps?sort=name', 'id')).toBe('/apps?sort=name')
   })
 
   it('is idempotent and switches between locales', () => {
-    expect(localizeHref('/id/apps', 'id')).toBe('/id/apps')
-    expect(localizeHref('/id/apps', 'en')).toBe('/apps')
+    expect(localizeHref('/en/apps', 'en')).toBe('/en/apps')
+    expect(localizeHref('/en/apps', 'id')).toBe('/apps')
+    expect(localizeHref('/id/apps', 'en')).toBe('/en/apps')
   })
 
   it('never touches external, mailto or anchor links', () => {
-    expect(localizeHref('https://www.kct.co.id', 'id')).toBe('https://www.kct.co.id')
-    expect(localizeHref('mailto:team@kct.co.id', 'id')).toBe('mailto:team@kct.co.id')
-    expect(localizeHref('//cdn.example.com/x', 'id')).toBe('//cdn.example.com/x')
-    expect(localizeHref('#top', 'id')).toBe('#top')
+    expect(localizeHref('https://www.kct.co.id', 'en')).toBe('https://www.kct.co.id')
+    expect(localizeHref('mailto:team@kct.co.id', 'en')).toBe('mailto:team@kct.co.id')
+    expect(localizeHref('//cdn.example.com/x', 'en')).toBe('//cdn.example.com/x')
+    expect(localizeHref('#top', 'en')).toBe('#top')
   })
 
   it('strips locale prefixes', () => {
-    expect(stripLocale('/id')).toBe('/')
-    expect(stripLocale('/id/apps/x')).toBe('/apps/x')
+    expect(stripLocale('/id/apps')).toBe('/apps')
+    expect(stripLocale('/en')).toBe('/')
+    expect(stripLocale('/en/apps/x')).toBe('/apps/x')
     expect(stripLocale('/idea')).toBe('/idea')
+    expect(stripLocale('/identity')).toBe('/identity')
   })
 
-  it('handles the internal default-locale path seen during SSR (regression: /id/en)', () => {
-    expect(stripLocale('/en')).toBe('/')
-    expect(stripLocale('/en/apps')).toBe('/apps')
-    expect(localizeHref(stripLocale('/en'), 'id')).toBe('/id')
-    expect(localizeHref(stripLocale('/en/apps/x'), 'id')).toBe('/id/apps/x')
+  it('handles the internal default-locale path seen during SSR (regression: /en/id)', () => {
+    expect(stripLocale('/id')).toBe('/')
+    expect(stripLocale('/id/apps')).toBe('/apps')
+    expect(localizeHref(stripLocale('/id'), 'en')).toBe('/en')
+    expect(localizeHref(stripLocale('/id/apps/x'), 'en')).toBe('/en/apps/x')
     expect(stripLocale('/english')).toBe('/english')
   })
 

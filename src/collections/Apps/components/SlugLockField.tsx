@@ -13,6 +13,7 @@ import {
 import { useEffect, useState, type ComponentProps } from 'react'
 
 import { useAdminApi } from '@/collections/AppDocuments/components/useAdminApi'
+import { localizeHref, locales } from '@/i18n/config'
 import { legalDocPath } from '@/utilities/legal/paths'
 
 import '@/collections/AppDocuments/components/legalAdmin.scss'
@@ -23,7 +24,6 @@ const MODAL_SLUG = 'slug-lock-modal'
 /** The hidden virtual checkbox read by the guardSlugChange hook. */
 const CONFIRM_PATH = 'confirmSlugChange'
 const PUBLISHED_DOCS_LIMIT = 100
-const ID_PREFIX = '/id'
 
 type PublishedDocs = { docs: Array<{ slug?: string | null }>; totalDocs: number }
 
@@ -80,7 +80,7 @@ export const SlugLockField = (props: Props) => {
   const urls = (published?.docs ?? []).flatMap((doc) => {
     if (!doc.slug || !lockedSlug) return []
     const path = legalDocPath(lockedSlug, doc.slug)
-    return [path, `${ID_PREFIX}${path}`]
+    return locales.map((locale) => localizeHref(path, locale))
   })
 
   const unlock = () => {

@@ -107,11 +107,27 @@ describe('Apps legal integration', () => {
     const app = await createApp('cascade')
     await createDoc(app.id, 0, 'published')
     await createDoc(app.id, 1, 'draft')
-    const redirect = await payload.create({
+    // One redirect per locale URL (`/en/...` now; legacy `/id/...` rows from before the default
+    // locale became Indonesian), plus one for another app that must survive.
+    const targets = [
+      legalDocPath(app.slug, 'doc-0'),
+      `/en${legalDocPath(app.slug, 'doc-0')}`,
+      `/id${legalDocPath(app.slug, 'doc-0')}`,
+    ]
+    const redirectIds: number[] = []
+    for (const [i, url] of targets.entries()) {
+      const redirect = await payload.create({
+        collection: 'redirects',
+        data: { from: `${legalDocPath(app.slug, 'old')}-${i}`, to: { type: 'custom', url } },
+        context: ctx,
+      })
+      redirectIds.push(redirect.id)
+    }
+    const other = await payload.create({
       collection: 'redirects',
       data: {
-        from: legalDocPath(app.slug, 'old'),
-        to: { type: 'custom', url: legalDocPath(app.slug, 'doc-0') },
+        from: `/en${legalDocPath(`${app.slug}-other`, 'old')}`,
+        to: { type: 'custom', url: `/en${legalDocPath(`${app.slug}-other`, 'doc-0')}` },
       },
       context: ctx,
     })
@@ -126,9 +142,15 @@ describe('Apps legal integration', () => {
     expect(docs.totalDocs).toBe(0)
     const redirects = await payload.find({
       collection: 'redirects',
-      where: { id: { equals: redirect.id } },
+      where: { id: { in: redirectIds } },
     })
     expect(redirects.totalDocs).toBe(0)
+    const kept = await payload.find({
+      collection: 'redirects',
+      where: { id: { equals: other.id } },
+    })
+    expect(kept.totalDocs).toBe(1)
+    await payload.delete({ collection: 'redirects', id: other.id, context: ctx })
   })
 
   it('rejects a slug change while published documents exist, unless confirmed', async () => {

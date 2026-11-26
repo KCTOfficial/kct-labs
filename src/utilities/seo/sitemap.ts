@@ -1,6 +1,6 @@
 import type { ISitemapField } from 'next-sitemap'
 
-import { defaultLocale, localeTags, locales } from '@/i18n/config'
+import { defaultLocale, localeTags, locales, type Locale } from '@/i18n/config'
 
 import { localizedUrl } from './urls'
 
@@ -30,13 +30,14 @@ export const localizedSitemapEntries = (
   }))
 }
 
-/** English-only page (no translation yet): a single entry, no `id` alternate. */
+/** Page available in one language only (no translation yet): a single entry, no alternates. */
 export const singleLocaleSitemapEntry = (
   path: string,
   lastmod: string,
   options: Pick<ISitemapField, 'changefreq' | 'priority'> = {},
+  locale: Locale = defaultLocale,
 ): ISitemapField => ({
-  loc: localizedUrl(path, defaultLocale),
+  loc: localizedUrl(path, locale),
   lastmod,
   ...options,
 })

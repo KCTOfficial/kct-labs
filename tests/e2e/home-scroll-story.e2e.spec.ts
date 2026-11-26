@@ -118,7 +118,8 @@ test.describe('Home scroll story — desktop', () => {
   })
 
   test('leaving the home page tears everything down; Back re-enables it', async ({ page }) => {
-    await page.goto(`${BASE}/`)
+    // English pages: the nav label and h1 below are the English ones.
+    await page.goto(`${BASE}/en`)
     await storyOn(page)
     await page.locator('header nav').getByRole('link', { name: 'Apps', exact: true }).click()
     await expect(page.locator('h1')).toHaveText('All Apps')
@@ -136,9 +137,9 @@ test.describe('Home scroll story — desktop', () => {
       ['About', 'about'],
       ['Contact', 'contact'],
     ] as const) {
-      await page.goto(`${BASE}/apps`)
+      await page.goto(`${BASE}/en/apps`)
       await page.locator('header nav').getByRole('link', { name, exact: true }).click()
-      await expect(page).toHaveURL(`${BASE}/#${id}`)
+      await expect(page).toHaveURL(`${BASE}/en#${id}`)
       // Expected landing offset = html scroll-padding-top + section scroll-margin-top (pre-existing CSS).
       const expected = await page
         .locator(`#${id}`)

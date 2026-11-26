@@ -67,7 +67,7 @@ test.describe('Home hero carousel — desktop', () => {
     const segments = page.locator('[data-hero-progress] button')
     await expect(segments).toHaveCount(total)
     await expect(segments.first()).toHaveAttribute('aria-current', 'true')
-    await expect(segments.first()).toHaveAttribute('aria-label', /^Show .+/)
+    await expect(segments.first()).toHaveAttribute('aria-label', /^Tampilkan .+/)
     await expect(fill(page)).toHaveCount(1)
     const colours = await fill(page).evaluate((el) => {
       const probe = document.createElement('span')
@@ -90,7 +90,7 @@ test.describe('Home hero carousel — desktop', () => {
     await settled(page)
     expect(await activeIndex(page)).toBe(1)
     await expect(target).toHaveAttribute('aria-current', 'true')
-    await expect(captionLink(page)).toHaveText(label.replace(/^Show /, ''))
+    await expect(captionLink(page)).toHaveText(label.replace(/^Tampilkan /, ''))
   })
 
   test('without JavaScript the caption and phone links work and buttons stay hidden', async ({
@@ -102,7 +102,7 @@ test.describe('Home hero carousel — desktop', () => {
       await page.goto(`${BASE}/`)
       await expect(captionLink(page)).toBeVisible()
       await expect(phoneLink(page, 'center')).toHaveAttribute('href', /\/apps\//)
-      await expect(page.getByRole('button', { name: 'Next app' })).toBeHidden()
+      await expect(page.getByRole('button', { name: 'Aplikasi berikutnya' })).toBeHidden()
     } finally {
       await context.close()
     }
@@ -115,7 +115,7 @@ test.describe('Home hero carousel — desktop', () => {
     await ready(page)
     const startCentre = await hrefOf(page, 'center')
 
-    await page.getByRole('button', { name: 'Next app' }).click()
+    await page.getByRole('button', { name: 'Aplikasi berikutnya' }).click()
     await settled(page)
     const nextCentre = await hrefOf(page, 'center')
     expect(nextCentre).not.toBe(startCentre)
@@ -124,13 +124,13 @@ test.describe('Home hero carousel — desktop', () => {
       await expect(link).toHaveAttribute('href', nextCentre!)
     }
 
-    await page.getByRole('button', { name: 'Previous app' }).click()
+    await page.getByRole('button', { name: 'Aplikasi sebelumnya' }).click()
     await settled(page)
     expect(await hrefOf(page, 'center')).toBe(startCentre)
 
     const total = Number(await group(page).getAttribute('data-count'))
     for (let i = 0; i < total; i++) {
-      await page.getByRole('button', { name: 'Next app' }).click()
+      await page.getByRole('button', { name: 'Aplikasi berikutnya' }).click()
       await settled(page)
     }
     expect(await hrefOf(page, 'center')).toBe(startCentre)
@@ -144,7 +144,7 @@ test.describe('Home hero carousel — desktop', () => {
     const before = await activeIndex(page)
     const total = Number(await group(page).getAttribute('data-count'))
     // Three synchronous clicks: the first starts the slide, the others must be dropped.
-    await page.getByRole('button', { name: 'Next app' }).evaluate((button) => {
+    await page.getByRole('button', { name: 'Aplikasi berikutnya' }).evaluate((button) => {
       ;(button as HTMLButtonElement).click()
       ;(button as HTMLButtonElement).click()
       ;(button as HTMLButtonElement).click()
@@ -160,7 +160,7 @@ test.describe('Home hero carousel — desktop', () => {
     const { samples, width } = await page.evaluate(async () => {
       const track = document.querySelector('.hero-track[data-slot="center"]')!
       const next = [...document.querySelectorAll('button')].find(
-        (b) => b.getAttribute('aria-label') === 'Next app',
+        (b) => b.getAttribute('aria-label') === 'Aplikasi berikutnya',
       )!
       const out: number[] = []
       next.click()
@@ -194,14 +194,14 @@ test.describe('Home hero carousel — desktop', () => {
     }
   })
 
-  test('phone links keep the locale prefix in Indonesian', async ({ page }) => {
-    await page.goto(`${BASE}/id`)
+  test('phone links keep the locale prefix in English', async ({ page }) => {
+    await page.goto(`${BASE}/en`)
     for (const slot of ['left', 'center', 'right'] as const) {
-      await expect(phoneLink(page, slot)).toHaveAttribute('href', /^\/id\/apps\/[a-z0-9-]+$/)
+      await expect(phoneLink(page, slot)).toHaveAttribute('href', /^\/en\/apps\/[a-z0-9-]+$/)
     }
     await ready(page)
-    await expect(page.getByRole('button', { name: 'Aplikasi berikutnya' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Aplikasi sebelumnya' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Next app' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Previous app' })).toBeVisible()
   })
 
   test('hovering a phone shows a pointer cursor', async ({ page }) => {
@@ -227,7 +227,7 @@ test.describe('Home hero carousel — desktop', () => {
 const STEP_TIMEOUT = 10_000
 const QUIET_MS = 6_500
 const total = async (page: Page) => Number(await group(page).getAttribute('data-count'))
-const nextButton = (page: Page) => page.getByRole('button', { name: 'Next app' })
+const nextButton = (page: Page) => page.getByRole('button', { name: 'Aplikasi berikutnya' })
 const parkMouse = (page: Page) => page.mouse.move(2, 2)
 const setHidden = (page: Page, hidden: boolean) =>
   page.evaluate((value) => {

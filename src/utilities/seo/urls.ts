@@ -9,7 +9,7 @@ export const absoluteUrl = (path: string): string => {
   return `${base}${path.startsWith('/') ? path : `/${path}`}`
 }
 
-/** Absolute, locale-prefixed URL. `('/apps', 'id')` → `https://site/id/apps`. */
+/** Absolute, locale-prefixed URL. `('/apps', 'en')` → `https://site/en/apps`. */
 export const localizedUrl = (path: string, locale: Locale): string =>
   absoluteUrl(localizeHref(path, locale))
 
@@ -31,9 +31,13 @@ export const buildAlternates = (path: string, locale: Locale): Alternates => {
 }
 
 /**
- * Pages whose content is NOT translated (template Pages/Posts): a single canonical in the default locale
- * prevents duplicate-content between `/x` and `/id/x`.
+ * Pages whose content is NOT translated (template Pages/Posts, legal documents in one language):
+ * a single canonical in the content's locale (default locale unless given) prevents duplicate
+ * content between `/x` and `/en/x`.
  */
-export const buildSingleLanguageAlternates = (path: string): Alternates => ({
-  canonical: localizedUrl(path, defaultLocale),
+export const buildSingleLanguageAlternates = (
+  path: string,
+  locale: Locale = defaultLocale,
+): Alternates => ({
+  canonical: localizedUrl(path, locale),
 })

@@ -16,7 +16,18 @@ module.exports = {
             userAgent: '*',
             // `/api/media/` must stay crawlable: app icons, screenshots and OG images are served from it.
             allow: ['/', '/api/media/'],
-            disallow: ['/admin', '/api/', '/next/', '/search', '/id/search', '/*?q=', '/*&q='],
+            // Internal search in every locale: `/search` (ID, default), `/en/search`; `/id/search`
+            // is the pre-2026-11 Indonesian URL (now a 308 to `/search`).
+            disallow: [
+              '/admin',
+              '/api/',
+              '/next/',
+              '/search',
+              '/en/search',
+              '/id/search',
+              '/*?q=',
+              '/*&q=',
+            ],
           },
     ],
     additionalSitemaps: [
