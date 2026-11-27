@@ -4,4 +4,4 @@
  * `text-app-accent-text`. One constant so the install and explore buttons can never drift apart.
  */
 export const ACCENT_PILL_BUTTON =
-  'rounded-full border-app-accent px-7 text-foreground hover:bg-app-accent-soft'
+  'rounded-full border-2 border-app-accent px-7 text-foreground hover:bg-app-accent-soft'

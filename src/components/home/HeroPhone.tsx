@@ -98,12 +98,7 @@ export const HeroPhone: React.FC<Props> = ({ apps, appIndex, slot, slide, neighb
         href={target.href}
         tabIndex={-1}
       >
-        <PhoneFrame
-          className="w-full max-lg:rounded-[26px] max-lg:p-1.5 [&>div]:max-lg:rounded-[20px]"
-          image={null}
-          screen={screen}
-          sizes={SIZES}
-        />
+        <PhoneFrame className="w-full" image={null} screen={screen} sizes={SIZES} />
       </Link>
     </div>
   )
