@@ -21,6 +21,10 @@ Halus dan profesional: 150–300 ms, hanya `transform`/`opacity`, mati total di 
 
 Terinspirasi everylastdrop.co.uk: gerak di-_scrub_ oleh posisi scroll dan berbalik saat scroll ke atas. Hanya di desktop ≥ 1024 px dengan mouse, tanpa reduced-motion (GSAP ScrollTrigger, dimuat lazy). Hero **statis** (tidak dianimasikan GSAP; hanya carousel layar HP-nya yang bergerak). Sorotan menempel di bawah header selama 90vh (perlu tinggi layar ≥ 760 px): ponsel masuk dari samping lalu fitur menyala satu per satu. Section lain: kartu katalog naik bertahap, garis progres "Cara kerja" terisi, teks Tentang parallax, pita CTA membesar. Batas: rotasi ≤ 6°, geser ≤ 80 px, skala ≤ 1.03, hanya transform/opacity. Mobile/tablet memakai `.reveal` CSS.
 
+## Bingkai HP (`PhoneFrame`)
+
+Radius dan bezel HP berupa **persentase** dari bingkai (basis desain 260×540: radius 38px → `14.6%/7.04%`, bezel 8px → `3.08%`/`1.48%`, radius layar 30px → `12.3%/5.7%`), bukan piksel, agar tampilannya sama di semua lebar (hero, detail app, How it works, Beranda). Jangan menambah override radius/padding piksel di pemanggil. Prop `notch` menambah pil kamera (hanya How it works). Tes: `tests/int/phoneFrame.int.spec.ts`, `tests/e2e/phone-frame.e2e.spec.ts`.
+
 ## Isi file .pen
 
 | Frame                                     | Keterangan                                                                                                                                                                            |
